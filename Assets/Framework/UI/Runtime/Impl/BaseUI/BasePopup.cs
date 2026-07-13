@@ -85,7 +85,6 @@ namespace Core.UI
             _cts = new CancellationTokenSource();
 
             await _disappearSM.DOHide(_cts.Token);
-            if (_cts.Token.IsCancellationRequested) return;
             _uiSystem.Hide(this);
         }
 
@@ -98,8 +97,11 @@ namespace Core.UI
 
         private async UniTaskVoid ShowAppearFx()
         {
-            await _appearSM.DOShow();
-            if (_isClosing) return;
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+
+            await _appearSM.DOShow(_cts.Token);
             AppearCompleted?.Invoke();
         }
 
@@ -107,6 +109,7 @@ namespace Core.UI
         {
             _isClosing = false;
             _cts?.Cancel();
+            _appearSM.Kill();
             _disappearSM.Kill();
             base.OnHide();
         }

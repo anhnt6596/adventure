@@ -6,14 +6,14 @@ using UnityEngine.UIElements;
 namespace Core.UI
 {
     public class ListUI<TElement, TElementData> : UIElement
-        where TElement : UIElement, IWithData<TElementData>
+        where TElement : UIElement
     {
         private readonly Dictionary<VisualElement, TElement> _elementMap = new();
         private readonly List<TElementData> _itemDatas = new();
         private ListView _listView;
-        private Action<TElement, int> _onBind;
+        private Action<TElement, TElementData, int> _onBind;
 
-        public ListUI(ListView root, Action<TElement, int> onBind = null) : base(root)
+        public ListUI(ListView root, Action<TElement, TElementData, int> onBind) : base(root)
         {
             _listView = root;
             _onBind = onBind;
@@ -32,10 +32,7 @@ namespace Core.UI
             _listView.bindItem = (element, index) =>
             {
                 if (_elementMap.TryGetValue(element, out var item))
-                {
-                    item.Data = _itemDatas[index];
-                    _onBind?.Invoke(item, index);
-                }
+                    _onBind?.Invoke(item, _itemDatas[index], index);
             };
         }
 

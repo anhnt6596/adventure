@@ -34,8 +34,12 @@ public class App : LifetimeScope
         builder.Register<IEventBus, EventBus>(Lifetime.Singleton);
         builder.Register<IDependencyInjector, VContainerInjector>(Lifetime.Singleton);
         builder.RegisterComponent(_uiSystem).As<IUISystem>().AsSelf();
+    }
 
-        builder.RegisterBuildCallback(c =>
-            c.Resolve<UISystem>().Setup(c.Resolve<IEventBus>(), c.Resolve<IDependencyInjector>()));
+    private void Start()
+    {
+        _uiSystem.Initialize(
+            Container.Resolve<IEventBus>(),
+            Container.Resolve<IDependencyInjector>());
     }
 }

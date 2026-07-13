@@ -24,17 +24,12 @@ namespace Core.UI
         private IDependencyInjector _injector;
         private bool _initialized;
 
-        public void Setup(IEventBus eventBus, IDependencyInjector injector = null)
-        {
-            _eventBus = eventBus;
-            _injector = injector;
-        }
-
-        private void Start() => Initialize();
-
-        public void Initialize()
+        public void Initialize(IEventBus eventBus, IDependencyInjector injector = null)
         {
             if (_initialized) return;
+            _eventBus = eventBus;
+            _injector = injector;
+
             if (_document == null) _document = GetComponent<UIDocument>();
             _root = _document.rootVisualElement;
 #if UNITY_EDITOR
@@ -101,7 +96,9 @@ namespace Core.UI
 
         private T ShowInternal<T>() where T : IUIView
         {
-            Initialize();
+            if (!_initialized)
+                throw new InvalidOperationException(
+                    $"{nameof(UISystem)}.{nameof(Initialize)}() must be called before showing UI.");
 
             var t = typeof(T);
             var ui = GetOrCreate<T>(t);
@@ -126,16 +123,6 @@ namespace Core.UI
         public T Show<T>() where T : IUIView
         {
             var ui = ShowInternal<T>();
-            if (ui is IPopup popup) PushPopup(popup);
-            ui.OnShow();
-            _eventBus.Publish(new UIShownEvent(ui));
-            return ui;
-        }
-
-        public T Show<T, TData>(TData data) where T : IUIView, IWithData<TData>
-        {
-            var ui = ShowInternal<T>();
-            ui.Data = data;
             if (ui is IPopup popup) PushPopup(popup);
             ui.OnShow();
             _eventBus.Publish(new UIShownEvent(ui));
@@ -262,10 +249,12 @@ namespace Core.UI
         public bool IsPointerOverUI()
         {
             if (_root?.panel == null) return false;
-            if (Mouse.current == null) return false;
 
-            var mouse = Mouse.current.position.ReadValue();
-            var screenPos = new Vector2(mouse.x, Screen.height - mouse.y);
+            var pointer = Pointer.current;
+            if (pointer == null) return false;
+
+            var pos = pointer.position.ReadValue();
+            var screenPos = new Vector2(pos.x, Screen.height - pos.y);
             var panelPos = RuntimePanelUtils.ScreenToPanel(_root.panel, screenPos);
             var picked = _root.panel.Pick(panelPos);
 
@@ -274,10 +263,10 @@ namespace Core.UI
 
         private void Update()
         {
-            var mouse = Mouse.current;
-            if (mouse != null && mouse.leftButton.wasPressedThisFrame && _root?.panel != null)
+            var pointer = Pointer.current;
+            if (pointer != null && pointer.press.wasPressedThisFrame && _root?.panel != null)
             {
-                var m = mouse.position.ReadValue();
+                var m = pointer.position.ReadValue();
                 Vector2 panelPos = RuntimePanelUtils.ScreenToPanel(
                     _root.panel,
                     new Vector2(m.x, Screen.height - m.y)

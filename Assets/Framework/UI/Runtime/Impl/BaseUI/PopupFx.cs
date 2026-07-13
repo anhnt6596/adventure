@@ -15,7 +15,7 @@ namespace Core.UI
 
     public abstract class PopupAppear
     {
-        public abstract UniTask DOShow();
+        public abstract UniTask DOShow(CancellationToken token);
         public virtual void Kill() { }
     }
 
@@ -27,7 +27,7 @@ namespace Core.UI
 
     public class PopupAppear_None : PopupAppear
     {
-        public override UniTask DOShow() => UniTask.CompletedTask;
+        public override UniTask DOShow(CancellationToken token) => UniTask.CompletedTask;
     }
 
     public class PopupDisappear_None : PopupDisappear
@@ -48,10 +48,16 @@ namespace Core.UI
             _popup = root.Q<VisualElement>("popup");
         }
 
-        public override UniTask DOShow()
+        public override UniTask DOShow(CancellationToken token)
         {
             Kill();
             var tcs = new UniTaskCompletionSource();
+
+            token.Register(() =>
+            {
+                Kill();
+                tcs.TrySetCanceled(token);
+            });
 
             _dimmer.style.opacity = 0;
             _popup.style.opacity = 0;
@@ -142,10 +148,16 @@ namespace Core.UI
             _popup = root.Q<VisualElement>("popup");
         }
 
-        public override UniTask DOShow()
+        public override UniTask DOShow(CancellationToken token)
         {
             Kill();
             var tcs = new UniTaskCompletionSource();
+
+            token.Register(() =>
+            {
+                Kill();
+                tcs.TrySetCanceled(token);
+            });
 
             _dimmer.style.opacity = 0;
             _popup.style.opacity = 1;

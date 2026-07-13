@@ -20,7 +20,6 @@ namespace Core.UI
     {
         event Action<Vector2> OnScreenTapped;
         T Show<T>() where T : IUIView;
-        T Show<T, TData>(TData data) where T : IUIView, IWithData<TData>;
         void Hide<T>() where T: IUIView;
         void Hide(IUIView ui);
         T Get<T>() where T : IUIView;

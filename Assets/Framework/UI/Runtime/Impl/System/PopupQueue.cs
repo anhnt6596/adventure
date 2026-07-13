@@ -9,14 +9,12 @@ namespace Core.UI
         private class QueueItem
         {
             public Type PopupType { get; }
-            public object Data { get; }
             public Action ShowAction { get; }
             public int Priority { get; }
 
-            public QueueItem(Type popupType, object data, Action showAction, int priority = 0)
+            public QueueItem(Type popupType, Action showAction, int priority = 0)
             {
                 PopupType = popupType;
-                Data = data;
                 ShowAction = showAction;
                 Priority = priority;
             }
@@ -49,22 +47,24 @@ namespace Core.UI
             if (_uiSystem.GetTopPopup() != null) return;
             if (_queueItems.Count == 0) return;
 
-            _queueItems.Sort((a, b) => a.Priority.CompareTo(b.Priority));
-            var nextPopup = _queueItems[0];
-            _queueItems.RemoveAt(0);
+            // Lowest Priority first; strict '<' keeps FIFO among equal priorities
+            // (List.Sort is unstable and would break insertion order here).
+            int best = 0;
+            for (int i = 1; i < _queueItems.Count; i++)
+            {
+                if (_queueItems[i].Priority < _queueItems[best].Priority)
+                    best = i;
+            }
+
+            var nextPopup = _queueItems[best];
+            _queueItems.RemoveAt(best);
 
             nextPopup.ShowAction();
         }
 
         public void AddToQueue<T>(int priority = 0) where T : IPopup
         {
-            _queueItems.Add(new QueueItem(typeof(T), null, () => _uiSystem.Show<T>(), priority));
-            CheckShowNextPopupInQueue();
-        }
-
-        public void AddToQueue<T, TData>(TData data, int priority = 0) where T : IPopup, IWithData<TData>
-        {
-            _queueItems.Add(new QueueItem(typeof(T), data, () => _uiSystem.Show<T, TData>(data), priority));
+            _queueItems.Add(new QueueItem(typeof(T), () => _uiSystem.Show<T>(), priority));
             CheckShowNextPopupInQueue();
         }
 
