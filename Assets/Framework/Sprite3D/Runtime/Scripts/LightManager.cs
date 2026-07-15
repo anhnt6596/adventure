@@ -40,7 +40,7 @@ public class LightManager : MonoBehaviour
         if (LightTexture == null || LightTexture.width != width || LightTexture.height != height)
         {
             if (LightTexture) LightTexture.Release();
-            LightTexture = new RenderTexture(width, height, 16, RenderTextureFormat.ARGB32);
+            LightTexture = new RenderTexture(width, height, 16, RenderTextureFormat.ARGBHalf);
             LightTexture.name = "LightMap";
             lightCam.targetTexture = LightTexture;
         }
