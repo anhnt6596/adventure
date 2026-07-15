@@ -7,6 +7,7 @@ using Core;
 
 namespace Core.UI
 {
+    [RequireComponent(typeof(UIDocument))]
     public class UISystem : MonoBehaviour, IUISystem
     {
         public event Action<Vector2> OnScreenTapped;
