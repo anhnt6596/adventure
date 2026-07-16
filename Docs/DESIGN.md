@@ -182,6 +182,10 @@ At home the player is safe: **hunger doesn't drain**, and the table always serve
 an NPC fills you up. That warmth is deliberate: home should be somewhere you *want* to come back to.
 The frontier is scarier when there's something to come back for.
 
+**Crawling home starving:** if you reach home at zero fullness (already bleeding out), you're put
+**straight at the table**. No stumbling to find it, no dying two steps inside the door. Making it
+back *is* the win — the game shouldn't take it away on a technicality.
+
 ### The rule that unifies everything
 
 Every irreversible choice happens at home; the field is where you live with it.
