@@ -133,6 +133,56 @@ competing, and both point outward.
 
 Balance numbers: **later.** The shape is what matters now.
 
+### Affixes at high rarity
+
+From roughly **Orange** up, gear unlocks **secondary effects** on top of its stats:
+
+- cooldown reduction / skill damage up
+- periodic auto-shots at nearby enemies
+- **much faster hunger drain — in exchange for much higher stats** (the gear-costs-hunger rule,
+  concentrated into one item)
+- an extra stat line: speed, HP, armour, …
+
+**Why this matters:** it makes the top of the ladder **qualitatively** different, not just bigger
+numbers. You climb to *unlock effects*, not to add +5 damage — which is what keeps a 12-rung ladder
+worth climbing.
+
+**⚠️ Affixes collide with "only identical items merge".** If affixes roll per item, two Oranges of
+the same sword with different rolls are *not identical* — so they can't merge, and the merge system
+dies exactly at the rungs where it matters. Pick one:
+
+| | How | Trade |
+| --- | --- | --- |
+| **a** | Affixes are **fixed per `(definition, rung)`** | Simplest. An item stays `(def, rung)`. No gambling. |
+| **c** | Merge needs only **same def + same rung** (affixes ignored); the result **rolls a fresh affix** | Merge survives, and you merge *hoping for a good roll* — a second gacha loop for free |
+
+**(c)** is richer, **(a)** is cheaper. Either works — but it must be chosen, or the merge code
+contradicts itself.
+
+### Pickup radius
+
+A **magnet stat**: loot within the radius comes to you, so you don't have to walk onto every drop.
+Upgradeable like the rest.
+
+It's quality-of-life that **serves the pillar**: less backtracking over corpses, more time moving
+outward. It also pairs with night — a wide magnet lets you collect what your small vision radius
+can't even show you.
+
+*(Two different radii — **vision** and **pickup**. Don't let them merge in code or UI.)*
+
+### Damage types — deferred
+
+Physical / magic / true is **not** in yet. It only earns its place if enemies resist differently,
+so that the region you're heading to dictates the loadout you commit to at home — which would feed
+the prep loop nicely.
+
+**Why wait:** every type is a permanent tax on every item, enemy, UI and balance pass — ×3, solo.
+And with one character it decides nothing. Add a type the day a specific enemy demands a different
+answer; then you'll know how many you actually need.
+
+**Note:** *true damage* is a red flag — it usually exists to escape a resistance system that turned
+out annoying. Needing it at design time suggests the resistance system isn't wanted yet.
+
 ### Modelling it — the trap to avoid
 
 An item is **`(definition id, rung)`**. The ladder is a **rule**, not authored content:

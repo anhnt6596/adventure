@@ -50,6 +50,37 @@ later is a one-place change.
 
 ---
 
+## 2026-07-17 — Damage types deferred; one type for now
+
+No physical/magic/true split yet.
+
+**Why:** types only create decisions if enemies resist differently — and then the payoff is real
+(the region dictates the loadout you commit to at home). But each type is a permanent tax on every
+item, enemy, UI and balance pass, and with one character it decides nothing.
+
+**Add one when** a specific enemy demands a different answer. Then the count is known instead of
+guessed. Adding is cheap; removing isn't.
+
+**Red flag noted:** *true damage* usually exists to escape a resistance system that became annoying.
+Wanting it up front is a hint the resistance system isn't wanted yet.
+
+---
+
+## 2026-07-17 — Affixes at high rarity (and the merge collision)
+
+Orange+ gear unlocks secondary effects (cooldown, skill damage, auto-shots, big stats for much
+faster hunger, extra stat lines).
+
+**Why:** it makes the top of the ladder *qualitatively* different. A 12-rung ladder is only worth
+climbing if late rungs change what the item **does**, not just how big its number is.
+
+**Unresolved, and it must be resolved before merge is coded:** affixes break *"only identical items
+merge"*. Either (a) affixes are **fixed per `(def, rung)`** — simplest, item stays `(def, rung)`; or
+(c) merge matches on **def + rung only** and **rerolls the affix** — merge survives and becomes a
+second gacha loop. Pick one; leaving it open makes the merge rule self-contradictory.
+
+---
+
 ## 2026-07-17 — Home is where you commit; the field is where you live with it
 
 Character swap, gear change, stocking supplies, refilling hunger and saving **all happen only at
