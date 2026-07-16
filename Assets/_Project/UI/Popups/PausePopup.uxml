@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Popups/PausePopup.uss" />
+    <ui:VisualElement name="dimmer" class="dimmer">
+        <ui:VisualElement name="popup" class="popup">
+            <ui:Label text="PAUSED" class="title" />
+            <ui:Button name="resume-button" text="Resume" class="btn" />
+            <ui:Button name="restart-button" text="Restart" class="btn btn--secondary" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,35 @@
+/* transparent full-screen overlay: only the button is clickable (picking-mode=Ignore elsewhere) */
+.screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    justify-content: flex-end;
+}
+
+.bottom-bar {
+    align-items: center;
+    padding-bottom: 48px;
+}
+
+.start-btn {
+    width: 220px;
+    height: 56px;
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(20, 22, 28);
+    background-color: rgb(235, 200, 90);
+    border-width: 0;
+    border-radius: 10px;
+}
+
+.start-btn:hover {
+    background-color: rgb(245, 215, 120);
+    scale: 1.03 1.03;
+}
+
+.start-btn:active {
+    scale: 0.97 0.97;
+}

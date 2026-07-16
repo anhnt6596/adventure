@@ -1,18 +1,9 @@
 using UnityEngine;
 
 // Registers into BillboardManager on enable; the manager rotates all billboards
-// from a single LateUpdate. No per-object LateUpdate here.
+// from a single LateUpdate (and orients newly registered ones even if the camera is still).
 public class Billboard : MonoBehaviour
 {
-    private void OnEnable()
-    {
-        var f = CameraViewDir.CamForward;
-        if (f.sqrMagnitude > 1e-6f) transform.forward = f;   // snap to face camera on spawn
-        BillboardManager.Register(transform);
-    }
-
-    private void OnDisable()
-    {
-        BillboardManager.Unregister(transform);
-    }
+    private void OnEnable() => BillboardManager.Register(transform);
+    private void OnDisable() => BillboardManager.Unregister(transform);
 }

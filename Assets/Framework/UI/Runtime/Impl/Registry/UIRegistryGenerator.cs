@@ -14,7 +14,11 @@ namespace Core.UI
         [MenuItem("Tools/UI/Regenerate UI Registry")]
         public static void Regenerate(UIRegistry registry)
         {
-            if (registry == null) return;
+            if (registry == null)
+            {
+                Debug.LogError("[UIRegistry] No registry assigned — assign the UI Registry asset to UISystem._registry, or no UXML will resolve.");
+                return;
+            }
 
             var guids = AssetDatabase.FindAssets("t:VisualTreeAsset", new[] { "Assets" });
 

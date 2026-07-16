@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/GameUI/GameUI.uss" />
+    <ui:VisualElement name="screen" class="screen">
+        <ui:VisualElement name="bottom-bar" class="bottom-bar">
+            <ui:Button name="start-button" text="START" class="start-btn" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
