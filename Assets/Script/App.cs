@@ -9,6 +9,8 @@ public class App : LifetimeScope
     private static App _instance;
 
     [SerializeField] private UISystem _uiSystem;
+    [SerializeField] private Character _mainCharacter;
+    [SerializeField] private MainCharStatsConfig _mainCharStatsConfig;
 
     protected override void Awake()
     {
@@ -24,12 +26,9 @@ public class App : LifetimeScope
 
     protected override void Configure(IContainerBuilder builder)
     {
-        builder.Register<IInventory, Inventory>(Lifetime.Singleton);
-
-        builder.RegisterEntryPoint<GameController>();
-        builder.RegisterEntryPoint<EnemySpawner>();
-
-        builder.RegisterComponentInHierarchy<Player>();
+        builder.RegisterInstance(_mainCharStatsConfig);
+        builder.Register<MainCharStats>(Lifetime.Singleton).As<ICharacterStats>().AsSelf();
+        builder.RegisterComponent(_mainCharacter);
 
         builder.Register<IEventBus, EventBus>(Lifetime.Singleton);
         builder.Register<IDependencyInjector, VContainerInjector>(Lifetime.Singleton);

@@ -5,8 +5,8 @@ public class CharacterAnimator : MonoBehaviour
 {
     [SerializeField] private Animator animator;
     [SerializeField] private Transform scaleNode;
-    [SerializeField] private Dir dirType = Dir.Dir2;
-    public enum Dir { Dir2 = 0, Dir4 = 1, Dir8 = 2 }
+    [SerializeField] private DirMode dirType = DirMode.Two;
+    public enum DirMode { Two = 0, Four = 1, Eight = 2 }
     private int curDir;
     private bool isFlip;
     private Vector3 oriScale;
@@ -27,7 +27,7 @@ public class CharacterAnimator : MonoBehaviour
     {
         int notFlipDir;
         (notFlipDir, isFlip) = CalculateDir(dir);
-        if (animator.GetInteger("Dir") != notFlipDir) animator.SetInteger("Dir", dir);
+        if (animator.GetInteger("Dir") != notFlipDir) animator.SetInteger("Dir", notFlipDir);
         scaleNode.localScale = new Vector3(oriScale.x * (isFlip ? -1 : 1), oriScale.y, oriScale.z);
     }
 
@@ -41,9 +41,9 @@ public class CharacterAnimator : MonoBehaviour
     {
         switch (dirType)
         {
-            case Dir.Dir2:
+            case DirMode.Two:
                 return (1, dir != 1);
-            case Dir.Dir4:
+            case DirMode.Four:
                 return (dir == 3 ? 1 : dir, dir == 3);
         }
         return default;
