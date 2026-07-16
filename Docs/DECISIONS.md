@@ -50,6 +50,62 @@ later is a one-place change.
 
 ---
 
+## 2026-07-17 — Home is where you commit; the field is where you live with it
+
+Character swap, gear change, stocking supplies, refilling hunger and saving **all happen only at
+home**. Nothing irreversible happens in the field.
+
+**Why:** four rules that were decided separately turn out to be one principle. It makes every choice
+a **commitment with stakes** instead of an optimisation you can undo mid-run (e.g. swapping gear to
+dodge the hunger cost). It also happens to be the cheap option: every complex state change occurs in
+one place, at one time, while nothing is moving — no swap mid-combat, no migration mid-run, no save
+mid-transition.
+
+---
+
+## 2026-07-17 — Hunger is an expedition budget, not a timer
+
+Food drains in the field; starving kills. Stock at home, go out, come back when supplies run low.
+
+**Why it earns its place** (I argued against it first and was wrong): it isn't a tax on lingering —
+it's the **budget for a trip**, like fuel in Subnautica or Dredge. It gives a run an arc, and it adds
+a second axis to the ratchet: the frontier extends with **strength**, **carry capacity**,
+**production** — and **route knowledge**. That last one is the real prize: without a budget,
+wandering is free, so knowing the way is worth nothing. Hunger is what makes knowledge a resource.
+
+**The risk is the number, not the mechanic:** drain fast → a nagging bar that interrupts exploring;
+drain slow → an invisible budget that only says *"this trip ends here"*. The player should rarely
+look at the bar.
+
+**Keep separate:** *fullness* (free at home) vs *supply bag* (must be earned). Merging them makes
+food production pointless.
+
+---
+
+## 2026-07-17 — Gear costs hunger
+
+Higher-rung gear drains hunger faster; it pays back through faster kills and more food.
+
+**Why:** it prevents "max gear = infinite range" — the frontier stays a frontier at every power
+level, so the ratchet can't trivialise itself. Combined with *gear only changes at home*, it becomes
+a **loadout commitment** (scout run vs clear run) rather than a mid-run exploit.
+
+**Watch:** if the net is negative, players strip gear to travel and upgrading feels like a
+punishment. The net must stay positive.
+
+---
+
+## 2026-07-17 — Player-placed things are player data, not map state
+
+Buildings (torch towers, production) and death drops both live as player data keyed by map:
+`[(map id, position, …)]`.
+
+**Why:** maps reset their contents on re-entry, so anything stored *in* the map is destroyed. The
+death drop already needed this; buildings need exactly the same thing. One pattern covers both —
+"my footprint in the world" persists, the map's own contents don't.
+
+---
+
 ## 2026-07-17 — Premium on both platforms; mobile is a demo
 
 One game, sold once. Steam: buy up front. Mobile: free demo, buy to continue — reach, not revenue.

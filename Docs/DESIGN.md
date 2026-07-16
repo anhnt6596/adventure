@@ -159,6 +159,121 @@ table reads as one flat 12-rung ladder, so: yes.
 There are **several homes**, unlocked over time. They are the game's checkpoints: the only place
 you can save, swap character, and the place you respawn to.
 
+## Day & night
+
+Light shifts across a session: bright day, dark night. **No seasons** — too much work for the
+value. Instead, individual places get their own **signature weather** later. To start: sun and dark,
+nothing else.
+
+This is not new tech — it's the existing veil finally doing its job. Day = light ambient;
+night = the veil closes in and the player carries a **small vision radius**.
+
+- Vision radius is **upgradeable through gear**, and **temporarily boosted** by pickups or by
+  buffs off certain monsters.
+- **Night serves the pillar for free:** it makes *known ground unfamiliar again*. The ratchet's
+  payoff — *"this place used to kill me"* — comes back on the commute, without building a new map.
+
+## Home
+
+Home is a checkpoint, but not a menu. **It's a place, and it's explored too**: go inside, upstairs,
+poke around for items, take short walks nearby.
+
+At home the player is safe: **hunger doesn't drain**, and the table always serves a free meal —
+an NPC fills you up. That warmth is deliberate: home should be somewhere you *want* to come back to.
+The frontier is scarier when there's something to come back for.
+
+### The rule that unifies everything
+
+Every irreversible choice happens at home; the field is where you live with it.
+
+| At home | In the field |
+| --- | --- |
+| swap **character** | — |
+| change **gear** | — |
+| stock **supplies** | — |
+| **hunger refills free** | hunger drains |
+| **saves** | no save (except on death) |
+
+> **Home is where you commit. The field is where you live with it.**
+
+Four separate decisions turned out to be one principle. It's also the cheap one technically:
+every complex state change happens **in one place, at one time, while nothing is moving** — no
+swapping mid-combat, no migrating mid-run, no saving mid-transition.
+
+## Hunger — the expedition budget
+
+Food drains over time in the field. Starve and you lose health continuously until you die.
+Respawning refills hunger.
+
+**Hunger is not a nagging timer — it's the budget for a trip.** The loop it creates:
+
+> stock up at home → head out → probe, get lost, **learn the route** → supplies run low → head
+> home → next time go further, with better gear *and* better knowledge.
+
+**Why it earns its place** (it's the second axis of the ratchet): the frontier extends because you
+are **stronger** (kill faster = less food per distance), because you can **carry more**, because
+your **production** is better — and because **you know the way**. That last one is the gift:
+hunger is what makes *route knowledge a resource*. Without a budget, wandering costs nothing, so
+knowing the way is worth nothing.
+
+**The tuning rule — it's the number, not the mechanic:**
+
+| Drain fast | interrupts exploring to eat → a nagging bar ❌ |
+| --- | --- |
+| **Drain slow, generous budget** | barely noticed while out; it only says *"this trip ends here"* ✅ |
+
+The player should **rarely look at the hunger bar** while exploring.
+
+### Supplies vs fullness — keep them separate
+
+Two different things, easy to accidentally merge in code:
+
+| | What it is | Where it comes from |
+| --- | --- | --- |
+| **Fullness** (the bar) | your current state | **free at home** (the table) |
+| **Supply bag** | food you *carry* | **must be earned** — farmed, found, produced |
+
+The table refills the bar; it does **not** fill the bag. That's what keeps food production
+meaningful and makes "stock up before a trip" a real act instead of a free top-up.
+
+- The **supply bag is a gear item** with capacity — **upgrade it to extend your range**. One gear
+  slot means *reach* rather than *power*.
+
+### Gear costs hunger
+
+**Higher-rung gear drains hunger faster.** It pays for itself later: you kill faster, so you find
+more food.
+
+**Why it's good:** it stops "max gear = infinite range". The frontier stays a frontier at every
+power level — the ratchet can't trivialise itself.
+
+**Because gear only changes at home, this is a commitment, not an exploit.** You pick a loadout and
+live with it, which turns it into a real choice:
+
+- **Scout run** — light gear, slow drain, long reach, avoid fights.
+- **Clear run** — heavy gear, hungry, strong, short reach.
+
+The optimum is a mix (enough gear to survive the frontier, light enough to reach it), so neither
+extreme dominates. **Watch the net:** if good gear doesn't earn back more food than it costs,
+players will strip down — and upgrading will feel like a punishment.
+
+## Building
+
+The player can build: **torch towers** (light — and light is survival at night), **production
+units** (fruit trees and the like, feeding the supply economy).
+
+**⚠️ Buildings vs "maps reset":** a map's contents rebuild when you re-enter, so anything built
+there would vanish. Solved the same way as the death drop: **buildings are player data, not map
+state**.
+
+```
+buildings: [(map id, position, type, state)]
+drops:     [(map id, position, items)]
+```
+
+A map resets *its own* contents; what the player put into the world persists, because it never
+belonged to the map. Same pattern, reused — both are "my footprint in the world", saved together.
+
 ## Business model
 
 **One premium game, two platforms.** Not a F2P game and a paid game — the same game.
@@ -219,6 +334,21 @@ are one operation. A crash between them is the one case that could duplicate or 
 Gates on jump points are the progression spine: level, currency, (later) items/quests.
 Unlock state (maps, characters) is player data and must survive across maps and sessions —
 written at home, with the rest of the save.
+
+## Parking lot — ideas, not commitments
+
+Things that sound good but aren't decided. Nothing here gets built until the core loop is fun.
+
+- **Home NPC as a relationship, not a vending machine.** She already gives home its warmth (the
+  reason you *want* to return, which is what makes the frontier scary). The version worth building
+  is *memory*: she asks how the trip went, reacts to a streak of deaths, cooks something new when
+  you bring back a strange ingredient, and lets slip **hints about what's out there** — feeding the
+  pillar rather than sitting beside it.
+- **An heir you can play.** After some time, a new controllable character is born and joins the
+  roster. Precedent exists (Rogue Legacy, Massive Chalice, Fire Emblem). **Big scope, and it drags
+  in a different pillar** (legacy/generations vs exploration) — park it. If it ever happens, it
+  should ride the existing character system (stats + attack + skill), i.e. an heir is just another
+  character config, unlocked by a condition instead of a purchase.
 
 ## Open questions (not decided yet)
 
