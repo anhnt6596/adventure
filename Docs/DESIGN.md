@@ -147,17 +147,12 @@ From roughly **Orange** up, gear unlocks **secondary effects** on top of its sta
 numbers. You climb to *unlock effects*, not to add +5 damage — which is what keeps a 12-rung ladder
 worth climbing.
 
-**⚠️ Affixes collide with "only identical items merge".** If affixes roll per item, two Oranges of
-the same sword with different rolls are *not identical* — so they can't merge, and the merge system
-dies exactly at the rungs where it matters. Pick one:
+**Affixes are part of the item, not rolled per drop.** An Orange sword always has the Orange sword's
+effect. So identical items really are identical, `(definition, rung)` still describes an item
+completely, and merging stays a three-line rule.
 
-| | How | Trade |
-| --- | --- | --- |
-| **a** | Affixes are **fixed per `(definition, rung)`** | Simplest. An item stays `(def, rung)`. No gambling. |
-| **c** | Merge needs only **same def + same rung** (affixes ignored); the result **rolls a fresh affix** | Merge survives, and you merge *hoping for a good roll* — a second gacha loop for free |
-
-**(c)** is richer, **(a)** is cheaper. Either works — but it must be chosen, or the merge code
-contradicts itself.
+*(This also means a drop's effect is predictable from what it is — the surprise lives in **which**
+item drops and **how high** it lands, not in a hidden roll on top.)*
 
 ### Pickup radius
 

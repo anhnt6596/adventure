@@ -66,18 +66,22 @@ Wanting it up front is a hint the resistance system isn't wanted yet.
 
 ---
 
-## 2026-07-17 — Affixes at high rarity (and the merge collision)
+## 2026-07-17 — Affixes at high rarity, fixed per item
 
 Orange+ gear unlocks secondary effects (cooldown, skill damage, auto-shots, big stats for much
-faster hunger, extra stat lines).
+faster hunger, extra stat lines). **The effect belongs to the item** — an Orange sword always has
+the Orange sword's effect. Nothing is rolled per drop.
 
-**Why:** it makes the top of the ladder *qualitatively* different. A 12-rung ladder is only worth
-climbing if late rungs change what the item **does**, not just how big its number is.
+**Why affixes:** they make the top of the ladder *qualitatively* different. A 12-rung ladder is only
+worth climbing if late rungs change what the item **does**, not just how big its number is.
 
-**Unresolved, and it must be resolved before merge is coded:** affixes break *"only identical items
-merge"*. Either (a) affixes are **fixed per `(def, rung)`** — simplest, item stays `(def, rung)`; or
-(c) merge matches on **def + rung only** and **rerolls the affix** — merge survives and becomes a
-second gacha loop. Pick one; leaving it open makes the merge rule self-contradictory.
+**Why fixed:** identical items stay genuinely identical, so `(definition, rung)` still describes an
+item completely and merge stays a three-line rule. The surprise lives in *which* item drops and
+*how high* it lands — not in a hidden roll stacked on top.
+
+*(I briefly assumed affixes would roll per instance and went off designing around a collision with
+"only identical items merge". They don't roll. There was no collision — noted as a reminder to check
+the premise before solving.)*
 
 ---
 
