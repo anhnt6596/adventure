@@ -13,23 +13,23 @@ MonoBehaviour:
   m_Name: New Terrain Set
   m_EditorClassIdentifier: Assembly-CSharp::TerrainSet
   layers:
-  - name: Water
-    walkable: 0
-    previewColor: {r: 0, g: 0.83110595, b: 1, a: 0}
+  - name: Brick
+    walkable: 1
+    previewColor: {r: 0.5320754, g: 0, b: 0, a: 0}
     tiles:
+    - {fileID: 21300000, guid: b12a65e15413d4d48970c2a44afa4a78, type: 3}
+    - {fileID: 21300000, guid: fa76dc2bb3d496040a3b641c3892c761, type: 3}
+    - {fileID: 21300000, guid: f10fc076894c78b448a921c3865ba741, type: 3}
+    - {fileID: 21300000, guid: 043f58a96d8a1424a9d35121c82f15bc, type: 3}
+    - {fileID: 21300000, guid: 9fba00bbf302d974e8e559bfdccc6568, type: 3}
+    - {fileID: 0}
+    - {fileID: 21300000, guid: 9bcc76ad700fd164fa98896932b554c2, type: 3}
+    - {fileID: 0}
+    - {fileID: 21300000, guid: 0e019bcd2872f8640bd627e8af7ac07c, type: 3}
+    - {fileID: 21300000, guid: 673f0e5e587dbde469e5d4004661f307, type: 3}
     - {fileID: 0}
     - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 21300000, guid: 19f8e7ce0e8447c4cb30ea4cc8439e67, type: 3}
     - {fileID: 0}
     - {fileID: 0}
     - {fileID: 0}
@@ -37,39 +37,39 @@ MonoBehaviour:
     walkable: 1
     previewColor: {r: 0, g: 1, b: 0.12100744, a: 0}
     tiles:
+    - {fileID: 21300000, guid: 864075d980eace345b334d218557c3ba, type: 3}
+    - {fileID: 21300000, guid: 763c0bb385a9433428b4abd77c1a4c67, type: 3}
+    - {fileID: 21300000, guid: be1e396d2f280da469a4c2db8909dec5, type: 3}
+    - {fileID: 21300000, guid: 767657590bdf8994e96377e9c5e1977d, type: 3}
+    - {fileID: 21300000, guid: c9861ce9ebfd69548a9932ce5381cc78, type: 3}
+    - {fileID: 0}
+    - {fileID: 21300000, guid: 616ee7fe578301843aeeced08ea01b25, type: 3}
+    - {fileID: 0}
+    - {fileID: 21300000, guid: 1b2f4e0e632b1964f9e2d54b1e04ffb3, type: 3}
+    - {fileID: 21300000, guid: 1f79e965169b78f46b50884f32fd5b11, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 21300000, guid: b5be2b26d81750a42a28dc3edc9f2de7, type: 3}
     - {fileID: 0}
     - {fileID: 0}
     - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-  - name: Brick
-    walkable: 1
-    previewColor: {r: 0.5320754, g: 0, b: 0, a: 0}
+  - name: Water
+    walkable: 0
+    previewColor: {r: 0, g: 0.83110595, b: 1, a: 0}
     tiles:
+    - {fileID: 21300000, guid: 8f3477a25b963f445b1a426fed266228, type: 3}
+    - {fileID: 21300000, guid: 55b5a75baf9698b488259c6c483f9d5e, type: 3}
+    - {fileID: 21300000, guid: 757a60d4df472014faf59d237b1f99aa, type: 3}
+    - {fileID: 21300000, guid: 45af99df235e82346b4466de6f5e5352, type: 3}
+    - {fileID: 21300000, guid: 78409d552d5b88449b94f588ffe0190a, type: 3}
+    - {fileID: 0}
+    - {fileID: 21300000, guid: 1b67617f1416bd047916fa46de9f0048, type: 3}
+    - {fileID: 0}
+    - {fileID: 21300000, guid: 5795c204417096346addbf2018fde38e, type: 3}
+    - {fileID: 21300000, guid: 009a8dadde451ed48a7ff046c2bcd7e5, type: 3}
     - {fileID: 0}
     - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 21300000, guid: 78ba4d8a38cd0f44fa481b2f6743f8ad, type: 3}
     - {fileID: 0}
     - {fileID: 0}
     - {fileID: 0}
