@@ -50,6 +50,27 @@ later is a one-place change.
 
 ---
 
+## 2026-07-17 — Resources, not Addressables
+
+`Resources.Load` / `Resources.UnloadUnusedAssets`. No Addressables.
+
+**Why:** the game is sold once and ships whole — no DLC, no patched content, no live-ops. Everything
+Addressables exists for is remote or updatable content, none of which applies. What it costs is
+permanent: catalogs, a separate build step, groups and profiles, async handles at every call site.
+Solo, that tax is paid forever for a feature never used.
+
+**Why it fits what was already decided:** maps are referenced *by id*, not as direct prefab fields.
+`Resources.Load(id)` is exactly that indirection, so the loader stays one place.
+
+**Cost:** `UnloadUnusedAssets` is a full sweep, 100ms and up, and it is the only way to reclaim what
+a map held. Map jumps hide it behind their transition FX, which is the whole reason that is
+affordable. **The day a jump has to be seamless, this is the first thing in the way.**
+
+**Revisit if:** jumps stop being a cut, or the build grows enough that startup and memory care that
+everything under `Resources/` is loaded as one blob.
+
+---
+
 ## 2026-07-17 — Least-art-cost wins, all else equal
 
 Solo project: art is the scarce resource, not code. When two approaches reach the same result,
