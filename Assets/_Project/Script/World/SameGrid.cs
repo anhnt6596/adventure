@@ -22,4 +22,20 @@ public static class SameGrid
         if (!inLayer[map.Get(x - 1, y)]) mask |= OpenWest;
         return mask;
     }
+
+    public const int DiagNorthWest = 1;
+    public const int DiagNorthEast = 2;
+    public const int DiagSouthEast = 4;
+    public const int DiagSouthWest = 8;
+
+    // Only a quarter whose own two sides both match can see its diagonal; that is the concave case.
+    public static int DiagonalMask(TerrainMap map, int x, int y, bool[] inLayer)
+    {
+        int mask = 0;
+        if (!inLayer[map.Get(x - 1, y + 1)]) mask |= DiagNorthWest;
+        if (!inLayer[map.Get(x + 1, y + 1)]) mask |= DiagNorthEast;
+        if (!inLayer[map.Get(x + 1, y - 1)]) mask |= DiagSouthEast;
+        if (!inLayer[map.Get(x - 1, y - 1)]) mask |= DiagSouthWest;
+        return mask;
+    }
 }

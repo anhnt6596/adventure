@@ -14,10 +14,15 @@ public class TerrainLayer
     public Color previewColor = Color.magenta;
 
     [Tooltip("16 tiles, indexed by the mask of the renderer's TileMode.\n" +
-             "SameGrid - which neighbours are in this layer: bit0 N, bit1 E, bit2 S, bit3 W. " +
-             "15 = enclosed, 0 = isolated.\n" +
+             "SameGrid/Quadrant - which sides transition: bit0 N, bit1 E, bit2 S, bit3 W. " +
+             "0 = plain, 15 = lone cell.\n" +
              "DualGrid - which corners are in this layer: bit0 SW, bit1 SE, bit2 NW, bit3 NE.")]
     public Sprite[] tiles = new Sprite[16];
+
+    [Tooltip("Optional, Quadrant mode: the concave notch where only the diagonal differs. " +
+             "Order NW, NE, SE, SW. Leave empty if the tileset has none - the plain quarter is " +
+             "drawn instead.")]
+    public Sprite[] innerCorners = new Sprite[4];
 }
 
 [CreateAssetMenu(menuName = "World/Terrain Set")]
@@ -41,6 +46,15 @@ public class TerrainSet : ScriptableObject
                     for (int i = 0; i < layer.tiles.Length && i < resized.Length; i++)
                         resized[i] = layer.tiles[i];
                 layer.tiles = resized;
+            }
+
+            if (layer.innerCorners == null || layer.innerCorners.Length != 4)
+            {
+                var resized = new Sprite[4];
+                if (layer.innerCorners != null)
+                    for (int i = 0; i < layer.innerCorners.Length && i < 4; i++)
+                        resized[i] = layer.innerCorners[i];
+                layer.innerCorners = resized;
             }
         }
     }

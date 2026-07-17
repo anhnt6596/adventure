@@ -141,7 +141,8 @@ public class TerrainRenderer : MonoBehaviour
                     if (layer > 0 && !inLayer[map.Get(x, y)]) continue;
 
                     int mask = layer == 0 ? 0 : SameGrid.NeighbourMask(map, x, y, inLayer);
-                    AddCellQuadrants(x * cs, y * cs, cs, tiles, mask);
+                    int diag = layer == 0 ? 0 : SameGrid.DiagonalMask(map, x, y, inLayer);
+                    AddCellQuadrants(x * cs, y * cs, cs, set.layers[layer], mask, diag);
                 }
         }
         else
@@ -171,11 +172,10 @@ public class TerrainRenderer : MonoBehaviour
         return mesh;
     }
 
-    // A cell's quarter only cares about its own two sides, so each quarter can be taken from a
-    // different tile. That covers strips and lone cells - cases a 3x3 tileset has no whole tile for
-    // - out of the same nine tiles. It cannot invent a concave notch: with no inner-corner art, a
-    // cell whose diagonal differs just draws its plain quarter, which reads fine.
-    void AddCellQuadrants(float x0, float z0, float cs, Sprite[] tiles, int mask)
+    // A cell's quarter depends only on its own two sides plus the diagonal between them, so each
+    // quarter can come from a different tile. Strips and lone cells fall out of the same nine tiles
+    // a 3x3 set draws, with no whole-tile art for those cases needed.
+    void AddCellQuadrants(float x0, float z0, float cs, TerrainLayer layer, int mask, int diag)
     {
         bool n = (mask & SameGrid.OpenNorth) != 0;
         bool e = (mask & SameGrid.OpenEast) != 0;
@@ -184,19 +184,39 @@ public class TerrainRenderer : MonoBehaviour
 
         float h = cs * 0.5f;
 
-        AddSubQuad(x0, z0 + h, h, Source(tiles, n, w, SameGrid.OpenNorth, SameGrid.OpenWest), 0, 1);
-        AddSubQuad(x0 + h, z0 + h, h, Source(tiles, n, e, SameGrid.OpenNorth, SameGrid.OpenEast), 1, 1);
-        AddSubQuad(x0 + h, z0, h, Source(tiles, s, e, SameGrid.OpenSouth, SameGrid.OpenEast), 1, 0);
-        AddSubQuad(x0, z0, h, Source(tiles, s, w, SameGrid.OpenSouth, SameGrid.OpenWest), 0, 0);
+        AddQuarter(x0, z0 + h, h, layer, n, w, SameGrid.OpenNorth, SameGrid.OpenWest,
+            (diag & SameGrid.DiagNorthWest) != 0, InnerNW, 0, 1);
+        AddQuarter(x0 + h, z0 + h, h, layer, n, e, SameGrid.OpenNorth, SameGrid.OpenEast,
+            (diag & SameGrid.DiagNorthEast) != 0, InnerNE, 1, 1);
+        AddQuarter(x0 + h, z0, h, layer, s, e, SameGrid.OpenSouth, SameGrid.OpenEast,
+            (diag & SameGrid.DiagSouthEast) != 0, InnerSE, 1, 0);
+        AddQuarter(x0, z0, h, layer, s, w, SameGrid.OpenSouth, SameGrid.OpenWest,
+            (diag & SameGrid.DiagSouthWest) != 0, InnerSW, 0, 0);
     }
 
-    // Picks the tile whose matching quarter is drawn the way this one needs: plain, one edge, the
-    // other edge, or the corner where both meet.
-    static Sprite Source(Sprite[] tiles, bool openA, bool openB, int bitA, int bitB)
+    const int InnerNW = 0, InnerNE = 1, InnerSE = 2, InnerSW = 3;
+
+    // The five cases a quarter can be in. Inner corner is the one a 3x3 tileset has no art for, so
+    // it degrades to the plain quarter - drop an inner-corner sprite in and it is used, with no
+    // code change.
+    void AddQuarter(float x0, float z0, float size, TerrainLayer layer,
+                    bool openA, bool openB, int bitA, int bitB,
+                    bool diagOpen, int innerIndex, int qx, int qy)
     {
-        int slot = (openA ? bitA : 0) | (openB ? bitB : 0);
-        return tiles[slot] != null ? tiles[slot] : tiles[0];
+        bool concave = !openA && !openB && diagOpen;
+
+        var sprite = concave
+            ? Inner(layer, innerIndex)
+            : Tile(layer, (openA ? bitA : 0) | (openB ? bitB : 0));
+
+        AddSubQuad(x0, z0, size, sprite ?? Tile(layer, 0), qx, qy);
     }
+
+    static Sprite Tile(TerrainLayer layer, int slot)
+        => layer.tiles != null && slot < layer.tiles.Length ? layer.tiles[slot] : null;
+
+    static Sprite Inner(TerrainLayer layer, int index)
+        => layer.innerCorners != null && index < layer.innerCorners.Length ? layer.innerCorners[index] : null;
 
     void AddSubQuad(float x0, float z0, float size, Sprite sprite, int qx, int qy)
     {

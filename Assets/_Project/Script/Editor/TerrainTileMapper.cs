@@ -71,10 +71,10 @@ public class TerrainTileMapper : EditorWindow
 
         if (missing > 0)
             EditorGUILayout.HelpBox(
-                $"{16 - missing}/16 slots filled. A 3x3 tileset only draws blobs, so the strip and " +
-                "lone-cell slots have no art - those cells fall back to the plain tile, and a " +
-                "one-cell-wide river will look wrong.",
-                MessageType.Warning);
+                $"{16 - missing}/16 slots filled. Quadrant mode only ever reads slots " +
+                "0/1/2/3/4/6/8/9/12, so a 3x3 tileset filling exactly those is complete. " +
+                "The rest only matter to SameGrid mode.",
+                MessageType.Info);
 
         if (_rejected.Count > 0)
             EditorGUILayout.HelpBox(
@@ -168,11 +168,6 @@ public class TerrainTileMapper : EditorWindow
             layer.tiles = new Sprite[SameGrid.MaskCount];
 
         foreach (var kv in _found) layer.tiles[kv.Key] = kv.Value;
-
-        // Slots a 3x3 set never drew: better a seam than a hole in the ground.
-        if (layer.tiles[0] != null)
-            for (int mask = 0; mask < SameGrid.MaskCount; mask++)
-                if (layer.tiles[mask] == null) layer.tiles[mask] = layer.tiles[0];
 
         EditorUtility.SetDirty(set);
         AssetDatabase.SaveAssets();
