@@ -77,9 +77,19 @@ automatically meets everything already there. It is also how Don't Starve gets i
 coastlines — it *has* to, since its world is generated and nobody can hand-author transitions for a
 random map.
 
-**Why not now:** it is real shader work (Shader Graph, days not hours), and it moves the look from
-*drawn* to *blended* — the boundary becomes a noise function rather than an artist's line. The
-current tile path already renders, so this is an upgrade, not a rescue.
+**Why it was skipped first time round — fear it looks bad.** A fair fear, and precisely locatable:
+lerping two textures by weight gives a **soft smear**, which is genuinely ugly and is what most
+people picture. The technique that works is the opposite — a **hard threshold with noise pushed into
+it**: `smoothstep(t - eps, t + eps, weight + noise(uv))` with a small `eps` gives a *crisp* edge
+that noise bends into an organic line. The drawn look survives too: the band near the threshold can
+be tinted, which is exactly the pack's brown shore, now a parameter.
+
+**The part of that fear that stays true:** a generated boundary has no intent. A drawn shore has
+rhythm and deliberate detail; noise is uniformly busy, and up close it reads as machine-made. Don't
+Starve gets away with it because the entire game commits to that look.
+
+**Why not now:** real shader work (Shader Graph, days not hours), and the tile path already renders.
+This is an upgrade, not a rescue.
 
 **When to do it:** when a third or fourth terrain is wanted, or when the tile boundaries look too
 regular against real art. Both are signals the tile approach has hit its ceiling.
