@@ -22,7 +22,11 @@ public class TerrainRenderer : MonoBehaviour
 
     readonly List<Vector3> _verts = new List<Vector3>();
     readonly List<Vector2> _uvs = new List<Vector2>();
-    readonly List<int> _tris = new List<int>();
+
+    // A tileset of loose PNGs gives every tile its own texture, and one mesh can only bind one per
+    // submesh - so triangles are grouped by the texture their UVs address.
+    readonly List<Texture2D> _textures = new List<Texture2D>();
+    readonly List<List<int>> _trisPerTexture = new List<List<int>>();
 
     void Awake() => _grid = GetComponent<TerrainGrid>();
     void OnEnable() { _grid = GetComponent<TerrainGrid>(); Build(); }
@@ -49,7 +53,7 @@ public class TerrainRenderer : MonoBehaviour
 
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = go.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = MaterialFor(set.layers[layer]);
+            mr.sharedMaterials = MaterialsForSubmeshes();
             mr.shadowCastingMode = ShadowCastingMode.Off;
 
             _layerObjects.Add(go);
@@ -65,7 +69,8 @@ public class TerrainRenderer : MonoBehaviour
 
         _verts.Clear();
         _uvs.Clear();
-        _tris.Clear();
+        _textures.Clear();
+        _trisPerTexture.Clear();
 
         if (mode == TileMode.DualGrid)
         {
@@ -98,7 +103,9 @@ public class TerrainRenderer : MonoBehaviour
         var mesh = new Mesh { name = $"Terrain_Layer_{layer}", indexFormat = IndexFormat.UInt32 };
         mesh.SetVertices(_verts);
         mesh.SetUVs(0, _uvs);
-        mesh.SetTriangles(_tris, 0);
+        mesh.subMeshCount = _trisPerTexture.Count;
+        for (int i = 0; i < _trisPerTexture.Count; i++)
+            mesh.SetTriangles(_trisPerTexture[i], i);
         mesh.RecalculateBounds();
         return mesh;
     }
@@ -112,7 +119,7 @@ public class TerrainRenderer : MonoBehaviour
         AddQuadUV(x0, z0, size, sprite.texture, sprite.textureRect);
     }
 
-    void AddQuadUV(float x0, float z0, float size, Texture tex, Rect pixelRect)
+    void AddQuadUV(float x0, float z0, float size, Texture2D tex, Rect pixelRect)
     {
         float x1 = x0 + size;
         float z1 = z0 + size;
@@ -131,29 +138,34 @@ public class TerrainRenderer : MonoBehaviour
         _uvs.Add(new Vector2(u0, w1));
         _uvs.Add(new Vector2(u1, w1));
 
-        _tris.Add(v); _tris.Add(v + 2); _tris.Add(v + 1);
-        _tris.Add(v + 1); _tris.Add(v + 2); _tris.Add(v + 3);
+        var tris = TrianglesFor(tex);
+        tris.Add(v); tris.Add(v + 2); tris.Add(v + 1);
+        tris.Add(v + 1); tris.Add(v + 2); tris.Add(v + 3);
     }
 
-    // Mesh UVs address the atlas the layer's sprites live in, so each layer needs a material
-    // pointing at that texture.
-    Material MaterialFor(TerrainLayer data)
+    List<int> TrianglesFor(Texture2D tex)
     {
-        var texture = AtlasOf(data);
-        if (texture == null || texture == material.mainTexture) return material;
-
-        var copy = new Material(material) { name = $"{material.name}_{data.name}", hideFlags = HideFlags.DontSave };
-        copy.mainTexture = texture;
-        _layerMaterials.Add(copy);
-        return copy;
+        int i = _textures.IndexOf(tex);
+        if (i < 0)
+        {
+            _textures.Add(tex);
+            _trisPerTexture.Add(new List<int>());
+            i = _textures.Count - 1;
+        }
+        return _trisPerTexture[i];
     }
 
-    static Texture2D AtlasOf(TerrainLayer data)
+    Material[] MaterialsForSubmeshes()
     {
-        if (data.tiles != null)
-            foreach (var sprite in data.tiles)
-                if (sprite != null) return sprite.texture;
-        return null;
+        var materials = new Material[_textures.Count];
+        for (int i = 0; i < _textures.Count; i++)
+        {
+            var copy = new Material(material) { name = $"{material.name}_{_textures[i].name}", hideFlags = HideFlags.DontSave };
+            copy.mainTexture = _textures[i];
+            _layerMaterials.Add(copy);
+            materials[i] = copy;
+        }
+        return materials;
     }
 
     // A domain reload clears the lists but leaves the objects, so children are scanned rather than
