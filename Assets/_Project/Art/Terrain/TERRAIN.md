@@ -59,28 +59,25 @@ A tileset like the Kenney pack draws **9** tiles per terrain, the classic 3x3:
 └─────────┴─────────┴─────────┘
 ```
 
-A whole-tile renderer would want 16 and call the other 7 missing. **Quadrant mode builds each cell
-out of four quarters instead**, and a quarter only cares about its own two sides — so its slot is
-always one of four:
+Quadrant draws each cell as **four tiles instead of one**: the map is split 2x2 (every sub-cell
+inheriting its cell's terrain) and the same rule runs on the finer grid at half the tile size.
+Example — `[[1 2] [1 3]]` becomes `[[1 1 2 2] [1 1 2 2] [1 1 3 3] [1 1 3 3]]`.
 
-| Quarter | Slots it can need |
+A sub-cell's two *inner* sides always match its own cell, so only the outer two can transition. Its
+slot is therefore always one of four:
+
+| Sub-cell | Slots it can need |
 | --- | --- |
 | top-left | 0, 1 (N), 8 (W), 9 (N+W) |
 | top-right | 0, 1 (N), 2 (E), 3 (N+E) |
 | bottom-right | 0, 4 (S), 2 (E), 6 (S+E) |
 | bottom-left | 0, 4 (S), 8 (W), 12 (S+W) |
 
-Together: **0, 1, 2, 3, 4, 6, 8, 9, 12** — exactly the nine the pack draws. Slots 5, 7, 10, 11, 13,
-14, 15 are never read. Leave them empty.
+Together: **0, 1, 2, 3, 4, 6, 8, 9, 12** — exactly the nine a 3x3 tileset draws. Slots 5, 7, 10, 11,
+13, 14, 15 are unreachable, so a one-cell-wide river renders from the west-edge and east-edge tiles
+and nothing about the map needs constraining.
 
-So a one-cell-wide river works: its left half comes from the "west edge" tile and its right half
-from the "east edge" tile. Nothing about the map needs constraining.
-
-It is the same rule as SameGrid, run on a grid split 2x2 — each sub-cell's inner two sides always
-match, so only the outer two can transition. Computing the four sources directly avoids storing four
-times the map.
-
-**Inner corners are optional art, not a logic limit.** A quarter whose two sides match but whose diagonal differs is a concave notch. If the layer has an `innerCorners` sprite for it, it is used; if not, the plain quarter is drawn and it reads fine. Commission the art later and it works with no code change.
+The tile-picking algorithm is identical to SameGrid. Only the input differs.
 
 ## Layer order follows the art, not preference
 
@@ -118,9 +115,6 @@ Measured, not guessed. Layer 0 only ever needs slot 0 (it fills everything).
 
 The pack ships several interiors per terrain (`004`, `019`, `021`, … are all plain grass). Any of
 them works in slot 0.
-
-`Tools > Terrain > Tile Mapper` does this by measuring the sprites, if you would rather not drag 27
-of them.
 
 ## Steps
 
