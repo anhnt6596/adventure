@@ -9,9 +9,11 @@ public class TerrainRenderer : MonoBehaviour
     public enum TileMode { SameGrid, Quadrant, DualGrid }
 
     const string LayerPrefix = "Layer_";
+    const int InnerNW = 0, InnerNE = 1, InnerSE = 2, InnerSW = 3;
 
     [SerializeField] TileMode mode = TileMode.Quadrant;
     [SerializeField] Material material;
+    [SerializeField] int sortingOrder = -1;
 
     [Tooltip("Vertical gap between layers. Coplanar layers z-fight.")]
     [SerializeField] float layerHeight = 0.002f;
@@ -55,6 +57,7 @@ public class TerrainRenderer : MonoBehaviour
             var mr = go.AddComponent<MeshRenderer>();
             mr.sharedMaterials = MaterialsForSubmeshes();
             mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.sortingOrder = sortingOrder;
 
             _layerObjects.Add(go);
         }
@@ -94,7 +97,12 @@ public class TerrainRenderer : MonoBehaviour
                 {
                     if (layer > 0 && !inLayer[grid.Get(x, y)]) continue;
                     int mask = layer == 0 ? 0 : SameGrid.NeighbourMask(grid, x, y, inLayer);
-                    AddQuad(x * size, y * size, size, Tile(data, mask));
+
+                    var sprite = mask == 0 && step == 2
+                        ? PlainOrNotch(data, grid, inLayer, x, y)
+                        : Tile(data, mask);
+
+                    AddQuad(x * size, y * size, size, sprite);
                 }
         }
 
@@ -108,6 +116,27 @@ public class TerrainRenderer : MonoBehaviour
             mesh.SetTriangles(_trisPerTexture[i], i);
         mesh.RecalculateBounds();
         return mesh;
+    }
+
+    // A sub-cell with no open side can still have its outer diagonal differ - the concave notch,
+    // which the side mask cannot see. Its three other diagonals are either its own cell or a cell
+    // an open side already covers, so only the outer one matters.
+    static Sprite PlainOrNotch(TerrainLayer data, TerrainMap grid, bool[] inLayer, int x, int y)
+    {
+        bool east = (x & 1) == 1;
+        bool north = (y & 1) == 1;
+
+        int dx = east ? 1 : -1;
+        int dy = north ? 1 : -1;
+
+        if (inLayer[grid.Get(x + dx, y + dy)]) return Tile(data, 0);
+
+        int index = north ? (east ? InnerNE : InnerNW) : (east ? InnerSE : InnerSW);
+        var inner = data.innerCorners != null && index < data.innerCorners.Length
+            ? data.innerCorners[index]
+            : null;
+
+        return inner != null ? inner : Tile(data, 0);
     }
 
     static Sprite Tile(TerrainLayer data, int slot)

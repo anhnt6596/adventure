@@ -119,6 +119,43 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!84 &128616453
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LightMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 910
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 90
+  m_ColorFormat: 48
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &143667938
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -202,7 +239,7 @@ PrefabInstance:
     - target: {fileID: 7422796970273104650, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_TargetTexture
       value: 
-      objectReference: {fileID: 907447090}
+      objectReference: {fileID: 128616453}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -344,43 +381,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!84 &907447090
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: LightMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 910
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 90
-  m_ColorFormat: 48
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &1534016988 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3781071600342696188, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
@@ -589,6 +589,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1543617716253896139, guid: 64b17296c02c636419690e9d3358e22b, type: 3}
+      propertyPath: 'cells.Array.data[1549]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1543617716253896139, guid: 64b17296c02c636419690e9d3358e22b, type: 3}
+      propertyPath: 'cells.Array.data[1684]'
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1543617716253896139, guid: 64b17296c02c636419690e9d3358e22b, type: 3}
+      propertyPath: 'cells.Array.data[1876]'
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1543617716253896139, guid: 64b17296c02c636419690e9d3358e22b, type: 3}
+      propertyPath: 'cells.Array.data[1937]'
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1543617716253896139, guid: 64b17296c02c636419690e9d3358e22b, type: 3}
+      propertyPath: 'cells.Array.data[2002]'
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1543617716253896139, guid: 64b17296c02c636419690e9d3358e22b, type: 3}
       propertyPath: 'cells.Array.data[2080]'
       value: 1

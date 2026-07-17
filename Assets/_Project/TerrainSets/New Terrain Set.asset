@@ -13,23 +13,28 @@ MonoBehaviour:
   m_Name: New Terrain Set
   m_EditorClassIdentifier: Assembly-CSharp::TerrainSet
   layers:
-  - name: Water
-    walkable: 0
-    previewColor: {r: 0, g: 0.83110595, b: 1, a: 0}
+  - name: Brick
+    walkable: 1
+    previewColor: {r: 0.5320754, g: 0, b: 0, a: 0}
     tiles:
-    - {fileID: 21300000, guid: 8f3477a25b963f445b1a426fed266228, type: 3}
-    - {fileID: 21300000, guid: 55b5a75baf9698b488259c6c483f9d5e, type: 3}
-    - {fileID: 21300000, guid: 757a60d4df472014faf59d237b1f99aa, type: 3}
-    - {fileID: 21300000, guid: 45af99df235e82346b4466de6f5e5352, type: 3}
-    - {fileID: 21300000, guid: 78409d552d5b88449b94f588ffe0190a, type: 3}
+    - {fileID: 21300000, guid: b12a65e15413d4d48970c2a44afa4a78, type: 3}
+    - {fileID: 21300000, guid: fa76dc2bb3d496040a3b641c3892c761, type: 3}
+    - {fileID: 21300000, guid: f10fc076894c78b448a921c3865ba741, type: 3}
+    - {fileID: 21300000, guid: 043f58a96d8a1424a9d35121c82f15bc, type: 3}
+    - {fileID: 21300000, guid: 9fba00bbf302d974e8e559bfdccc6568, type: 3}
     - {fileID: 0}
-    - {fileID: 21300000, guid: 1b67617f1416bd047916fa46de9f0048, type: 3}
+    - {fileID: 21300000, guid: 9bcc76ad700fd164fa98896932b554c2, type: 3}
     - {fileID: 0}
-    - {fileID: 21300000, guid: 5795c204417096346addbf2018fde38e, type: 3}
-    - {fileID: 21300000, guid: 009a8dadde451ed48a7ff046c2bcd7e5, type: 3}
+    - {fileID: 21300000, guid: 0e019bcd2872f8640bd627e8af7ac07c, type: 3}
+    - {fileID: 21300000, guid: 673f0e5e587dbde469e5d4004661f307, type: 3}
     - {fileID: 0}
     - {fileID: 0}
-    - {fileID: 21300000, guid: 78ba4d8a38cd0f44fa481b2f6743f8ad, type: 3}
+    - {fileID: 21300000, guid: 19f8e7ce0e8447c4cb30ea4cc8439e67, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    innerCorners:
+    - {fileID: 0}
     - {fileID: 0}
     - {fileID: 0}
     - {fileID: 0}
@@ -53,23 +58,33 @@ MonoBehaviour:
     - {fileID: 0}
     - {fileID: 0}
     - {fileID: 0}
-  - name: Brick
-    walkable: 1
-    previewColor: {r: 0.5320754, g: 0, b: 0, a: 0}
+    innerCorners:
+    - {fileID: 21300000, guid: c166fcb9d2fee104288d5ddce05f5aeb, type: 3}
+    - {fileID: 21300000, guid: a1daa3a47901386418bfbcf00cc54317, type: 3}
+    - {fileID: 21300000, guid: 544f745b6dde2834caa22c65326f0faa, type: 3}
+    - {fileID: 21300000, guid: 40528e8da23408e45bee147164e61327, type: 3}
+  - name: Water
+    walkable: 0
+    previewColor: {r: 0, g: 0.83110595, b: 1, a: 0}
     tiles:
-    - {fileID: 21300000, guid: b12a65e15413d4d48970c2a44afa4a78, type: 3}
-    - {fileID: 21300000, guid: fa76dc2bb3d496040a3b641c3892c761, type: 3}
-    - {fileID: 21300000, guid: f10fc076894c78b448a921c3865ba741, type: 3}
-    - {fileID: 21300000, guid: 043f58a96d8a1424a9d35121c82f15bc, type: 3}
-    - {fileID: 21300000, guid: 9fba00bbf302d974e8e559bfdccc6568, type: 3}
+    - {fileID: 21300000, guid: 8f3477a25b963f445b1a426fed266228, type: 3}
+    - {fileID: 21300000, guid: 55b5a75baf9698b488259c6c483f9d5e, type: 3}
+    - {fileID: 21300000, guid: 757a60d4df472014faf59d237b1f99aa, type: 3}
+    - {fileID: 21300000, guid: 45af99df235e82346b4466de6f5e5352, type: 3}
+    - {fileID: 21300000, guid: 78409d552d5b88449b94f588ffe0190a, type: 3}
     - {fileID: 0}
-    - {fileID: 21300000, guid: 9bcc76ad700fd164fa98896932b554c2, type: 3}
+    - {fileID: 21300000, guid: 1b67617f1416bd047916fa46de9f0048, type: 3}
     - {fileID: 0}
-    - {fileID: 21300000, guid: 0e019bcd2872f8640bd627e8af7ac07c, type: 3}
-    - {fileID: 21300000, guid: 673f0e5e587dbde469e5d4004661f307, type: 3}
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 21300000, guid: 19f8e7ce0e8447c4cb30ea4cc8439e67, type: 3}
+    - {fileID: 21300000, guid: 5795c204417096346addbf2018fde38e, type: 3}
+    - {fileID: 21300000, guid: 009a8dadde451ed48a7ff046c2bcd7e5, type: 3}
     - {fileID: 0}
     - {fileID: 0}
+    - {fileID: 21300000, guid: 78ba4d8a38cd0f44fa481b2f6743f8ad, type: 3}
     - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    innerCorners:
+    - {fileID: 21300000, guid: 5c47b30c40796ef4c933a6f268a79489, type: 3}
+    - {fileID: 21300000, guid: 722c6c544295b4d48bb2d2debc360abc, type: 3}
+    - {fileID: 21300000, guid: 6da6638539f49a54b98cd8fe2707c7b5, type: 3}
+    - {fileID: 21300000, guid: 9273d064a0a6e6e4d9b268f461db5018, type: 3}

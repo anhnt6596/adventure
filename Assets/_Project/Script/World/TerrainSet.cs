@@ -15,6 +15,10 @@ public class TerrainLayer
     [Tooltip("Indexed by which sides transition: bit0 N, bit1 E, bit2 S, bit3 W. 0 = plain.\n" +
              "DualGrid instead indexes corners: bit0 SW, bit1 SE, bit2 NW, bit3 NE.")]
     public Sprite[] tiles = new Sprite[SameGrid.MaskCount];
+
+    [Tooltip("Quadrant mode: the notch where only the diagonal differs, which no side mask can see. " +
+             "Order NW, NE, SE, SW. Empty falls back to the plain tile and leaves a square corner.")]
+    public Sprite[] innerCorners = new Sprite[4];
 }
 
 [CreateAssetMenu(menuName = "World/Terrain Set")]
@@ -60,6 +64,7 @@ public class TerrainSet : ScriptableObject
         {
             if (layer == null) continue;
             layer.tiles = Resize(layer.tiles, SameGrid.MaskCount);
+            layer.innerCorners = Resize(layer.innerCorners, 4);
         }
     }
 
