@@ -13,7 +13,9 @@ public class TerrainRenderer : MonoBehaviour
 
     [SerializeField] TileMode mode = TileMode.Quadrant;
     [SerializeField] Material material;
-    [SerializeField] int sortingOrder = -1;
+    [Tooltip("Order of the base layer; each layer above takes the next. Keep below everything that " +
+             "stands on the ground.")]
+    [SerializeField] int sortingOrder = -100;
 
     [Tooltip("Vertical gap between layers. Coplanar layers z-fight.")]
     [SerializeField] float layerHeight = 0.002f;
@@ -38,12 +40,13 @@ public class TerrainRenderer : MonoBehaviour
     // reach the ones already built.
     void OnValidate()
     {
-        foreach (var go in _layerObjects)
+        for (int i = 0; i < _layerObjects.Count; i++)
         {
+            var go = _layerObjects[i];
             if (go == null) continue;
             go.layer = gameObject.layer;
             var mr = go.GetComponent<MeshRenderer>();
-            if (mr != null) mr.sortingOrder = sortingOrder;
+            if (mr != null) mr.sortingOrder = sortingOrder + i;
         }
     }
 #endif
@@ -75,7 +78,10 @@ public class TerrainRenderer : MonoBehaviour
             var mr = go.AddComponent<MeshRenderer>();
             mr.sharedMaterials = MaterialsForSubmeshes();
             mr.shadowCastingMode = ShadowCastingMode.Off;
-            mr.sortingOrder = sortingOrder;
+
+            // The material writes no depth, so nothing sinks into the ground - which means the
+            // layers cannot sort themselves either, and order has to be explicit.
+            mr.sortingOrder = sortingOrder + layer;
 
             _layerObjects.Add(go);
         }

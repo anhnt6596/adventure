@@ -17,7 +17,7 @@ MonoBehaviour:
     walkable: 1
     previewColor: {r: 0.5320754, g: 0, b: 0, a: 0}
     tiles:
-    - {fileID: 21300000, guid: b12a65e15413d4d48970c2a44afa4a78, type: 3}
+    - {fileID: 21300000, guid: f7fb30e585f4a834f9bd80b15578e939, type: 3}
     - {fileID: 21300000, guid: fa76dc2bb3d496040a3b641c3892c761, type: 3}
     - {fileID: 21300000, guid: f10fc076894c78b448a921c3865ba741, type: 3}
     - {fileID: 21300000, guid: 043f58a96d8a1424a9d35121c82f15bc, type: 3}
