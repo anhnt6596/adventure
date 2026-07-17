@@ -10,6 +10,7 @@ public class TerrainRenderer : MonoBehaviour
 {
     const string LayerPrefix = "Layer_";
 
+    [Tooltip("Template. Each layer gets a copy with its own atlas, since layers rarely share one.")]
     [SerializeField] Material material;
 
     [Tooltip("Vertical gap between layers. Coplanar layers z-fight.")]
@@ -17,6 +18,7 @@ public class TerrainRenderer : MonoBehaviour
 
     TerrainGrid _grid;
     readonly List<GameObject> _layerObjects = new List<GameObject>();
+    readonly List<Material> _layerMaterials = new List<Material>();
 
     readonly List<Vector3> _verts = new List<Vector3>();
     readonly List<Vector2> _uvs = new List<Vector2>();
@@ -46,11 +48,33 @@ public class TerrainRenderer : MonoBehaviour
 
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = go.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = material;
+            mr.sharedMaterial = MaterialFor(layer, set);
             mr.shadowCastingMode = ShadowCastingMode.Off;
 
             _layerObjects.Add(go);
         }
+    }
+
+    // The mesh UVs address the atlas the layer's sprites live in, so the material has to point at
+    // that same texture. Layers with separate atlases therefore need separate materials.
+    Material MaterialFor(int layer, TerrainSet set)
+    {
+        if (material == null) return null;
+
+        var texture = AtlasOf(set.layers[layer]);
+        if (texture == null || texture == material.mainTexture) return material;
+
+        var copy = new Material(material) { name = $"{material.name}_{layer}", hideFlags = HideFlags.DontSave };
+        copy.mainTexture = texture;
+        _layerMaterials.Add(copy);
+        return copy;
+    }
+
+    static Texture2D AtlasOf(TerrainLayer layer)
+    {
+        foreach (var sprite in layer.tiles)
+            if (sprite != null) return sprite.texture;
+        return null;
     }
 
     Mesh BuildLayerMesh(int layer, TerrainSet set)
@@ -128,6 +152,11 @@ public class TerrainRenderer : MonoBehaviour
             DestroySafe(child.gameObject);
         }
         _layerObjects.Clear();
+
+        // Build() runs on every paint stroke, so leaking a copy per layer per stroke adds up fast.
+        foreach (var m in _layerMaterials)
+            if (m != null) DestroySafe(m);
+        _layerMaterials.Clear();
     }
 
     static void DestroySafe(Object obj)
