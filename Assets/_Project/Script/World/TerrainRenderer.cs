@@ -33,6 +33,21 @@ public class TerrainRenderer : MonoBehaviour
     void Awake() => _grid = GetComponent<TerrainGrid>();
     void OnEnable() { _grid = GetComponent<TerrainGrid>(); Build(); }
 
+#if UNITY_EDITOR
+    // Layer and sorting order are copied onto the generated objects, so changing them here has to
+    // reach the ones already built.
+    void OnValidate()
+    {
+        foreach (var go in _layerObjects)
+        {
+            if (go == null) continue;
+            go.layer = gameObject.layer;
+            var mr = go.GetComponent<MeshRenderer>();
+            if (mr != null) mr.sortingOrder = sortingOrder;
+        }
+    }
+#endif
+
     [ContextMenu("Rebuild Terrain Mesh")]
     public void Build()
     {
@@ -48,10 +63,13 @@ public class TerrainRenderer : MonoBehaviour
             var mesh = BuildLayerMesh(layer, set);
             if (mesh == null) continue;
 
+            // Rebuilt from scratch on every paint stroke and reload, so nothing set on them by hand
+            // survives - anything they need is taken from this component or its GameObject.
             var go = new GameObject($"{LayerPrefix}{layer}_{set.layers[layer].name}");
             go.transform.SetParent(transform, false);
             go.transform.localPosition = new Vector3(0f, layer * layerHeight, 0f);
             go.hideFlags = HideFlags.DontSave;
+            go.layer = gameObject.layer;
 
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = go.AddComponent<MeshRenderer>();
