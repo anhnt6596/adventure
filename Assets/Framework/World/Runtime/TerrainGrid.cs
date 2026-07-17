@@ -1,7 +1,6 @@
 using UnityEngine;
 
-// Terrain is walkability, not buildability - BuildGrid owns the latter. A path around a house is
-// walkable and unbuildable; water is neither.
+// Terrain is walkability, not buildability: a path around a house is walkable and unbuildable.
 [ExecuteAlways]
 public class TerrainGrid : MonoBehaviour
 {
