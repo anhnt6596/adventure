@@ -23,8 +23,14 @@ public class TerrainMap
 
     public bool InBounds(int x, int y) => (uint)x < (uint)Width && (uint)y < (uint)Height;
 
-    // Outside the map reads as terrain 0, so the base layer closes the map edge for free.
-    public byte Get(int x, int y) => InBounds(x, y) ? _cells[y * Width + x] : (byte)0;
+    // Outside the map reads as the nearest edge cell, so terrain continues past the border instead
+    // of transitioning against nothing.
+    public byte Get(int x, int y)
+    {
+        if (x < 0) x = 0; else if (x >= Width) x = Width - 1;
+        if (y < 0) y = 0; else if (y >= Height) y = Height - 1;
+        return _cells[y * Width + x];
+    }
 
     public void Set(int x, int y, byte id)
     {
