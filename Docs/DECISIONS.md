@@ -231,6 +231,30 @@ the premise before solving.)*
 
 ---
 
+## 2026-07-18 — Characters share progression; swap is diegetic, not an RPG party
+
+Multiple unlockable characters, but they **share the wallet, level and gear inventory**. A character
+is a playstyle (stats / attack / skill / collision size / mass / look), not a separate save. The
+roster standing at home is for liveliness; you walk up and switch.
+
+**Why shared:** the pillar is exploration and unlock, not raising a roster. Independent per-character
+progression turns "change playstyle" into "nurture several heroes" — it dilutes the pillar and
+multiplies save and balance work. And since gear and character change only at home, per-character
+stats would carry no meaning anyway.
+
+**Architecture — possession, not re-skin (deferred):** each character is a self-contained body (own
+collision/mass/visual/stats-from-config). A persistent control layer (input, camera, interactor,
+map-reposition ref) re-binds to the active body on swap; at home all owned bodies are present, in the
+field only the active one. This is cleaner than reconfiguring one shared pawn *because* collision/
+mass/visual differ per character, and the present bodies make the swap diegetic.
+
+**`MainCharManager` (deferred, not built):** will spawn the active character + the map, bind the
+control layer, and own the save. Not built — one character can't show its shape. **Seam to keep
+now:** input/camera/interactor/map-player must not be hard-wired to one character; they should ask
+for "the active character". Hard-wiring is fine with one character; generalise at character two.
+
+---
+
 ## 2026-07-17 — Home is where you commit; the field is where you live with it
 
 Character swap, gear change, stocking supplies, refilling hunger and saving **all happen only at

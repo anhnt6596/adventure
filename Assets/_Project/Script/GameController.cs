@@ -1,16 +1,23 @@
 using Core.UI;
+using Cysharp.Threading.Tasks;
 using UnityEngine.InputSystem;
 using VContainer.Unity;
 
 public class GameController : IStartable, ITickable
 {
+    const string StartMapId = "Map_1";
+    const int StartGateIndex = 0;
+
     readonly IUISystem _ui;
+    readonly IMapService _maps;
 
-    public GameController(IUISystem ui) => _ui = ui;
-
-    public void Start()
+    public GameController(IUISystem ui, IMapService maps)
     {
+        _ui = ui;
+        _maps = maps;
     }
+
+    public void Start() => _maps.ChangeMapAsync(StartMapId, StartGateIndex).Forget();
 
     public void Tick()
     {

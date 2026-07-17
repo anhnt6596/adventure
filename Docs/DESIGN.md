@@ -105,6 +105,37 @@ Only **attack** and **skill** are behaviour rather than numbers, so they're the 
 more than a config field. Keep the count of attack kinds and skills small; if it ever wants a
 "new concept per character", that's a signal the differentiation stopped being data.
 
+### Shared progression, not separate heroes
+
+Characters **share everything that progresses** — one wallet, one level, one gear inventory.
+Swapping a character changes **playstyle** (stats, attack, skill, collision size, mass, look), not
+which save you're on. There is no per-character state to save.
+
+**Why shared:** the pillar is exploration and unlock, not raising a roster. Independent progression
+would turn "change playstyle" into "nurture several heroes" — it dilutes the focus and multiplies
+save and balance work. And since gear and character only change at home anyway, per-character stats
+would carry no meaning.
+
+The roster standing around at home is for **liveliness**, not depth — you see who you own, walk up,
+and switch. That's a home-warmth decision, not an RPG-party one.
+
+### How a swap works (architecture note, not built yet)
+
+**Possession, not re-skin.** Each character is a **self-contained body** — its own collision size,
+mass, visual, and stats-from-config. At home the owned bodies stand present; in the field only the
+active one comes along. Swapping doesn't rebuild a shared pawn — a persistent **control layer**
+(input, camera target, interactor, the map-reposition reference) **re-binds to the selected body**.
+
+This is why possession fits: collision/mass/visual differ per character, so a full body each is
+cleaner than reconfiguring one pawn — and the bodies being physically present makes the swap
+diegetic.
+
+**`MainCharManager` (deferred — one character exists, so its shape can't be seen yet).** When built,
+it will: spawn the active MainChar and the map, bind the control layer to the active body, and own
+the save. Until then, the seam to keep is that input/camera/interactor/map-player are **not
+hard-wired to one character** — they should ask for "the active character". With one character they
+are hard-wired, and that's fine; generalise at character two.
+
 ## Gear: gacha + merge
 
 Gear is pulled from **gacha** and upgraded by **merging two identical items into one a step up**
