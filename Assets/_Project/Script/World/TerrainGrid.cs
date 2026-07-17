@@ -81,8 +81,6 @@ public class TerrainGrid : MonoBehaviour
 
     public int DefaultPassMask => set != null ? set.BuildDefaultPassMask() : ~0;
 
-    public byte TerrainAt(int x, int y) => Map.Get(x, y);
-
     public bool WorldToCell(Vector3 world, out int x, out int y)
     {
         Vector3 local = transform.InverseTransformPoint(world);

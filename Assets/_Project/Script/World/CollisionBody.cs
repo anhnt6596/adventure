@@ -24,14 +24,7 @@ public class CollisionBody : MonoBehaviour, ICollisionBody
     public float InvMass => mass > 0f ? 1f / mass : 0f;
     public int PassMask { get; private set; } = ~0;
 
-    // The default comes from the terrain's own walkable flags; a swimming or flying body overrides
-    // it once, a buff toggles single bits.
     public void SetPassMask(int mask) => PassMask = mask;
-    public void AllowTerrain(int terrainId) => PassMask |= TerrainSet.BitOf(terrainId);
-    public void DenyTerrain(int terrainId) => PassMask &= ~TerrainSet.BitOf(terrainId);
-    public bool IsOn(int terrainId, TerrainGrid terrain)
-        => terrain.WorldToCell(transform.position, out int x, out int y)
-           && terrain.TerrainAt(x, y) == terrainId;
 
 #if UNITY_EDITOR
     void OnDrawGizmosSelected()
