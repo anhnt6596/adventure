@@ -11,10 +11,6 @@ public class CollisionSystem : MonoBehaviour
 
     public CollisionWorld World => _world ??= new CollisionWorld(terrain);
 
-    public TerrainGrid Terrain => terrain;
-
-    // Seeds the body's pass mask from the terrain so callers don't have to know it exists; a
-    // swimmer or flyer overrides it after registering.
     public void Register(ICollisionBody body)
     {
         if (body is CollisionBody b && terrain != null) b.SetPassMask(terrain.DefaultPassMask);

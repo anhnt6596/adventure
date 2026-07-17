@@ -259,7 +259,7 @@ PrefabInstance:
     - target: {fileID: 7422796970273104650, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_TargetTexture
       value: 
-      objectReference: {fileID: 186544375}
+      objectReference: {fileID: 890406964}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -270,43 +270,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3805254027030119076, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
   m_PrefabInstance: {fileID: 143667938}
   m_PrefabAsset: {fileID: 0}
---- !u!84 &186544375
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: LightMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 910
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 90
-  m_ColorFormat: 48
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &616452065
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -374,7 +337,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5431757174141155505, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 616452072}
   m_SourcePrefab: {fileID: 100100000, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
 --- !u!4 &616452066 stripped
 Transform:
@@ -386,6 +352,20 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5431757174141155505, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
   m_PrefabInstance: {fileID: 616452065}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &616452072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 616452067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7827bdbcbaf24e943b9e07bb4e1ea47b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CollisionBody
+  radius: 0.25
+  mass: 1
 --- !u!1 &642295460
 GameObject:
   m_ObjectHideFlags: 0
@@ -438,6 +418,89 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &693011997
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 693011999}
+  - component: {fileID: 693011998}
+  m_Layer: 0
+  m_Name: CollisionSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &693011998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 693011997}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7964a6aa6dcb71843bbc2bdb790f7419, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CollisionSystem
+  terrain: {fileID: 1942293864}
+  iterations: 2
+--- !u!4 &693011999
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 693011997}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -9.78973, y: 0, z: -9.32574}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!84 &890406964
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LightMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 910
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 90
+  m_ColorFormat: 48
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1534016988 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3781071600342696188, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
@@ -570,6 +633,17 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &1942293864 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1543617716253896139, guid: 64b17296c02c636419690e9d3358e22b, type: 3}
+  m_PrefabInstance: {fileID: 77724896}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51322e80c715ccd45a4534227a5f1c2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TerrainGrid
 --- !u!1 &2063203228
 GameObject:
   m_ObjectHideFlags: 0
@@ -648,3 +722,4 @@ SceneRoots:
   - {fileID: 616452065}
   - {fileID: 2063203231}
   - {fileID: 77724896}
+  - {fileID: 693011999}

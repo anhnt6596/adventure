@@ -7,6 +7,18 @@ public class CollisionBody : MonoBehaviour, ICollisionBody
     [Tooltip("0 = immovable (wall, boss). Higher = harder to shove aside.")]
     [SerializeField, Min(0f)] float mass = 1f;
 
+    [SerializeField] CollisionSystem system;
+
+    void OnEnable()
+    {
+        if (system != null) system.Register(this);
+    }
+
+    void OnDisable()
+    {
+        if (system != null) system.Unregister(this);
+    }
+
     public Vector3 Position { get => transform.position; set => transform.position = value; }
     public float Radius => radius;
     public float InvMass => mass > 0f ? 1f / mass : 0f;
