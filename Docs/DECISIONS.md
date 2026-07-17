@@ -62,9 +62,15 @@ Solo, that tax is paid forever for a feature never used.
 **Why it fits what was already decided:** maps are referenced *by id*, not as direct prefab fields.
 `Resources.Load(id)` is exactly that indirection, so the loader stays one place.
 
-**Cost:** `UnloadUnusedAssets` is a full sweep, 100ms and up, and it is the only way to reclaim what
-a map held. Map jumps hide it behind their transition FX, which is the whole reason that is
-affordable. **The day a jump has to be seamless, this is the first thing in the way.**
+**Cost:** `UnloadUnusedAssets` is a full sweep, 100ms and up. `Resources.UnloadAsset` can free a
+single asset instead, but not a GameObject or prefab — only leaves like textures and meshes — and
+`Resources.Load` hands back no handles to what a prefab pulled in, so using it means walking the
+hierarchy for the dependencies *and* tracking which of them another map still shares. The sweep is
+slow precisely because it does that reference counting for you; it is also the part Addressables
+would automate.
+
+Map jumps hide the sweep behind their transition FX, which is the whole reason it is affordable.
+**The day a jump has to be seamless, this is the first thing in the way.**
 
 **Revisit if:** jumps stop being a cut, or the build grows enough that startup and memory care that
 everything under `Resources/` is loaded as one blob.
