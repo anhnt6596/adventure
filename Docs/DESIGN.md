@@ -32,7 +32,7 @@ commute. That feeling — *this place used to kill me* — is the game.
 
 **Why this settles the grind worry:** rewards scale with **how far out you are**, so farming a known,
 safe map is *inefficient by construction*. The optimal play is always to push. The merge ladder
-(2048 Greys for a Diamond) then measures **how far you've travelled**, not how long you've stood
+(64 Greys for a Diamond) then measures **how far you've travelled**, not how long you've stood
 still — the maths is identical, the experience is the opposite. Keep it that way: **the day a safe
 map out-farms the frontier, the drop table is broken.**
 
@@ -109,27 +109,34 @@ more than a config field. Keep the count of attack kinds and skills small; if it
 Gear is pulled from **gacha** and upgraded by **merging two identical items into one a step up**
 the ladder.
 
-**The ladder** — colours, most with 2 tiers, ends included with 1:
+**The ladder** — one rung per colour, no sub-tiers:
 
-| # | Rung | | # | Rung |
-| --- | --- | --- | --- | --- |
-| 0 | Grey | | 6 | Purple II |
-| 1 | Green I | | 7 | Orange I |
-| 2 | Green II | | 8 | Orange II |
-| 3 | Blue I | | 9 | Red I |
-| 4 | Blue II | | 10 | Red II |
-| 5 | Purple I | | 11 | Diamond |
+| # | Rung |
+| --- | --- |
+| 0 | Grey |
+| 1 | Green |
+| 2 | Blue |
+| 3 | Purple |
+| 4 | Orange |
+| 5 | Red |
+| 6 | Diamond |
 
-12 rungs. Merge is `2 × rung(n) → 1 × rung(n+1)`.
+7 rungs. Merge is `2 × rung(n) → 1 × rung(n+1)`. A colour *is* a rung — every merge changes colour.
 
 **Where gear actually comes from:** drops land **directly at various rungs**, and the rung
 distribution **shifts up the further out you are** — the frontier drops better gear, rarely a high
 rung outright. Merging is how you **convert surplus low rungs upward**, not the main path.
 
-So `2¹¹ = 2048 Greys per Diamond` is the **ceiling** — the worst case of grinding Greys alone — not
+So `2⁶ = 64 Greys per Diamond` is the **ceiling** — the worst case of grinding Greys alone — not
 the expected route. That's the point: **merge is the floor** (junk drops are never worthless),
 **exploration is the ceiling** (distance buys rungs directly). The two systems stack instead of
 competing, and both point outward.
+
+**Watch — the short ladder makes merge cheap.** 64 Greys per Diamond is a *farmable* number. A safe
+early map that hands out Greys freely can now merge its way to the top, which is exactly what the
+pillar forbids (*a safe, known map must never out-farm the frontier*). With 7 rungs the whole load
+moves onto **low-rung drop abundance**: if Greys are common, the frontier is bypassable. Levers if
+it breaks: cut low-rung drop rates, or make merge cost more than the two items.
 
 Balance numbers: **later.** The shape is what matters now.
 
@@ -144,7 +151,7 @@ From roughly **Orange** up, gear unlocks **secondary effects** on top of its sta
 - an extra stat line: speed, HP, armour, …
 
 **Why this matters:** it makes the top of the ladder **qualitatively** different, not just bigger
-numbers. You climb to *unlock effects*, not to add +5 damage — which is what keeps a 12-rung ladder
+numbers. You climb to *unlock effects*, not to add +5 damage — which is what keeps a 7-rung ladder
 worth climbing.
 
 **Affixes are part of the item, not rolled per drop.** An Orange sword always has the Orange sword's
@@ -186,18 +193,15 @@ An item is **`(definition id, rung)`**. The ladder is a **rule**, not authored c
 Merge(a, b) : a.def == b.def && a.rung == b.rung  ->  new Item(a.def, a.rung + 1)
 ```
 
-Do **not** create a config/asset per colour-tier of every item. That's enumeration of a
-combinatorial space: 20 gear definitions × 12 rungs = 240 assets to author and maintain, and every
+Do **not** create a config/asset per colour of every item. That's enumeration of a
+combinatorial space: 20 gear definitions × 7 rungs = 140 assets to author and maintain, and every
 new item type multiplies it again. One definition + a rung index composes the same space for free,
 and merge stays a three-line rule instead of a lookup table.
 
 Same for stats: scale them **from the rung** (a curve/formula per definition), rather than
-authoring 12 stat blocks per item.
+authoring 7 stat blocks per item.
 
 **Only identical items merge** — same definition, same rung. Nothing cross-definition.
-
-**Open:** does merging past a colour's last tier roll into the next colour automatically? The
-table reads as one flat 12-rung ladder, so: yes.
 
 ## Homes & checkpoints
 
@@ -352,7 +356,8 @@ hundreds. That keeps it noise. If a daily ever becomes worth *waiting* for, it s
 
 Dying respawns the player at the **nearest home they have saved at**. The penalty:
 
-- **Half the gold carried is destroyed** — not dropped. There is nothing to run back for; it's gone.
+- **All carried gold is destroyed** — not dropped. There is nothing to run back for; it's gone.
+- **The whole supply bag is destroyed** — every unit of food you were carrying, gone with it.
 - **Equipped gear drops where you fell** — go back and retrieve it.
 - **Death writes a save.** The penalty is committed on the spot, so it can't be undone by quitting.
 - **Drops stack.** Dying again before recovering the first drop leaves a second one; both wait.
@@ -361,8 +366,19 @@ The dropped stash is **player data**, not map state: *"my drops: [map X, positio
 list, since drops stack. That matters because maps reset on re-entry — the corpse must survive the
 rebuild, and modelling it as player data means it does, for free.
 
-**Gold destroyed vs dropped, deliberately:** a recoverable pile makes death a delay; destroying the
-gold makes it a cost. It also keeps the drop unambiguous — one thing to run back for, the gear.
+**Gold and food destroyed vs dropped, deliberately:** a recoverable pile makes death a delay;
+destroying them makes it a cost. It also keeps the drop unambiguous — one thing to run back for,
+the gear.
+
+**Why the food too:** it puts the penalty in the currency the pillar actually runs on. Gold buys
+rolls; **supplies buy distance**. Wiping the bag means the next trip is a short one until you
+re-earn it — the frontier pushes back in and you have to work your way out again. Death costs you
+*range*, which is the thing the whole game is about.
+
+**Watch — the spiral:** the bag must be earned, but the table still refills **fullness** for free.
+So a death must never leave a player *unable to leave home* — only unable to go **far**. If food
+can't be reached and re-earned within one free fullness bar, death stopped being a cost and became
+a wall. That free meal is the floor holding this rule up; don't remove it.
 
 ## Saving
 
@@ -375,7 +391,7 @@ Consequences (intended):
 - It removes a whole class of problems: partial world state, save-during-transition, and
   reconciling a map mid-change.
 
-**Must be atomic:** applying the penalty (gold halved, gear moved to a drop) and writing the save
+**Must be atomic:** applying the penalty (gold and supplies wiped, gear moved to a drop) and writing the save
 are one operation. A crash between them is the one case that could duplicate or delete items.
 
 ## Progression

@@ -50,6 +50,46 @@ later is a one-place change.
 
 ---
 
+## 2026-07-17 — One rung per colour; sub-tiers dropped (12 rungs → 7)
+
+*Supersedes the ladder shape in "2026-07-16 — Gear is `(definition, rung)`, not an asset per tier".
+The model is untouched — `(definition, rung)`, merge as a rule, stats scaled from the rung. Only the
+ladder got shorter.*
+
+Grey → Green → Blue → Purple → Orange → Red → Diamond. **7 rungs, one per colour.** No I/II
+sub-tiers, so every merge changes colour, and the old open question ("does merging past a colour's
+last tier roll into the next colour?") stops existing.
+
+**Cost — the merge ceiling collapsed:** `2¹¹ = 2048` Greys per Diamond → `2⁶ = 64`. 2048 was absurd
+*by construction*, and that absurdity is what made "merge is the floor, exploration is the ceiling"
+enforce itself. 64 is **farmable**. So the invariant (*a safe, known map must never out-farm the
+frontier*) no longer has the ladder length protecting it — it now rests on **low-rung drop
+abundance** alone.
+
+**Revisit when** drop tables get written. If a safe early map pours out Greys, it can merge to the
+top and the pillar breaks. Levers: tighten low-rung drop rates, or make merge cost more than the
+two items.
+
+---
+
+## 2026-07-17 — Death wipes all gold and the whole supply bag
+
+*Supersedes the gold amount in "2026-07-16 — Death: gold destroyed, gear dropped, drops stack".
+Gear still drops at the death spot, drops still stack, death still writes a save — all unchanged.*
+
+**All** carried gold is destroyed (was: half). **The whole supply bag** is destroyed with it.
+
+**Why the supplies:** supplies buy **distance**. Wiping the bag costs the player *range* — the
+penalty lands in the currency the pillar actually runs on, not just the wallet. The next trip is a
+short one until food is re-earned, so the frontier pushes back in and you work your way out again.
+Death now costs the thing the whole game is about.
+
+**Bound — death must stay a cost, not a wall:** the table at home still refills **fullness** for
+free, so a player can always leave; they just can't go **far**. If food can't be reached and
+re-earned within one free fullness bar, this decision is broken. That free meal is load-bearing now.
+
+---
+
 ## 2026-07-17 — Damage types deferred; one type for now
 
 No physical/magic/true split yet.
