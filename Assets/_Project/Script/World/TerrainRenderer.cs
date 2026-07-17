@@ -11,12 +11,15 @@ public class TerrainRenderer : MonoBehaviour
     // Both modes read 16 tiles and stack identically; they differ only in which tile a cell picks.
     // SameGrid fits ready-made tilesets, DualGrid fits art authored for it - so the choice belongs
     // to the map, following whatever art it uses.
-    public enum TileMode { SameGrid, DualGrid }
+    public enum TileMode { SameGrid, Quadrant, DualGrid }
 
     const string LayerPrefix = "Layer_";
 
-    [Tooltip("SameGrid for ready-made tilesets (Kenney); DualGrid for art made by the generator.")]
-    [SerializeField] TileMode mode = TileMode.SameGrid;
+    [Tooltip("SameGrid: one tile per cell - needs art for every case.\n" +
+             "Quadrant: each cell built from four quarters of the same 9 tiles, so strips and lone " +
+             "cells work without extra art.\n" +
+             "DualGrid: for art authored by the tileset generator.")]
+    [SerializeField] TileMode mode = TileMode.Quadrant;
 
     [Tooltip("Template. Each layer gets a copy with its own atlas, since layers rarely share one.")]
     [SerializeField] Material material;
@@ -130,6 +133,17 @@ public class TerrainRenderer : MonoBehaviour
                     AddQuad(x * cs, y * cs, cs, sprite);
                 }
         }
+        else if (mode == TileMode.Quadrant)
+        {
+            for (int y = 0; y < map.Height; y++)
+                for (int x = 0; x < map.Width; x++)
+                {
+                    if (layer > 0 && !inLayer[map.Get(x, y)]) continue;
+
+                    int mask = layer == 0 ? 0 : SameGrid.NeighbourMask(map, x, y, inLayer);
+                    AddCellQuadrants(x * cs, y * cs, cs, tiles, mask);
+                }
+        }
         else
         {
             // One quad per cell corner, offset half a cell, so (W+1)x(H+1) of them.
@@ -157,12 +171,59 @@ public class TerrainRenderer : MonoBehaviour
         return mesh;
     }
 
-    // Takes the quad's corner in grid-local units: the two modes place quads differently, so the
-    // caller decides where and this only builds.
+    // A cell's quarter only cares about its own two sides, so each quarter can be taken from a
+    // different tile. That covers strips and lone cells - cases a 3x3 tileset has no whole tile for
+    // - out of the same nine tiles. It cannot invent a concave notch: with no inner-corner art, a
+    // cell whose diagonal differs just draws its plain quarter, which reads fine.
+    void AddCellQuadrants(float x0, float z0, float cs, Sprite[] tiles, int mask)
+    {
+        bool n = (mask & SameGrid.OpenNorth) != 0;
+        bool e = (mask & SameGrid.OpenEast) != 0;
+        bool s = (mask & SameGrid.OpenSouth) != 0;
+        bool w = (mask & SameGrid.OpenWest) != 0;
+
+        float h = cs * 0.5f;
+
+        AddSubQuad(x0, z0 + h, h, Source(tiles, n, w, SameGrid.OpenNorth, SameGrid.OpenWest), 0, 1);
+        AddSubQuad(x0 + h, z0 + h, h, Source(tiles, n, e, SameGrid.OpenNorth, SameGrid.OpenEast), 1, 1);
+        AddSubQuad(x0 + h, z0, h, Source(tiles, s, e, SameGrid.OpenSouth, SameGrid.OpenEast), 1, 0);
+        AddSubQuad(x0, z0, h, Source(tiles, s, w, SameGrid.OpenSouth, SameGrid.OpenWest), 0, 0);
+    }
+
+    // Picks the tile whose matching quarter is drawn the way this one needs: plain, one edge, the
+    // other edge, or the corner where both meet.
+    static Sprite Source(Sprite[] tiles, bool openA, bool openB, int bitA, int bitB)
+    {
+        int slot = (openA ? bitA : 0) | (openB ? bitB : 0);
+        return tiles[slot] != null ? tiles[slot] : tiles[0];
+    }
+
+    void AddSubQuad(float x0, float z0, float size, Sprite sprite, int qx, int qy)
+    {
+        if (sprite == null) return;
+
+        var rect = sprite.textureRect;
+        var half = new Rect(
+            rect.xMin + qx * rect.width * 0.5f,
+            rect.yMin + qy * rect.height * 0.5f,
+            rect.width * 0.5f,
+            rect.height * 0.5f);
+
+        AddQuadUV(x0, z0, size, sprite.texture, half);
+    }
+
+    // Takes the quad's corner in grid-local units: the modes place quads differently, so the caller
+    // decides where and this only builds.
     void AddQuad(float x0, float z0, float cellSize, Sprite sprite)
     {
-        float x1 = x0 + cellSize;
-        float z1 = z0 + cellSize;
+        if (sprite == null) return;
+        AddQuadUV(x0, z0, cellSize, sprite.texture, sprite.textureRect);
+    }
+
+    void AddQuadUV(float x0, float z0, float size, Texture tex, Rect pixelRect)
+    {
+        float x1 = x0 + size;
+        float z1 = z0 + size;
 
         int v = _verts.Count;
         _verts.Add(new Vector3(x0, 0f, z0));
@@ -170,10 +231,8 @@ public class TerrainRenderer : MonoBehaviour
         _verts.Add(new Vector3(x0, 0f, z1));
         _verts.Add(new Vector3(x1, 0f, z1));
 
-        var rect = sprite.textureRect;
-        var tex = sprite.texture;
-        float u0 = rect.xMin / tex.width, u1 = rect.xMax / tex.width;
-        float w0 = rect.yMin / tex.height, w1 = rect.yMax / tex.height;
+        float u0 = pixelRect.xMin / tex.width, u1 = pixelRect.xMax / tex.width;
+        float w0 = pixelRect.yMin / tex.height, w1 = pixelRect.yMax / tex.height;
 
         _uvs.Add(new Vector2(u0, w0));
         _uvs.Add(new Vector2(u1, w0));
