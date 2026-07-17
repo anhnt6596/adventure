@@ -169,8 +169,11 @@ not just damage but **where your loot ends up**. Skill expression from one simpl
   deliberately unlike the jam's "flying object carries the amount, adds on animation-finish", which
   tangled state into animation. Here: model = the drop exists on the ground the moment it's created;
   the arc is presentation.
-- **Clamp the landing to valid ground** — wood must not land off-map or in a blocked cell. The arc's
-  landing point is computed, then snapped to a walkable spot.
+- **A flying piece has a collision radius; a landed piece does not.** *In flight* the wood is a
+  collision body (radius), so it flings out sensibly and can't end up buried inside an obstacle —
+  collision-while-flying keeps the landing valid, instead of computing a clamp analytically. *Once it
+  lands* it goes non-physical — it just sits on the map as a pickup, no collision, waiting to be
+  collected. (Two states: physical arc → static pickup.)
 - **Magnitude is a separate knob from direction** — how *far* loot flies is tuned per attack (or
   fixed); the force origin only decides *which way*.
 - Same rule generalises to enemies: kill with a swing → drops fly away from you; kill with a bomb →
