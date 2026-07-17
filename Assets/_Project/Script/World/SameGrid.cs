@@ -9,11 +9,6 @@ public static class SameGrid
     public const int OpenSouth = 4;
     public const int OpenWest = 8;
 
-    public const int DiagNorthWest = 1;
-    public const int DiagNorthEast = 2;
-    public const int DiagSouthEast = 4;
-    public const int DiagSouthWest = 8;
-
     public static int NeighbourMask(TerrainMap map, int x, int y, bool[] inLayer)
     {
         int mask = 0;
@@ -21,16 +16,6 @@ public static class SameGrid
         if (!inLayer[map.Get(x + 1, y)]) mask |= OpenEast;
         if (!inLayer[map.Get(x, y - 1)]) mask |= OpenSouth;
         if (!inLayer[map.Get(x - 1, y)]) mask |= OpenWest;
-        return mask;
-    }
-
-    public static int DiagonalMask(TerrainMap map, int x, int y, bool[] inLayer)
-    {
-        int mask = 0;
-        if (!inLayer[map.Get(x - 1, y + 1)]) mask |= DiagNorthWest;
-        if (!inLayer[map.Get(x + 1, y + 1)]) mask |= DiagNorthEast;
-        if (!inLayer[map.Get(x + 1, y - 1)]) mask |= DiagSouthEast;
-        if (!inLayer[map.Get(x - 1, y - 1)]) mask |= DiagSouthWest;
         return mask;
     }
 }

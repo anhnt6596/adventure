@@ -9,7 +9,6 @@ public class TerrainRenderer : MonoBehaviour
     public enum TileMode { SameGrid, Quadrant, DualGrid }
 
     const string LayerPrefix = "Layer_";
-    const int InnerNW = 0, InnerNE = 1, InnerSE = 2, InnerSW = 3;
 
     [SerializeField] TileMode mode = TileMode.Quadrant;
     [SerializeField] Material material;
@@ -68,38 +67,30 @@ public class TerrainRenderer : MonoBehaviour
         _uvs.Clear();
         _tris.Clear();
 
-        switch (mode)
+        if (mode == TileMode.DualGrid)
         {
-            case TileMode.SameGrid:
-                for (int y = 0; y < map.Height; y++)
-                    for (int x = 0; x < map.Width; x++)
-                    {
-                        if (layer > 0 && !inLayer[map.Get(x, y)]) continue;
-                        int mask = layer == 0 ? 0 : SameGrid.NeighbourMask(map, x, y, inLayer);
-                        AddQuad(x * cs, y * cs, cs, Tile(data, mask));
-                    }
-                break;
+            for (int j = 0; j <= map.Height; j++)
+                for (int i = 0; i <= map.Width; i++)
+                {
+                    int mask = layer == 0 ? 15 : DualGrid.CornerMask(map, i, j, inLayer);
+                    if (mask == 0) continue;
+                    AddQuad((i - 0.5f) * cs, (j - 0.5f) * cs, cs, Tile(data, mask));
+                }
+        }
+        else
+        {
+            // Quadrant is SameGrid over a map split 2x2: same rule, finer input.
+            int step = mode == TileMode.Quadrant ? 2 : 1;
+            var grid = step == 1 ? map : map.Subdivide(step);
+            float size = cs / step;
 
-            case TileMode.Quadrant:
-                for (int y = 0; y < map.Height; y++)
-                    for (int x = 0; x < map.Width; x++)
-                    {
-                        if (layer > 0 && !inLayer[map.Get(x, y)]) continue;
-                        int mask = layer == 0 ? 0 : SameGrid.NeighbourMask(map, x, y, inLayer);
-                        int diag = layer == 0 ? 0 : SameGrid.DiagonalMask(map, x, y, inLayer);
-                        AddQuarters(x * cs, y * cs, cs, data, mask, diag);
-                    }
-                break;
-
-            case TileMode.DualGrid:
-                for (int j = 0; j <= map.Height; j++)
-                    for (int i = 0; i <= map.Width; i++)
-                    {
-                        int mask = layer == 0 ? 15 : DualGrid.CornerMask(map, i, j, inLayer);
-                        if (mask == 0) continue;
-                        AddQuad((i - 0.5f) * cs, (j - 0.5f) * cs, cs, Tile(data, mask));
-                    }
-                break;
+            for (int y = 0; y < grid.Height; y++)
+                for (int x = 0; x < grid.Width; x++)
+                {
+                    if (layer > 0 && !inLayer[grid.Get(x, y)]) continue;
+                    int mask = layer == 0 ? 0 : SameGrid.NeighbourMask(grid, x, y, inLayer);
+                    AddQuad(x * size, y * size, size, Tile(data, mask));
+                }
         }
 
         if (_verts.Count == 0) return null;
@@ -112,50 +103,8 @@ public class TerrainRenderer : MonoBehaviour
         return mesh;
     }
 
-    void AddQuarters(float x0, float z0, float cs, TerrainLayer data, int mask, int diag)
-    {
-        bool n = (mask & SameGrid.OpenNorth) != 0;
-        bool e = (mask & SameGrid.OpenEast) != 0;
-        bool s = (mask & SameGrid.OpenSouth) != 0;
-        bool w = (mask & SameGrid.OpenWest) != 0;
-
-        float h = cs * 0.5f;
-
-        AddQuarter(x0, z0 + h, h, data, n, w, SameGrid.OpenNorth, SameGrid.OpenWest,
-            (diag & SameGrid.DiagNorthWest) != 0, InnerNW, 0, 1);
-        AddQuarter(x0 + h, z0 + h, h, data, n, e, SameGrid.OpenNorth, SameGrid.OpenEast,
-            (diag & SameGrid.DiagNorthEast) != 0, InnerNE, 1, 1);
-        AddQuarter(x0 + h, z0, h, data, s, e, SameGrid.OpenSouth, SameGrid.OpenEast,
-            (diag & SameGrid.DiagSouthEast) != 0, InnerSE, 1, 0);
-        AddQuarter(x0, z0, h, data, s, w, SameGrid.OpenSouth, SameGrid.OpenWest,
-            (diag & SameGrid.DiagSouthWest) != 0, InnerSW, 0, 0);
-    }
-
-    void AddQuarter(float x0, float z0, float size, TerrainLayer data,
-                    bool openA, bool openB, int bitA, int bitB,
-                    bool diagOpen, int innerIndex, int qx, int qy)
-    {
-        bool concave = !openA && !openB && diagOpen;
-
-        var sprite = concave
-            ? Inner(data, innerIndex) ?? Tile(data, 0)
-            : Tile(data, (openA ? bitA : 0) | (openB ? bitB : 0)) ?? Tile(data, 0);
-
-        if (sprite == null) return;
-
-        var r = sprite.textureRect;
-        AddQuadUV(x0, z0, size, sprite.texture, new Rect(
-            r.xMin + qx * r.width * 0.5f,
-            r.yMin + qy * r.height * 0.5f,
-            r.width * 0.5f,
-            r.height * 0.5f));
-    }
-
     static Sprite Tile(TerrainLayer data, int slot)
         => data.tiles != null && slot < data.tiles.Length ? data.tiles[slot] : null;
-
-    static Sprite Inner(TerrainLayer data, int index)
-        => data.innerCorners != null && index < data.innerCorners.Length ? data.innerCorners[index] : null;
 
     void AddQuad(float x0, float z0, float size, Sprite sprite)
     {

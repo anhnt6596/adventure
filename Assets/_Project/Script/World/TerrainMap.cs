@@ -30,4 +30,13 @@ public class TerrainMap
     {
         if (InBounds(x, y)) _cells[y * Width + x] = id;
     }
+
+    public TerrainMap Subdivide(int factor)
+    {
+        var fine = new TerrainMap(Width * factor, Height * factor);
+        for (int y = 0; y < fine.Height; y++)
+            for (int x = 0; x < fine.Width; x++)
+                fine.Set(x, y, Get(x / factor, y / factor));
+        return fine;
+    }
 }
