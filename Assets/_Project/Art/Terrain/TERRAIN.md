@@ -79,6 +79,12 @@ and nothing about the map needs constraining.
 
 The tile-picking algorithm is identical to SameGrid. Only the input differs.
 
+## Later: shader blending
+
+The endgame is **one tiling texture per terrain**, with the shader blending them by per-cell weight
+and noise — no transition art at all, and no tile count that grows with terrain count. See
+`Docs/DECISIONS.md`. Everything below is the tile path, which works today.
+
 ## Layer order follows the art, not preference
 
 The pack draws **grass with dirt around it** and **water with grass around it**. Those painted

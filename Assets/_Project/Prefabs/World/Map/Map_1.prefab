@@ -157,6 +157,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 339e944084e77dc42ab832f7dd7a6afe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainRenderer
+  mode: 1
   material: {fileID: 2100000, guid: c7c095af2af64314996285b327ce8f4b, type: 2}
   layerHeight: 0.002
 --- !u!1 &3124701105216783473

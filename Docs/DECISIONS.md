@@ -50,6 +50,45 @@ later is a one-place change.
 
 ---
 
+## 2026-07-17 — Least-art-cost wins, all else equal
+
+Solo project: art is the scarce resource, not code. When two approaches reach the same result,
+take the one that needs fewer drawings — even if it costs more engineering.
+
+**Why write it down:** the terrain work spent a day rediscovering it. Dual-grid was chosen for its
+elegance (16 tiles instead of 47, layers instead of N² pairs) without checking whether the art
+existed. It doesn't — there is essentially no ready-made dual-grid art — so the "cheap" option
+required drawing everything from scratch.
+
+**What it rejects:** any system whose tile count multiplies with terrain count, and any elegance
+argument that doesn't price the art.
+
+---
+
+## 2026-07-17 — Shader-blended terrain, deferred
+
+Each terrain is **one tiling texture**. The renderer produces per-cell weights; the shader blends
+the textures by weight, breaking the boundary up with noise. **No transition art at all** — no
+corners, no edges, no 9/13/47-tile sets, no pairs.
+
+**Why it's the endgame:** it is the only approach whose art cost doesn't grow with terrain count.
+One texture per terrain, forever. Adding stone or sand is one drawing, not nine, and it
+automatically meets everything already there. It is also how Don't Starve gets its organic
+coastlines — it *has* to, since its world is generated and nobody can hand-author transitions for a
+random map.
+
+**Why not now:** it is real shader work (Shader Graph, days not hours), and it moves the look from
+*drawn* to *blended* — the boundary becomes a noise function rather than an artist's line. The
+current tile path already renders, so this is an upgrade, not a rescue.
+
+**When to do it:** when a third or fourth terrain is wanted, or when the tile boundaries look too
+regular against real art. Both are signals the tile approach has hit its ceiling.
+
+**Watch:** use a `Texture2DArray`, not an atlas. Blending atlas pages bleeds neighbouring pixels at
+every mip level, and the seams are miserable to chase.
+
+---
+
 ## 2026-07-17 — One rung per colour; sub-tiers dropped (12 rungs → 7)
 
 *Supersedes the ladder shape in "2026-07-16 — Gear is `(definition, rung)`, not an asset per tier".
