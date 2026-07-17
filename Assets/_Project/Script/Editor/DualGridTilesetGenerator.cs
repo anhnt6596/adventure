@@ -1,5 +1,6 @@
 using System.IO;
 using UnityEditor;
+using UnityEditor.U2D.Sprites;
 using UnityEngine;
 
 // Builds the 16 dual-grid tiles from three quadrant pieces. Every tile is four quadrants, and a
@@ -203,12 +204,13 @@ public class DualGridTilesetGenerator : EditorWindow
         var provider = factory.GetSpriteEditorDataProviderFromObject(importer);
         provider.InitSpriteEditorDataProvider();
 
-        var rects = new UnityEditor.U2D.Sprites.SpriteRect[DualGrid.MaskCount];
+        // SpriteRect lives in UnityEditor, not UnityEditor.U2D.Sprites alongside the provider API.
+        var rects = new SpriteRect[DualGrid.MaskCount];
         for (int mask = 0; mask < DualGrid.MaskCount; mask++)
         {
             int col = mask % 4;
             int row = mask / 4;
-            rects[mask] = new UnityEditor.U2D.Sprites.SpriteRect
+            rects[mask] = new SpriteRect
             {
                 name = $"{Path.GetFileNameWithoutExtension(path)}_{mask}",
                 spriteID = GUID.Generate(),
