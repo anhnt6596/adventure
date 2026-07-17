@@ -36,9 +36,10 @@ safe map is *inefficient by construction*. The optimal play is always to push. T
 still — the maths is identical, the experience is the opposite. Keep it that way: **the day a safe
 map out-farms the frontier, the drop table is broken.**
 
-**And it settles the death penalty:** losing gear far out is the *cost of the frontier*, and it's
-temporary by design — once you gear up, that ground becomes safe and the run back is trivial. The
-penalty is steep exactly where the game wants tension, and self-erasing exactly where it doesn't.
+**And it settles the death penalty:** the ratchet is why death can afford to spare your gear. Ground
+you have cleared stays cleared, so a death costs the *trip*, not the climb — you lose the gold and
+the supplies that trip was buying and you walk back out. The penalty bites at the frontier, where
+tension belongs, and costs nothing on ground already made ordinary.
 If players avoid the frontier instead of respecting it, it's tuned too high.
 
 ## Look
@@ -316,7 +317,7 @@ The player can build: **torch towers** (light — and light is survival at night
 units** (fruit trees and the like, feeding the supply economy).
 
 **⚠️ Buildings vs "maps reset":** a map's contents rebuild when you re-enter, so anything built
-there would vanish. Solved the same way as the death drop: **buildings are player data, not map
+there would vanish. Solved by keeping them out of the map: **buildings are player data, not map
 state**.
 
 ```
@@ -358,17 +359,18 @@ Dying respawns the player at the **nearest home they have saved at**. The penalt
 
 - **All carried gold is destroyed** — not dropped. There is nothing to run back for; it's gone.
 - **The whole supply bag is destroyed** — every unit of food you were carrying, gone with it.
-- **Equipped gear drops where you fell** — go back and retrieve it.
+- **Gear is kept.** Nothing drops. There is no corpse and no run back for it.
 - **Death writes a save.** The penalty is committed on the spot, so it can't be undone by quitting.
-- **Drops stack.** Dying again before recovering the first drop leaves a second one; both wait.
 
-The dropped stash is **player data**, not map state: *"my drops: [map X, position P, items…]"* — a
-list, since drops stack. That matters because maps reset on re-entry — the corpse must survive the
-rebuild, and modelling it as player data means it does, for free.
+**Nothing is recoverable, deliberately:** death is a **cost, not a delay**. A pile waiting on the
+map turns dying into a chore — walk back, pick up, resume — which is backtracking, and backtracking
+is the one thing the pillar refuses. Destroying gold and food charges the price immediately and
+points the player outward again.
 
-**Gold and food destroyed vs dropped, deliberately:** a recoverable pile makes death a delay;
-destroying them makes it a cost. It also keeps the drop unambiguous — one thing to run back for,
-the gear.
+**Why gear survives:** losing gear far out is what makes players *turtle*. It punishes the exact
+behaviour the game is built to reward, and it punishes it hardest at the frontier, where the game
+wants you. Gear is also the slowest thing to re-earn, so losing it doesn't sting — it deletes hours.
+Keeping it means a death costs **range and gold**, never progress.
 
 **Why the food too:** it puts the penalty in the currency the pillar actually runs on. Gold buys
 rolls; **supplies buy distance**. Wiping the bag means the next trip is a short one until you
@@ -391,8 +393,9 @@ Consequences (intended):
 - It removes a whole class of problems: partial world state, save-during-transition, and
   reconciling a map mid-change.
 
-**Must be atomic:** applying the penalty (gold and supplies wiped, gear moved to a drop) and writing the save
-are one operation. A crash between them is the one case that could duplicate or delete items.
+**Must be atomic:** applying the penalty (gold and supplies wiped) and writing the save are one
+operation — a crash between them would refund the trip. Nothing moves between containers any more,
+so the old duplicate/delete-an-item hazard is gone with the drop.
 
 ## Progression
 
@@ -427,7 +430,6 @@ Things that sound good but aren't decided. Nothing here gets built until the cor
   is a change in one place.)
 - What does "at home" mean structurally — a flag on the map prefab, a map id, or a home map type?
 - "Nearest" home — nearest by what? Map graph distance, a fixed order, or the last one saved at?
-- Is a drop permanent until collected, or can it expire / be capped in count?
 - How are **attack** and **skill** referenced from a character config? They're behaviour, not
   numbers — a prefab, a component on the character, or a small strategy object. Decide when the
   second character exists, not before; one character can't show the shape.

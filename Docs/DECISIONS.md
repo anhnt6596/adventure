@@ -72,6 +72,36 @@ two items.
 
 ---
 
+## 2026-07-17 — Death drops nothing; gear is kept
+
+*Supersedes the drop half of "2026-07-16 — Death: gold destroyed, gear dropped, drops stack", and
+the drop half of "2026-07-17 — Death wipes all gold and the whole supply bag" below. Gold and
+supplies are still wiped. Death still writes a save.*
+
+No corpse, no stash, no run back. Gear stays equipped through death.
+
+**Why:** the drop was the one part of the penalty that created **backtracking** — die, walk back,
+pick up, resume. That is the single behaviour the pillar exists to reject, and we had built it into
+the death rule. Charging gold and food instead makes death a **cost, paid instantly**, and points
+the player outward again rather than back over old ground.
+
+**Why gear specifically:** losing gear far out makes players turtle — it punishes the exact play the
+game is built to reward, hardest at the frontier where the game wants them. And gear is the slowest
+thing to re-earn, so losing it doesn't sting, it deletes hours. A death now costs **range and gold**,
+never progress.
+
+**What this removes for free:**
+- The drop list in player data (buildings still need that pattern; they no longer share the reason).
+- "Drops stack" — no drops, nothing to stack.
+- The whole class of *unreachable drop* problems: gear at the bottom of a lake after a water-walk
+  buff expires, gear behind a one-way jump, gear on a map you cannot re-enter yet. None of these
+  can exist now.
+
+**Cost, accepted:** death is softer, and the corpse-run tension is gone. If deaths stop mattering,
+the lever is the gold and supply loss, not bringing the drop back.
+
+---
+
 ## 2026-07-17 — Death wipes all gold and the whole supply bag
 
 *Supersedes the gold amount in "2026-07-16 — Death: gold destroyed, gear dropped, drops stack".
@@ -179,6 +209,9 @@ Buildings (torch towers, production) and death drops both live as player data ke
 death drop already needed this; buildings need exactly the same thing. One pattern covers both —
 "my footprint in the world" persists, the map's own contents don't.
 
+*(2026-07-17: death drops are gone, so buildings are the only case left. The decision stands on its
+own — maps still reset, buildings still have to survive it — it just lost its second example.)*
+
 ---
 
 ## 2026-07-17 — Premium on both platforms; mobile is a demo
@@ -251,6 +284,9 @@ death commits the penalty on the spot.
 
 **Follow-on:** maps **reset** on re-entry — nothing outside home is persisted, so there is nothing
 to restore. The death drop survives that because it's modelled as player data, not map state.
+
+*(2026-07-17: no death drop any more — nothing outside home survives at all except buildings. Why
+death saves is unchanged: it commits the gold and supply loss.)*
 
 **Requirement:** applying the penalty and writing the save must be **atomic** — a crash between
 "gear moved to drop" and "save written" is the only path to duplicated or lost items.
