@@ -136,6 +136,46 @@ the save. Until then, the seam to keep is that input/camera/interactor/map-playe
 hard-wired to one character** — they should ask for "the active character". With one character they
 are hard-wired, and that's fine; generalise at character two.
 
+## Attacks, chopping & drops
+
+**Chopping is attacking.** A tree has HP like an enemy; hitting it deals damage. There is no separate
+harvest system — a tree is just a damageable-with-HP, and the same attack hits trees and enemies
+alike.
+
+**An attack spawns a *ballistic*** — a hit-carrier that owns: the damage, the list of targets it has
+already hit (so one swing hits each once), its own logic, and a **force origin** (tọa độ phát lực):
+the point the impulse radiates from.
+
+**Drops launch away from the force origin.** When a hit breaks a lootable target (tree → wood,
+enemy → drops), the loot flies in the direction `targetPos − forceOrigin`. The force origin lives on
+the *attack*, not the target — so the **same** break scatters loot differently depending on **how you
+hit it**. That's the clever bit: loot placement becomes an expression of the attack's geometry.
+
+**Per-character attack shapes the scatter:**
+- **MC_1** — sword swing around the body → force origin = the MC's position → wood flies outward,
+  away from you (lands farther out).
+- **Another MC** — throws a bomb forward that then explodes → force origin = the blast centre → place
+  the blast well and you can make the wood land exactly where you want.
+
+So the "characters differ by attack" decision pays off in something tangible: attack choice changes
+not just damage but **where your loot ends up**. Skill expression from one simple rule.
+
+### Notes to hold onto when building
+
+- **The damage payload carries the force origin** (a `Vector3`), not just the amount — the drop
+  reads it to know which way to launch. A hit is `(amount, forceOrigin, source)`, not a bare number.
+- **The flight is visual; the result is a ground pickup.** Wood launches on an arc and *lands as a
+  real drop* on the map (walk over / magnet to collect). It is **not** an amount-in-flight — that's
+  deliberately unlike the jam's "flying object carries the amount, adds on animation-finish", which
+  tangled state into animation. Here: model = the drop exists on the ground the moment it's created;
+  the arc is presentation.
+- **Clamp the landing to valid ground** — wood must not land off-map or in a blocked cell. The arc's
+  landing point is computed, then snapped to a walkable spot.
+- **Magnitude is a separate knob from direction** — how *far* loot flies is tuned per attack (or
+  fixed); the force origin only decides *which way*.
+- Same rule generalises to enemies: kill with a swing → drops fly away from you; kill with a bomb →
+  from the blast. One system, one rule.
+
 ## Gear: gacha + merge
 
 Gear is pulled from **gacha** and upgraded by **merging two identical items into one a step up**

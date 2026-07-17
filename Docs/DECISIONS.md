@@ -231,6 +231,26 @@ the premise before solving.)*
 
 ---
 
+## 2026-07-18 — Chopping is attacking; drops launch away from the attack's force origin
+
+Trees have HP; hitting one deals damage (same model as enemies — no separate harvest system). An
+attack spawns a *ballistic* carrying damage + already-hit list + a **force origin**. When a hit
+breaks a lootable target, the loot flies along `targetPos − forceOrigin`.
+
+**Why it's worth building this way:** the force origin sits on the *attack*, so loot scatter becomes
+a function of *how* you hit — a swing (origin at self) throws wood outward, a placed explosion
+(origin at the blast) lets you aim where it lands. Emergent skill from one rule, and it makes the
+per-character attack differences pay off in something the player can *feel* and exploit.
+
+**Constraints recorded so building doesn't lose them:**
+- The damage payload must carry the force origin (`Vector3`), not just an amount.
+- The flight is presentation; the drop exists on the ground the instant it's created (a ground
+  pickup), never an amount-in-flight — deliberately unlike the jam's animation-gated flying object.
+- Landing point is computed then clamped to a walkable cell (no off-map / blocked drops).
+- Launch *direction* comes from the force origin; *magnitude* is a separate per-attack knob.
+
+---
+
 ## 2026-07-18 — Characters share progression; swap is diegetic, not an RPG party
 
 Multiple unlockable characters, but they **share the wallet, level and gear inventory**. A character
