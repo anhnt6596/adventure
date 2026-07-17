@@ -6,6 +6,8 @@ public interface IMapService
 {
     string CurrentMapId { get; }
 
-    // Load map `mapId`, place the player at its gate `gateIndex`. Input is blocked for the swap.
-    UniTask ChangeMapAsync(string mapId, int gateIndex);
+    // Put the player at gate `gateIndex` of map `mapId`.
+    // - mapId empty or equal to the current map -> in-map warp: just reposition, no reload.
+    // - otherwise -> swap the map (input blocked for the swap).
+    UniTask WarpAsync(string mapId, int gateIndex);
 }

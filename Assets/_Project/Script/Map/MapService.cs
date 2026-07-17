@@ -20,9 +20,23 @@ public class MapService : IMapService
         _player = player;
     }
 
-    public async UniTask ChangeMapAsync(string mapId, int gateIndex)
+    public async UniTask WarpAsync(string mapId, int gateIndex)
     {
-        // Block input for the whole swap (released when this method returns).
+        bool sameMap = string.IsNullOrEmpty(mapId) || mapId == CurrentMapId;
+
+        // In-map warp: no reload, no input block, map state (trees, etc.) untouched.
+        if (sameMap)
+        {
+            if (_current == null)
+            {
+                Debug.LogError("[MapService] in-map warp requested but no map is loaded.");
+                return;
+            }
+            PlaceAtGate(_current, gateIndex);
+            return;
+        }
+
+        // Cross-map: block input for the swap (released when this method returns).
         using var _ = _gate.Block(InputKind.All, "map-change");
 
         // TODO transition FX in
@@ -46,20 +60,25 @@ public class MapService : IMapService
         _current = _container.Instantiate(prefab);
         CurrentMapId = mapId;
 
-        var map = _current.GetComponent<Map>();
+        PlaceAtGate(_current, gateIndex);
+
+        // Freeing the old map's assets is deferred (small 2D maps + cut transition). If memory grows:
+        //   await Resources.UnloadUnusedAssets();   // full sweep — hide it behind the transition FX
+
+        // TODO transition FX out
+    }
+
+    void PlaceAtGate(GameObject mapInstance, int gateIndex)
+    {
+        var map = mapInstance.GetComponent<Map>();
         if (map == null)
         {
-            Debug.LogError($"[MapService] map '{mapId}' has no Map component on its root prefab.", _current);
+            Debug.LogError($"[MapService] map '{CurrentMapId}' has no Map component on its root prefab.", mapInstance);
             return;
         }
 
         var gate = map.GetGate(gateIndex);
         if (gate != null && _player != null)
             _player.transform.SetPositionAndRotation(gate.SpawnPosition, gate.SpawnRotation);
-
-        // Freeing the old map's assets is deferred (small 2D maps + cut transition). If memory grows:
-        //   await Resources.UnloadUnusedAssets();   // full sweep — hide it behind the transition FX
-
-        // TODO transition FX out
     }
 }

@@ -17,7 +17,7 @@ public class GameController : IStartable, ITickable
         _maps = maps;
     }
 
-    public void Start() => _maps.ChangeMapAsync(StartMapId, StartGateIndex).Forget();
+    public void Start() => _maps.WarpAsync(StartMapId, StartGateIndex).Forget();
 
     public void Tick()
     {
