@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Core;
 
 // Its own index, separate from collision: a ghost that collides with nothing is still hittable, and
 // the rocks that fill the collision world are never a combat query's problem.

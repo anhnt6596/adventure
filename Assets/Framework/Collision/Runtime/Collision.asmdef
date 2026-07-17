@@ -1,0 +1,17 @@
+{
+    "name": "Collision",
+    "rootNamespace": "",
+    "references": [
+        "Core",
+        "World"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
