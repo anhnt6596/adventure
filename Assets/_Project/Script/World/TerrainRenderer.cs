@@ -8,7 +8,15 @@ using UnityEngine.Rendering;
 [RequireComponent(typeof(TerrainGrid))]
 public class TerrainRenderer : MonoBehaviour
 {
+    // Both modes read 16 tiles and stack identically; they differ only in which tile a cell picks.
+    // SameGrid fits ready-made tilesets, DualGrid fits art authored for it - so the choice belongs
+    // to the map, following whatever art it uses.
+    public enum TileMode { SameGrid, DualGrid }
+
     const string LayerPrefix = "Layer_";
+
+    [Tooltip("SameGrid for ready-made tilesets (Kenney); DualGrid for art made by the generator.")]
+    [SerializeField] TileMode mode = TileMode.SameGrid;
 
     [Tooltip("Template. Each layer gets a copy with its own atlas, since layers rarely share one.")]
     [SerializeField] Material material;
@@ -95,7 +103,7 @@ public class TerrainRenderer : MonoBehaviour
     Mesh BuildLayerMesh(int layer, TerrainSet set)
     {
         var tiles = set.layers[layer].tiles;
-        if (tiles == null || tiles.Length < DualGrid.MaskCount) return null;
+        if (tiles == null || tiles.Length < SameGrid.MaskCount) return null;
 
         var map = _grid.Map;
         var inLayer = set.BuildLayerTable(layer);
@@ -105,18 +113,37 @@ public class TerrainRenderer : MonoBehaviour
         _uvs.Clear();
         _tris.Clear();
 
-        for (int j = 0; j <= map.Height; j++)
-            for (int i = 0; i <= map.Width; i++)
-            {
-                // The base layer fills everything; higher layers only draw where they exist.
-                int mask = layer == 0 ? 15 : DualGrid.CornerMask(map, i, j, inLayer);
-                if (mask == 0) continue;
+        if (mode == TileMode.SameGrid)
+        {
+            // One quad per cell, aligned to it.
+            for (int y = 0; y < map.Height; y++)
+                for (int x = 0; x < map.Width; x++)
+                {
+                    // The base layer covers everything; higher layers only draw on their own cells.
+                    if (layer > 0 && !inLayer[map.Get(x, y)]) continue;
 
-                var sprite = tiles[mask];
-                if (sprite == null) continue;
+                    int mask = layer == 0 ? 15 : SameGrid.NeighbourMask(map, x, y, inLayer);
+                    var sprite = tiles[mask];
+                    if (sprite == null) continue;
 
-                AddQuad(i, j, cs, sprite);
-            }
+                    AddQuad(x * cs, y * cs, cs, sprite);
+                }
+        }
+        else
+        {
+            // One quad per cell corner, offset half a cell, so (W+1)x(H+1) of them.
+            for (int j = 0; j <= map.Height; j++)
+                for (int i = 0; i <= map.Width; i++)
+                {
+                    int mask = layer == 0 ? 15 : DualGrid.CornerMask(map, i, j, inLayer);
+                    if (mask == 0) continue;
+
+                    var sprite = tiles[mask];
+                    if (sprite == null) continue;
+
+                    AddQuad((i - 0.5f) * cs, (j - 0.5f) * cs, cs, sprite);
+                }
+        }
 
         if (_verts.Count == 0) return null;
 
@@ -128,10 +155,12 @@ public class TerrainRenderer : MonoBehaviour
         return mesh;
     }
 
-    void AddQuad(int i, int j, float cellSize, Sprite sprite)
+    // Takes the quad's corner in grid-local units: the two modes place quads differently, so the
+    // caller decides where and this only builds.
+    void AddQuad(float x0, float z0, float cellSize, Sprite sprite)
     {
-        float x0 = (i - 0.5f) * cellSize, x1 = (i + 0.5f) * cellSize;
-        float z0 = (j - 0.5f) * cellSize, z1 = (j + 0.5f) * cellSize;
+        float x1 = x0 + cellSize;
+        float z1 = z0 + cellSize;
 
         int v = _verts.Count;
         _verts.Add(new Vector3(x0, 0f, z0));

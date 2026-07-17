@@ -13,7 +13,10 @@ public class TerrainLayer
     [Tooltip("Editor-only: paints the map readable before any art exists.")]
     public Color previewColor = Color.magenta;
 
-    [Tooltip("16 tiles indexed by dual-grid corner mask: bit0 SW, bit1 SE, bit2 NW, bit3 NE")]
+    [Tooltip("16 tiles, indexed by the mask of the renderer's TileMode.\n" +
+             "SameGrid - which neighbours are in this layer: bit0 N, bit1 E, bit2 S, bit3 W. " +
+             "15 = enclosed, 0 = isolated.\n" +
+             "DualGrid - which corners are in this layer: bit0 SW, bit1 SE, bit2 NW, bit3 NE.")]
     public Sprite[] tiles = new Sprite[16];
 }
 
@@ -31,9 +34,9 @@ public class TerrainSet : ScriptableObject
         foreach (var layer in layers)
         {
             if (layer == null) continue;
-            if (layer.tiles == null || layer.tiles.Length != DualGrid.MaskCount)
+            if (layer.tiles == null || layer.tiles.Length != SameGrid.MaskCount)
             {
-                var resized = new Sprite[DualGrid.MaskCount];
+                var resized = new Sprite[SameGrid.MaskCount];
                 if (layer.tiles != null)
                     for (int i = 0; i < layer.tiles.Length && i < resized.Length; i++)
                         resized[i] = layer.tiles[i];
