@@ -8,25 +8,22 @@ using UnityEngine;
 //      any visual glitch, and the death penalty makes a stuck player a lost run.
 public class CollisionWorld
 {
-    readonly List<ICollisionBody> _bodies = new List<ICollisionBody>();
-    readonly Dictionary<long, List<int>> _buckets = new Dictionary<long, List<int>>();
-    readonly Stack<List<int>> _bucketPool = new Stack<List<int>>();
-
-    TerrainGrid _terrain;
-    float _bucketSize = 2f;
+    readonly SpatialHash<ICollisionBody> _hash;
+    readonly TerrainGrid _terrain;
 
     public CollisionWorld(TerrainGrid terrain)
     {
         _terrain = terrain;
-        if (terrain != null) _bucketSize = Mathf.Max(0.5f, terrain.CellSize * 2f);
+        float cell = terrain != null ? Mathf.Max(0.5f, terrain.CellSize * 2f) : 2f;
+        _hash = new SpatialHash<ICollisionBody>(b => b.Position, cell);
     }
 
     public void Add(ICollisionBody body)
     {
-        if (body != null && !_bodies.Contains(body)) _bodies.Add(body);
+        if (body != null) _hash.Add(body);
     }
 
-    public void Remove(ICollisionBody body) => _bodies.Remove(body);
+    public void Remove(ICollisionBody body) => _hash.Remove(body);
 
     public void Step(int iterations = 2)
     {
@@ -41,31 +38,8 @@ public class CollisionWorld
 
     void ResolveBodies()
     {
-        RebuildBuckets();
-
-        foreach (var cell in _buckets)
-        {
-            var list = cell.Value;
-            for (int a = 0; a < list.Count; a++)
-                for (int b = a + 1; b < list.Count; b++)
-                    ResolvePair(_bodies[list[a]], _bodies[list[b]]);
-
-            // Neighbour buckets: only forward (+x, +z and the two diagonals) so each pair is seen once.
-            long key = cell.Key;
-            int cx = (int)(key >> 32), cz = (int)(key & 0xFFFFFFFF);
-            ResolveAgainst(list, cx + 1, cz);
-            ResolveAgainst(list, cx, cz + 1);
-            ResolveAgainst(list, cx + 1, cz + 1);
-            ResolveAgainst(list, cx + 1, cz - 1);
-        }
-    }
-
-    void ResolveAgainst(List<int> list, int cx, int cz)
-    {
-        if (!_buckets.TryGetValue(Key(cx, cz), out var other)) return;
-        for (int a = 0; a < list.Count; a++)
-            for (int b = 0; b < other.Count; b++)
-                ResolvePair(_bodies[list[a]], _bodies[other[b]]);
+        _hash.Rebuild();
+        _hash.ForEachPair(ResolvePair);
     }
 
     static void ResolvePair(ICollisionBody a, ICollisionBody b)
@@ -92,9 +66,8 @@ public class CollisionWorld
     {
         if (_terrain == null) return;
 
-        for (int i = 0; i < _bodies.Count; i++)
+        foreach (var body in _hash.Items)
         {
-            var body = _bodies[i];
             if (body.InvMass <= 0f) continue;
             body.Position = ResolveTerrain(body.Position, body.Radius, body.PassMask);
         }
@@ -168,27 +141,4 @@ public class CollisionWorld
         return local;
     }
 
-    void RebuildBuckets()
-    {
-        foreach (var list in _buckets.Values)
-        {
-            list.Clear();
-            _bucketPool.Push(list);
-        }
-        _buckets.Clear();
-
-        for (int i = 0; i < _bodies.Count; i++)
-        {
-            var p = _bodies[i].Position;
-            long key = Key(Mathf.FloorToInt(p.x / _bucketSize), Mathf.FloorToInt(p.z / _bucketSize));
-            if (!_buckets.TryGetValue(key, out var list))
-            {
-                list = _bucketPool.Count > 0 ? _bucketPool.Pop() : new List<int>();
-                _buckets[key] = list;
-            }
-            list.Add(i);
-        }
-    }
-
-    static long Key(int x, int z) => ((long)x << 32) | (uint)z;
 }
