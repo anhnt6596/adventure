@@ -36,10 +36,18 @@ public class TerrainRenderer : MonoBehaviour
 
         ClearLayers();
 
+        if (material == null)
+        {
+            Debug.LogWarning("[Terrain] No material assigned - nothing will render.", this);
+            return;
+        }
+
+        int drawn = 0;
         for (int layer = 0; layer < set.Count; layer++)
         {
             var mesh = BuildLayerMesh(layer, set);
             if (mesh == null) continue;
+            drawn++;
 
             var go = new GameObject($"{LayerPrefix}{layer}_{set.layers[layer].name}");
             go.transform.SetParent(transform, false);
@@ -53,6 +61,13 @@ public class TerrainRenderer : MonoBehaviour
 
             _layerObjects.Add(go);
         }
+
+        // Silence here reads as a broken renderer; it is almost always just unassigned tiles.
+        if (drawn == 0)
+            Debug.LogWarning(
+                $"[Terrain] '{set.name}' has no tiles assigned, so nothing rendered. Fill each " +
+                "layer's Tiles array (layer 0 only needs slot 15). Painting still works via Gizmos.",
+                this);
     }
 
     // The mesh UVs address the atlas the layer's sprites live in, so the material has to point at

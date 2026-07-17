@@ -124,7 +124,7 @@ public class TerrainGrid : MonoBehaviour
                     color = set.layers[id].previewColor;
                 }
 
-                color.a = gizmoAlpha;
+                color.a = gizmoAlpha;  // previewColor's own alpha is ignored; it names a terrain
                 Gizmos.color = color;
                 Gizmos.DrawCube(CellToWorld(x, y) + Vector3.up * 0.02f, size);
             }

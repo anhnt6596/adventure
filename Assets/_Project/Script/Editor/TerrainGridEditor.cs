@@ -55,7 +55,7 @@ public class TerrainGridEditor : Editor
                 var rect = EditorGUILayout.GetControlRect(GUILayout.Height(22));
 
                 var swatch = new Rect(rect.x, rect.y, 22, rect.height);
-                EditorGUI.DrawRect(swatch, layer.previewColor);
+                EditorGUI.DrawRect(swatch, Opaque(layer.previewColor));
 
                 var button = new Rect(rect.x + 26, rect.y, rect.width - 26, rect.height);
                 string label = string.IsNullOrEmpty(layer.name) ? $"Layer {i}" : layer.name;
@@ -135,10 +135,14 @@ public class TerrainGridEditor : Editor
         SceneView.RepaintAll();
     }
 
+    // previewColor identifies a terrain; its alpha is meaningless and is routinely left at 0 by the
+    // colour picker, which would make every swatch and brush outline invisible.
+    static Color Opaque(Color c) => new Color(c.r, c.g, c.b, 1f);
+
     void DrawBrush(int cx, int cy)
     {
         var set = _grid.Set;
-        var color = _brush < set.Count ? set.layers[_brush].previewColor : Color.magenta;
+        var color = _brush < set.Count ? Opaque(set.layers[_brush].previewColor) : Color.magenta;
 
         float cs = _grid.CellSize;
         int r = _brushSize - 1;

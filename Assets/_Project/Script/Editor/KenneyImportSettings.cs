@@ -4,14 +4,23 @@ using UnityEditor;
 // jaggies. Pixel-art sets elsewhere in the project still want Point - this only claims Art/Kenney.
 public class KenneyImportSettings : AssetPostprocessor
 {
-    const string Folder = "Art/Kenney/";
+    const string KenneyFolder = "Art/Kenney/";
+    const string PiecesFolder = "Art/Terrain/Pieces/";
     const int PixelsPerUnit = 64;
 
     void OnPreprocessTexture()
     {
-        if (!assetPath.Contains(Folder)) return;
-
         var importer = (TextureImporter)assetImporter;
+
+        // Generator source art must stay readable whatever else changes, so this one is not gated
+        // on first import.
+        if (assetPath.Contains(PiecesFolder))
+        {
+            importer.isReadable = true;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+        }
+
+        if (!assetPath.Contains(KenneyFolder)) return;
 
         // Only seeds defaults on first import, so later hand-tuning in the Inspector sticks.
         if (!importer.importSettingsMissing) return;

@@ -24,6 +24,24 @@ public class TerrainSet : ScriptableObject
 
     public int Count => layers.Count;
 
+    // Unity serializes a newly added list element without running the field initialiser, so `tiles`
+    // arrives empty and the 16 slots never appear in the Inspector.
+    void OnValidate()
+    {
+        foreach (var layer in layers)
+        {
+            if (layer == null) continue;
+            if (layer.tiles == null || layer.tiles.Length != DualGrid.MaskCount)
+            {
+                var resized = new Sprite[DualGrid.MaskCount];
+                if (layer.tiles != null)
+                    for (int i = 0; i < layer.tiles.Length && i < resized.Length; i++)
+                        resized[i] = layer.tiles[i];
+                layer.tiles = resized;
+            }
+        }
+    }
+
     public bool IsWalkable(byte id) => id < layers.Count && layers[id].walkable;
 
     public bool[] BuildWalkableTable()
