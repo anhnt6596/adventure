@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Layer index is the terrain id AND its draw priority: a higher index draws over every lower one,
-// so each terrain only needs its own edges (N tile sets, not N^2 pairwise transitions).
+// Layer index is the terrain id and its draw priority: a higher index draws over every lower one.
 [Serializable]
 public class TerrainLayer
 {
@@ -13,15 +12,12 @@ public class TerrainLayer
     [Tooltip("Editor-only: paints the map readable before any art exists.")]
     public Color previewColor = Color.magenta;
 
-    [Tooltip("16 tiles, indexed by the mask of the renderer's TileMode.\n" +
-             "SameGrid/Quadrant - which sides transition: bit0 N, bit1 E, bit2 S, bit3 W. " +
-             "0 = plain, 15 = lone cell.\n" +
-             "DualGrid - which corners are in this layer: bit0 SW, bit1 SE, bit2 NW, bit3 NE.")]
-    public Sprite[] tiles = new Sprite[16];
+    [Tooltip("Indexed by which sides transition: bit0 N, bit1 E, bit2 S, bit3 W. 0 = plain.\n" +
+             "DualGrid instead indexes corners: bit0 SW, bit1 SE, bit2 NW, bit3 NE.")]
+    public Sprite[] tiles = new Sprite[SameGrid.MaskCount];
 
-    [Tooltip("Optional, Quadrant mode: the concave notch where only the diagonal differs. " +
-             "Order NW, NE, SE, SW. Leave empty if the tileset has none - the plain quarter is " +
-             "drawn instead.")]
+    [Tooltip("Quadrant mode only: the concave notch where just the diagonal differs. Order NW, NE, " +
+             "SE, SW. Empty slots fall back to the plain tile.")]
     public Sprite[] innerCorners = new Sprite[4];
 }
 
@@ -32,33 +28,6 @@ public class TerrainSet : ScriptableObject
 
     public int Count => layers.Count;
 
-    // Unity serializes a newly added list element without running the field initialiser, so `tiles`
-    // arrives empty and the 16 slots never appear in the Inspector.
-    void OnValidate()
-    {
-        foreach (var layer in layers)
-        {
-            if (layer == null) continue;
-            if (layer.tiles == null || layer.tiles.Length != SameGrid.MaskCount)
-            {
-                var resized = new Sprite[SameGrid.MaskCount];
-                if (layer.tiles != null)
-                    for (int i = 0; i < layer.tiles.Length && i < resized.Length; i++)
-                        resized[i] = layer.tiles[i];
-                layer.tiles = resized;
-            }
-
-            if (layer.innerCorners == null || layer.innerCorners.Length != 4)
-            {
-                var resized = new Sprite[4];
-                if (layer.innerCorners != null)
-                    for (int i = 0; i < layer.innerCorners.Length && i < 4; i++)
-                        resized[i] = layer.innerCorners[i];
-                layer.innerCorners = resized;
-            }
-        }
-    }
-
     public bool IsWalkable(byte id) => id < layers.Count && layers[id].walkable;
 
     public bool[] BuildWalkableTable()
@@ -68,9 +37,15 @@ public class TerrainSet : ScriptableObject
         return table;
     }
 
-    // Passability is a property of (terrain, body), not of terrain alone: a crocodile swims, a bird
-    // flies over, and a buff can open water for five seconds. Bodies carry a mask over terrain ids;
-    // this is the default one - everything the set calls walkable.
+    public bool[] BuildLayerTable(int layer)
+    {
+        var table = new bool[256];
+        for (int i = 0; i < table.Length; i++) table[i] = i >= layer;
+        return table;
+    }
+
+    // Bodies carry a mask over terrain ids, so a swimmer or a buff opens water without the terrain
+    // changing.
     public int BuildDefaultPassMask()
     {
         int mask = 0;
@@ -81,11 +56,25 @@ public class TerrainSet : ScriptableObject
 
     public static int BitOf(int terrainId) => terrainId < 32 ? 1 << terrainId : 0;
 
-    // inLayer[id] == true when a cell of terrain `id` counts as filled for this layer.
-    public bool[] BuildLayerTable(int layer)
+    // Unity serializes a new list element without running field initialisers, so the arrays arrive
+    // empty and their slots never appear in the Inspector.
+    void OnValidate()
     {
-        var table = new bool[256];
-        for (int i = 0; i < table.Length; i++) table[i] = i >= layer;
-        return table;
+        foreach (var layer in layers)
+        {
+            if (layer == null) continue;
+            layer.tiles = Resize(layer.tiles, SameGrid.MaskCount);
+            layer.innerCorners = Resize(layer.innerCorners, 4);
+        }
+    }
+
+    static Sprite[] Resize(Sprite[] source, int length)
+    {
+        if (source != null && source.Length == length) return source;
+
+        var resized = new Sprite[length];
+        if (source != null)
+            for (int i = 0; i < source.Length && i < length; i++) resized[i] = source[i];
+        return resized;
     }
 }

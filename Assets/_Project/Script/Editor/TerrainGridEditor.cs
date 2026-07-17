@@ -135,8 +135,7 @@ public class TerrainGridEditor : Editor
         SceneView.RepaintAll();
     }
 
-    // previewColor identifies a terrain; its alpha is meaningless and is routinely left at 0 by the
-    // colour picker, which would make every swatch and brush outline invisible.
+    // previewColor names a terrain; its alpha is not meaningful and is often 0.
     static Color Opaque(Color c) => new Color(c.r, c.g, c.b, 1f);
 
     void DrawBrush(int cx, int cy)

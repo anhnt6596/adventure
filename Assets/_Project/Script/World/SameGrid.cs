@@ -1,9 +1,5 @@
-// Same-grid autotiling: one tile per cell, picked from which of its four neighbours are a different
-// terrain - i.e. which sides need a transition drawn. This is the arrangement ready-made tilesets
-// are drawn for.
-//
-// A bit is set when that side transitions, so mask 0 is the plain interior tile and mask 15 is a
-// lone cell fringed all round. The 1/2/4/8 weights make every combination a distinct total.
+// One tile per cell, picked from which sides transition to another terrain.
+// Weights 1/2/4/8 make every combination a distinct total: 0 = plain, 15 = lone cell.
 public static class SameGrid
 {
     public const int MaskCount = 16;
@@ -12,6 +8,11 @@ public static class SameGrid
     public const int OpenEast = 2;
     public const int OpenSouth = 4;
     public const int OpenWest = 8;
+
+    public const int DiagNorthWest = 1;
+    public const int DiagNorthEast = 2;
+    public const int DiagSouthEast = 4;
+    public const int DiagSouthWest = 8;
 
     public static int NeighbourMask(TerrainMap map, int x, int y, bool[] inLayer)
     {
@@ -23,12 +24,6 @@ public static class SameGrid
         return mask;
     }
 
-    public const int DiagNorthWest = 1;
-    public const int DiagNorthEast = 2;
-    public const int DiagSouthEast = 4;
-    public const int DiagSouthWest = 8;
-
-    // Only a quarter whose own two sides both match can see its diagonal; that is the concave case.
     public static int DiagonalMask(TerrainMap map, int x, int y, bool[] inLayer)
     {
         int mask = 0;

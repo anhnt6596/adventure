@@ -40,8 +40,7 @@ public class TerrainGrid : MonoBehaviour
     {
         if (cells == null || cells.Length != width * height)
         {
-            // Resizing keeps whatever still fits: losing a painted map to a stray Inspector drag
-            // is not an acceptable failure.
+            // Keeps whatever still fits rather than dropping a painted map.
             var resized = new byte[width * height];
             if (cells != null && builtWidth > 0)
             {
