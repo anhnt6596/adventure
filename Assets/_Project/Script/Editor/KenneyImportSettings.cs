@@ -22,7 +22,11 @@ public class KenneyImportSettings : AssetPostprocessor
 
         if (!assetPath.Contains(KenneyFolder)) return;
 
-        // Only seeds defaults on first import, so later hand-tuning in the Inspector sticks.
+        // The tile mapper reads these pixels to work out each tile's slot, so readability is not
+        // optional and not left to first-import defaults.
+        importer.isReadable = true;
+
+        // Only seeds the rest on first import, so later hand-tuning in the Inspector sticks.
         if (!importer.importSettingsMissing) return;
 
         importer.textureType = TextureImporterType.Sprite;
