@@ -74,7 +74,7 @@ public class TerrainRenderer : MonoBehaviour
         if (drawn == 0)
             Debug.LogWarning(
                 $"[Terrain] '{set.name}' has no tiles assigned, so nothing rendered. Fill each " +
-                "layer's Tiles array (layer 0 only needs slot 15). Painting still works via Gizmos.",
+                "layer's Tiles array. Painting still works via Gizmos.",
                 this);
     }
 
@@ -122,7 +122,8 @@ public class TerrainRenderer : MonoBehaviour
                     // The base layer covers everything; higher layers only draw on their own cells.
                     if (layer > 0 && !inLayer[map.Get(x, y)]) continue;
 
-                    int mask = layer == 0 ? 15 : SameGrid.NeighbourMask(map, x, y, inLayer);
+                    // The base layer has nothing to transition against: mask 0 is its plain tile.
+                    int mask = layer == 0 ? 0 : SameGrid.NeighbourMask(map, x, y, inLayer);
                     var sprite = tiles[mask];
                     if (sprite == null) continue;
 
@@ -135,6 +136,7 @@ public class TerrainRenderer : MonoBehaviour
             for (int j = 0; j <= map.Height; j++)
                 for (int i = 0; i <= map.Width; i++)
                 {
+                    // DualGrid reads the opposite way round: 15 is all four corners in-layer.
                     int mask = layer == 0 ? 15 : DualGrid.CornerMask(map, i, j, inLayer);
                     if (mask == 0) continue;
 
