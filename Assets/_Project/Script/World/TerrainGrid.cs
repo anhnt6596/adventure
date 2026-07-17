@@ -97,7 +97,8 @@ public class TerrainGrid : MonoBehaviour
 #if UNITY_EDITOR
     public enum GizmoMode { Off, Terrain, Unwalkable }
 
-    [SerializeField] GizmoMode gizmos = GizmoMode.Terrain;
+    // Draws above the mesh, so it hides the art it sits on.
+    [SerializeField] GizmoMode gizmos = GizmoMode.Off;
     [SerializeField, Range(0f, 1f)] float gizmoAlpha = 0.5f;
 
     void OnDrawGizmosSelected()
