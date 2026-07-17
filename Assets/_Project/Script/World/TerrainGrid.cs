@@ -73,6 +73,17 @@ public class TerrainGrid : MonoBehaviour
         return _walkable[map.Get(x, y)];
     }
 
+    public bool CanPass(int passMask, int x, int y)
+    {
+        var map = Map;
+        if (!map.InBounds(x, y)) return false;
+        return (passMask & TerrainSet.BitOf(map.Get(x, y))) != 0;
+    }
+
+    public int DefaultPassMask => set != null ? set.BuildDefaultPassMask() : ~0;
+
+    public byte TerrainAt(int x, int y) => Map.Get(x, y);
+
     public bool WorldToCell(Vector3 world, out int x, out int y)
     {
         Vector3 local = transform.InverseTransformPoint(world);

@@ -96,11 +96,11 @@ public class CollisionWorld
         {
             var body = _bodies[i];
             if (body.InvMass <= 0f) continue;
-            body.Position = ResolveTerrain(body.Position, body.Radius);
+            body.Position = ResolveTerrain(body.Position, body.Radius, body.PassMask);
         }
     }
 
-    Vector3 ResolveTerrain(Vector3 world, float radius)
+    Vector3 ResolveTerrain(Vector3 world, float radius, int passMask)
     {
         var tf = _terrain.transform;
         Vector3 local = tf.InverseTransformPoint(world);
@@ -114,7 +114,7 @@ public class CollisionWorld
         for (int z = z0; z <= z1; z++)
             for (int x = x0; x <= x1; x++)
             {
-                if (_terrain.IsWalkable(x, z)) continue;
+                if (_terrain.CanPass(passMask, x, z)) continue;
 
                 float minX = x * cs, maxX = minX + cs;
                 float minZ = z * cs, maxZ = minZ + cs;

@@ -33,6 +33,19 @@ public class TerrainSet : ScriptableObject
         return table;
     }
 
+    // Passability is a property of (terrain, body), not of terrain alone: a crocodile swims, a bird
+    // flies over, and a buff can open water for five seconds. Bodies carry a mask over terrain ids;
+    // this is the default one - everything the set calls walkable.
+    public int BuildDefaultPassMask()
+    {
+        int mask = 0;
+        for (int i = 0; i < layers.Count && i < 32; i++)
+            if (layers[i].walkable) mask |= 1 << i;
+        return mask;
+    }
+
+    public static int BitOf(int terrainId) => terrainId < 32 ? 1 << terrainId : 0;
+
     // inLayer[id] == true when a cell of terrain `id` counts as filled for this layer.
     public bool[] BuildLayerTable(int layer)
     {
