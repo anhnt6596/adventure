@@ -4,7 +4,7 @@ using VContainer;
 
 public class Character : MonoBehaviour
 {
-    [SerializeField] float attackDuration = 0.4f;
+    [SerializeField] CollisionBody body;   // the character's body; its mass comes from stats, not the inspector
 
     ICharacterStats _stats;
     Vector2 _input;
@@ -17,6 +17,12 @@ public class Character : MonoBehaviour
     [Inject]
     public void Construct(ICharacterStats stats) => _stats = stats;
 
+    void Start()
+    {
+        if (body != null) body.SetMass(_stats.Mass);
+        else Debug.LogError($"[{nameof(Character)}] CollisionBody not assigned — mass from stats won't apply.", this);
+    }
+
     public void Move(Vector2 worldDir)
     {
         if (IsBusy) return;
@@ -27,7 +33,8 @@ public class Character : MonoBehaviour
     {
         if (IsBusy) return;
         var atkSpeed = _stats.AttackSpeed.Value;
-        _busyTimer = atkSpeed > 0f ? attackDuration / atkSpeed : attackDuration;
+        var dur = _stats.AttackDuration;
+        _busyTimer = atkSpeed > 0f ? dur / atkSpeed : dur;
         Attacked?.Invoke();
     }
 

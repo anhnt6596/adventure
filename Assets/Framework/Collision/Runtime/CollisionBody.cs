@@ -26,6 +26,9 @@ public class CollisionBody : MonoBehaviour, ICollisionBody
 
     public void SetPassMask(int mask) => PassMask = mask;
 
+    // Lets an owner drive mass from its stats/config instead of the serialized default.
+    public void SetMass(float m) => mass = Mathf.Max(0f, m);
+
     // A body inside a loaded map prefab can't serialize a scene CollisionSystem reference, so it's
     // bound after the map is instantiated. Re-registers so OnDisable/OnDestroy can still clean up.
     public void BindSystem(CollisionSystem s)

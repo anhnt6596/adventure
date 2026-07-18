@@ -236,6 +236,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6940764326736326858}
   - component: {fileID: 1127787428253677139}
+  - component: {fileID: 5548800800284103017}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Untagged
@@ -252,12 +253,12 @@ Transform:
   m_GameObject: {fileID: 929139483221565256}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 22.348999, y: 0, z: 29.891998}
+  m_LocalPosition: {x: 23.83, y: 0, z: 23.400002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3038201671752606698}
-  m_Father: {fileID: 9051723745720540181}
+  m_Father: {fileID: 2179480720488651259}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1127787428253677139
 MonoBehaviour:
@@ -274,6 +275,21 @@ MonoBehaviour:
   radius: 0.3
   mass: 0
   system: {fileID: 0}
+--- !u!114 &5548800800284103017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 929139483221565256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Harvestable
+  maxHp: 20
+  hitRadius: 0.5
+  team: 1
 --- !u!1 &1169675807417828498
 GameObject:
   m_ObjectHideFlags: 0
@@ -399,6 +415,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5420022885011727443}
   - component: {fileID: 7914685870726317536}
+  - component: {fileID: 8632071300945834537}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Untagged
@@ -415,12 +432,12 @@ Transform:
   m_GameObject: {fileID: 2424182966330776643}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 22.348999, y: 0, z: 29.891998}
+  m_LocalPosition: {x: 20.039999, y: 0, z: 21.37}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4593034232660095838}
-  m_Father: {fileID: 7122846038558064709}
+  m_Father: {fileID: 2179480720488651259}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7914685870726317536
 MonoBehaviour:
@@ -437,6 +454,21 @@ MonoBehaviour:
   radius: 0.3
   mass: 0
   system: {fileID: 0}
+--- !u!114 &8632071300945834537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2424182966330776643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Harvestable
+  maxHp: 20
+  hitRadius: 0.5
+  team: 1
 --- !u!1 &2595038459439399900
 GameObject:
   m_ObjectHideFlags: 0
@@ -578,38 +610,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!1 &2758543122912717686
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6466764052968683489}
-  m_Layer: 0
-  m_Name: Trees (1)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6466764052968683489
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2758543122912717686}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.75, y: 0, z: -8.49}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 2702603248425169339}
-  m_Father: {fileID: 3008127845935596630}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2878813705730058692
 GameObject:
   m_ObjectHideFlags: 0
@@ -689,9 +689,6 @@ Transform:
   - {fileID: 3563734384358258485}
   - {fileID: 3729553940923224197}
   - {fileID: 2179480720488651259}
-  - {fileID: 6466764052968683489}
-  - {fileID: 9051723745720540181}
-  - {fileID: 7122846038558064709}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1408542931166688022
@@ -719,6 +716,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2702603248425169339}
   - component: {fileID: 3720070894346482965}
+  - component: {fileID: 5169217641343037298}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Untagged
@@ -735,12 +733,12 @@ Transform:
   m_GameObject: {fileID: 3159526742229515843}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 22.348999, y: 0, z: 29.891998}
+  m_LocalPosition: {x: 23.710001, y: -0.2, z: 20.13}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1465935774886879569}
-  m_Father: {fileID: 6466764052968683489}
+  m_Father: {fileID: 2179480720488651259}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &3720070894346482965
 MonoBehaviour:
@@ -757,6 +755,21 @@ MonoBehaviour:
   radius: 0.3
   mass: 0
   system: {fileID: 0}
+--- !u!114 &5169217641343037298
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3159526742229515843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Harvestable
+  maxHp: 20
+  hitRadius: 0.5
+  team: 1
 --- !u!1 &3233003645922519342
 GameObject:
   m_ObjectHideFlags: 0
@@ -767,6 +780,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8535003345142454727}
   - component: {fileID: 3179439086457747444}
+  - component: {fileID: 1941324931436799356}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Untagged
@@ -783,7 +797,7 @@ Transform:
   m_GameObject: {fileID: 3233003645922519342}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 22.348999, y: 0, z: 29.891998}
+  m_LocalPosition: {x: 26.4, y: 0, z: 28.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -805,38 +819,21 @@ MonoBehaviour:
   radius: 0.3
   mass: 0
   system: {fileID: 0}
---- !u!1 &5050179715309624160
-GameObject:
+--- !u!114 &1941324931436799356
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 9051723745720540181}
-  m_Layer: 0
-  m_Name: Trees (3)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &9051723745720540181
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5050179715309624160}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.57, y: 0, z: -5.3}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 6940764326736326858}
-  m_Father: {fileID: 3008127845935596630}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_GameObject: {fileID: 3233003645922519342}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Harvestable
+  maxHp: 20
+  hitRadius: 0.5
+  team: 1
 --- !u!1 &5216212190132711897
 GameObject:
   m_ObjectHideFlags: 0
@@ -867,6 +864,9 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8535003345142454727}
+  - {fileID: 2702603248425169339}
+  - {fileID: 6940764326736326858}
+  - {fileID: 5420022885011727443}
   m_Father: {fileID: 3008127845935596630}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5368751252338105308
@@ -992,38 +992,6 @@ Transform:
   - {fileID: 8654165221811913530}
   - {fileID: 8462965841017038068}
   - {fileID: 3562362495267141920}
-  m_Father: {fileID: 3008127845935596630}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7048629186211203223
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7122846038558064709}
-  m_Layer: 0
-  m_Name: Trees (2)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7122846038558064709
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7048629186211203223}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.36, y: 0, z: -7.33}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 5420022885011727443}
   m_Father: {fileID: 3008127845935596630}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7275366028377675953

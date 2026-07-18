@@ -206,7 +206,7 @@ PrefabInstance:
     - target: {fileID: 7422796970273104650, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_TargetTexture
       value: 
-      objectReference: {fileID: 1402373330}
+      objectReference: {fileID: 1066971219}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -277,6 +277,10 @@ PrefabInstance:
       propertyPath: cameraTransform
       value: 
       objectReference: {fileID: 143667939}
+    - target: {fileID: 4637130129812403535, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
+      propertyPath: body
+      value: 
+      objectReference: {fileID: 616452072}
     - target: {fileID: 5431757174141155505, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
       propertyPath: m_Name
       value: MC 1
@@ -295,6 +299,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5431757174141155505, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 616452077}
+    - targetCorrespondingSourceObject: {fileID: 5431757174141155505, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 616452078}
   m_SourcePrefab: {fileID: 100100000, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
 --- !u!4 &616452066 stripped
 Transform:
@@ -344,6 +351,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3175bd379d492954fab3c7857c298d2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Interactor
+--- !u!114 &616452078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 616452067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 908c11e1ac13d9a4fa0e712a9d2fbda2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SwingAttack
+  radius: 1
+  team: 0
+  animatorSource: {fileID: 780344539}
 --- !u!1 &642295460
 GameObject:
   m_ObjectHideFlags: 0
@@ -447,7 +469,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 642295462}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!84 &1402373330
+--- !u!114 &780344539 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1662830386516377226, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
+  m_PrefabInstance: {fileID: 616452065}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c14445daa91446da8f49c2a0eb6db05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!84 &1066971219
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

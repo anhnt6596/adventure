@@ -18,6 +18,7 @@ public class GameScope : LifetimeScope
         builder.RegisterComponent(_cameraRig);
         builder.RegisterComponent(_collisionSystem);
         builder.Register<InteractField>(Lifetime.Singleton);
+        builder.RegisterInstance(new CombatWorld());
         builder.Register<IMapService, MapService>(Lifetime.Singleton);
 
         builder.RegisterEntryPoint<GameController>();

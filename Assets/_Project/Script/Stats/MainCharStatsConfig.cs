@@ -5,4 +5,7 @@ public class MainCharStatsConfig : ScriptableObject
 {
     public float moveSpeed = 6f;
     public float attackSpeed = 1f;
+    public float attackPower = 5f;
+    public float attackDuration = 0.4f;
+    public float mass = 1f;             // how hard to shove aside in collisions (not physics)
 }

@@ -37,6 +37,11 @@ public class CharacterAnimator : MonoBehaviour
         animator.SetTrigger("Attack");
     }
 
+    // Raised by an AnimationEvent at the frame an attack connects. The attack logic lives on the
+    // actor and listens here — the view only relays the timing.
+    public event Action Hit;
+    public void OnHit() => Hit?.Invoke();
+
     private (int curDir, bool isFlip) CalculateDir(int dir)
     {
         switch (dirType)
