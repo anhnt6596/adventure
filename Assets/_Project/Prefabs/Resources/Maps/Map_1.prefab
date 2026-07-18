@@ -237,6 +237,7 @@ GameObject:
   - component: {fileID: 6940764326736326858}
   - component: {fileID: 1127787428253677139}
   - component: {fileID: 5548800800284103017}
+  - component: {fileID: 2208653222627303366}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Untagged
@@ -288,6 +289,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Harvestable
   config: {fileID: 11400000, guid: fc6103d152288d94b9295a88008e5852, type: 2}
+--- !u!114 &2208653222627303366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 929139483221565256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b919e438d4050494b87156800319b7f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitFlash
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  duration: 0.15
+  renderers: []
 --- !u!1 &1169675807417828498
 GameObject:
   m_ObjectHideFlags: 0
@@ -414,6 +430,7 @@ GameObject:
   - component: {fileID: 5420022885011727443}
   - component: {fileID: 7914685870726317536}
   - component: {fileID: 8632071300945834537}
+  - component: {fileID: 2956953337583613504}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Untagged
@@ -465,6 +482,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Harvestable
   config: {fileID: 11400000, guid: fc6103d152288d94b9295a88008e5852, type: 2}
+--- !u!114 &2956953337583613504
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2424182966330776643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b919e438d4050494b87156800319b7f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitFlash
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  duration: 0.15
+  renderers: []
 --- !u!1 &2595038459439399900
 GameObject:
   m_ObjectHideFlags: 0
@@ -713,6 +745,7 @@ GameObject:
   - component: {fileID: 2702603248425169339}
   - component: {fileID: 3720070894346482965}
   - component: {fileID: 5169217641343037298}
+  - component: {fileID: 790858803741736440}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Untagged
@@ -764,6 +797,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Harvestable
   config: {fileID: 11400000, guid: fc6103d152288d94b9295a88008e5852, type: 2}
+--- !u!114 &790858803741736440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3159526742229515843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b919e438d4050494b87156800319b7f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitFlash
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  duration: 0.15
+  renderers: []
 --- !u!1 &3233003645922519342
 GameObject:
   m_ObjectHideFlags: 0
@@ -775,6 +823,7 @@ GameObject:
   - component: {fileID: 8535003345142454727}
   - component: {fileID: 3179439086457747444}
   - component: {fileID: 1941324931436799356}
+  - component: {fileID: 8180785845961067633}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Untagged
@@ -826,6 +875,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Harvestable
   config: {fileID: 11400000, guid: fc6103d152288d94b9295a88008e5852, type: 2}
+--- !u!114 &8180785845961067633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3233003645922519342}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b919e438d4050494b87156800319b7f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitFlash
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  duration: 0.15
+  renderers: []
 --- !u!1 &5216212190132711897
 GameObject:
   m_ObjectHideFlags: 0

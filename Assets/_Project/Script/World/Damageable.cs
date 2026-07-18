@@ -16,6 +16,8 @@ public class Damageable : MonoBehaviour, IDamageable
     public bool IsAlive => _hp > 0f;
     public int Team => config != null ? config.team : 2;
 
+    public event System.Action Damaged;   // raised on a non-fatal hit; views (HitFlash) listen
+
     void Awake()
     {
         if (config != null) _hp = config.maxHp;
@@ -43,7 +45,8 @@ public class Damageable : MonoBehaviour, IDamageable
     {
         if (!IsAlive) return;
         _hp -= amount;
-        if (_hp <= 0f) Die();
+        if (_hp <= 0f) { Die(); return; }
+        Damaged?.Invoke();
     }
 
     void Die()
