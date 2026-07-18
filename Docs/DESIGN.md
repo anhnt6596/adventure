@@ -492,6 +492,26 @@ Things that sound good but aren't decided. Nothing here gets built until the cor
   should ride the existing character system (stats + attack + skill), i.e. an heir is just another
   character config, unlocked by a condition instead of a purchase.
 
+- **Line of sight — model decided, not built.** Sight is blocked by **discrete fixed obstacles**
+  (not tiles): objects like trees, rocks, pillars that carry a `CollisionBody` **and** a separate
+  `blocksSight` flag. Collision and sight are **independent settings** on the obstacle — one may be on
+  without the other (a bush you can see through but not walk into, or the reverse).
+
+  **Tiles never block sight.** The tilemap is always flat, so a movement-blocking cell (water, a pit)
+  is still floor-level and occludes nothing. Movement-blocking lives on tiles; sight-blocking lives
+  only on discrete obstacles.
+
+  **This makes LoS one source, not two.** A segment A→B is tested by ray-vs-circle over the spatial
+  hash, filtered to `blocksSight` bodies. No terrain grid-DDA — tiles are irrelevant to sight. Cheap.
+
+  **Caveat for later:** circle occluders fit round obstacles well; a long sight-blocking *wall* does
+  not (it would need a row of circles or a segment occluder — a separate thing). A flat, object-
+  scattered world doesn't need walls, so this only matters if that changes.
+
+  **Still open — what LoS is *for*:** enemy AI sight (cheap, on-demand segment tests — the likely use)
+  vs. player vision shaped by geometry (2D shadowcasting — the "walls block light" idea already
+  rejected for radius-based darkness; reopening it is a bigger decision).
+
 ## Open questions (not decided yet)
 
 - Does a visited map remember its state, or reset on re-entry? (Save-at-home points hard at

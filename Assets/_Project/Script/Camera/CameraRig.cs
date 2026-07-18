@@ -58,6 +58,17 @@ public class CameraRig : MonoBehaviour
         transform.SetPositionAndRotation(pos, rot);
     }
 
+    // Cut the camera to the target now, no smoothing — for teleports / map changes.
+    public void SnapToTarget()
+    {
+        if (target == null) return;
+        _mode ??= new FollowMode();
+        _mode.Enter(this);                       // re-centre the follow pivot on the target
+        var (pos, rot) = _mode.Solve(this, 0f);
+        transform.SetPositionAndRotation(pos, rot);
+        _targetYaw = yaw;                         // drop any pending Q/E rotation so it doesn't animate after the cut
+    }
+
     public void SetMode(ICameraMode mode)
     {
         if (mode == null) return;

@@ -19,5 +19,12 @@ public class CollisionSystem : MonoBehaviour
 
     public void Unregister(ICollisionBody body) => World.Remove(body);
 
+    // Point the world at a newly loaded map's terrain. New bodies then use its pass mask.
+    public void SetTerrain(TerrainGrid t)
+    {
+        terrain = t;
+        World.SetTerrain(t);
+    }
+
     void LateUpdate() => World.Step(iterations);
 }

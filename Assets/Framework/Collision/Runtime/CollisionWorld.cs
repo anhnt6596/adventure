@@ -10,13 +10,27 @@ using Core;
 public class CollisionWorld
 {
     readonly SpatialHash<ICollisionBody> _hash;
-    readonly TerrainGrid _terrain;
+    TerrainGrid _terrain;
 
     public CollisionWorld(TerrainGrid terrain)
     {
         _terrain = terrain;
         float cell = terrain != null ? Mathf.Max(0.5f, terrain.CellSize * 2f) : 2f;
         _hash = new SpatialHash<ICollisionBody>(b => b.Position, cell);
+    }
+
+    // Swap the terrain when the map changes; registered bodies stay. Bodies that registered before a
+    // terrain existed kept the default pass-all mask, so re-apply the new terrain's mask to all of
+    // them here — otherwise a body that joined first walks through everything.
+    public void SetTerrain(TerrainGrid terrain)
+    {
+        _terrain = terrain;
+        if (terrain == null) return;
+
+        int mask = terrain.DefaultPassMask;
+        var items = _hash.Items;
+        for (int i = 0; i < items.Count; i++)
+            if (items[i] is CollisionBody cb) cb.SetPassMask(mask);
     }
 
     public void Add(ICollisionBody body)

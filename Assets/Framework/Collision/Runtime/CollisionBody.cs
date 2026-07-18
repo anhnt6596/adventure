@@ -26,6 +26,16 @@ public class CollisionBody : MonoBehaviour, ICollisionBody
 
     public void SetPassMask(int mask) => PassMask = mask;
 
+    // A body inside a loaded map prefab can't serialize a scene CollisionSystem reference, so it's
+    // bound after the map is instantiated. Re-registers so OnDisable/OnDestroy can still clean up.
+    public void BindSystem(CollisionSystem s)
+    {
+        if (system == s) return;
+        if (system != null) system.Unregister(this);
+        system = s;
+        if (isActiveAndEnabled && system != null) system.Register(this);
+    }
+
 #if UNITY_EDITOR
     void OnDrawGizmosSelected()
     {
