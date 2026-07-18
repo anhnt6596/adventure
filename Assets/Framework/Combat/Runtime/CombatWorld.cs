@@ -21,8 +21,9 @@ public class CombatWorld
 
     public void Rebuild() => _hash.Rebuild();
 
-    // Targets whose hit circle overlaps the given one, on the requested team.
-    public void Overlap(Vector3 centre, float radius, int excludeTeam, List<IDamageable> results)
+    // Targets whose hit circle overlaps the given one. Team 0 is neutral and hits everyone (including
+    // other team-0 targets); any other attacker team spares its own team (no friendly fire).
+    public void Overlap(Vector3 centre, float radius, int attackerTeam, List<IDamageable> results)
     {
         results.Clear();
 
@@ -35,7 +36,8 @@ public class CombatWorld
 
         foreach (var target in _query)
         {
-            if (!target.IsAlive || target.Team == excludeTeam) continue;
+            if (!target.IsAlive) continue;
+            if (attackerTeam != 0 && target.Team == attackerTeam) continue;
 
             Vector3 d = target.Position - centre;
             d.y = 0f;

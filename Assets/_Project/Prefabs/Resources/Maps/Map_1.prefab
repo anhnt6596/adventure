@@ -287,9 +287,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Harvestable
-  maxHp: 20
-  hitRadius: 0.5
-  team: 1
+  config: {fileID: 11400000, guid: fc6103d152288d94b9295a88008e5852, type: 2}
 --- !u!1 &1169675807417828498
 GameObject:
   m_ObjectHideFlags: 0
@@ -466,9 +464,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Harvestable
-  maxHp: 20
-  hitRadius: 0.5
-  team: 1
+  config: {fileID: 11400000, guid: fc6103d152288d94b9295a88008e5852, type: 2}
 --- !u!1 &2595038459439399900
 GameObject:
   m_ObjectHideFlags: 0
@@ -767,9 +763,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Harvestable
-  maxHp: 20
-  hitRadius: 0.5
-  team: 1
+  config: {fileID: 11400000, guid: fc6103d152288d94b9295a88008e5852, type: 2}
 --- !u!1 &3233003645922519342
 GameObject:
   m_ObjectHideFlags: 0
@@ -831,9 +825,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Harvestable
-  maxHp: 20
-  hitRadius: 0.5
-  team: 1
+  config: {fileID: 11400000, guid: fc6103d152288d94b9295a88008e5852, type: 2}
 --- !u!1 &5216212190132711897
 GameObject:
   m_ObjectHideFlags: 0

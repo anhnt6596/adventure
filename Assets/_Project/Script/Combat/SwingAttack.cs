@@ -8,7 +8,7 @@ using VContainer;
 public class SwingAttack : MonoBehaviour
 {
     [SerializeField] float radius = 1.5f;               // reach — a property of this weapon, not a character stat
-    [SerializeField] int team = 0;                      // the player's team; this hits every other team
+    [SerializeField] int team = 1;                      // player's normal attack; team 0 would be a self-hurting skill (bomb)
     [SerializeField] CharacterAnimator animatorSource;  // drag the one on the art child; fires Hit at the connect frame
 
     CombatWorld _combat;

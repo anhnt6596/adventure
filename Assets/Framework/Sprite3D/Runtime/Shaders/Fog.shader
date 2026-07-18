@@ -1,11 +1,11 @@
 Shader "Unlit/Fog"
 {
     Properties {
-        _Color ("Fog Color", Color) = (0.8, 0.9, 1.0, 0.15)
+        _Color ("Add Color (glare)", Color) = (0, 0, 0, 1)
     }
     SubShader {
         Tags { "Queue"="Overlay" }
-        Blend One OneMinusSrcAlpha
+        Blend One One
         ZWrite Off Cull Off
 
         Pass {
@@ -24,7 +24,11 @@ Shader "Unlit/Fog"
             }
 
             fixed4 frag (v2f i) : SV_Target {
-                return _Color;
+                // Additive (Blend One One): screen += rgb. Alpha is ignored — the COLOUR is the light
+                // added: black = off, brighter = stronger (HDR can push way past 1 for hard glare).
+                // This is the only veil pass URP renders besides DarknessMask Pass 1, so all screen-wide
+                // glare/haze lives here.
+                return fixed4(_Color.rgb, 1);
             }
             ENDCG
         }

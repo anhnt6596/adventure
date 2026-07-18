@@ -40,7 +40,8 @@ Shader "Unlit/DarknessMask"
             ENDCG
         }
 
-        // ---- Pass 2: GLOW (additive) — ADDS bright color where light is strong (over-bright / chói) ----
+        // ---- Pass 2: GLOW (additive) — NOTE: URP renders only Pass 1 of an overlay, so this pass is
+        //      inactive under URP. Screen-wide glare lives on the Fog overlay (additive) instead. ----
         Pass {
             Blend One One
             CGPROGRAM

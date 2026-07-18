@@ -5,7 +5,7 @@ public class LightManager : MonoBehaviour
 {
     public Material darknessMaterial, fogMaterial;
     public Color ambientColor = new Color(0.1f, 0.1f, 0.15f, 1f);
-    public Color fogColor = new Color(0.1f, 0.1f, 0.15f, 1f);
+    public Color fogColor = Color.black;   // additive light on the Fog overlay — this IS the glare: brighter = more "chói", black = off
     public int baseResolution = 512;
     public Camera lightCam;
 
