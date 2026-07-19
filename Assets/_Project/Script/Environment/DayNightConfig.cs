@@ -48,8 +48,9 @@ public class DayNightConfig : ScriptableObject
             (0.30f, Color.black),                            // ~07:00, off — starts rising after
             (0.42f, new Color(0.3358f, 0.3255f, 0.0602f)),   // ~10:00, full sun (picked olive)
             (0.58f, new Color(0.3373f, 0.3238f, 0.0588f)),   // ~14:00, full sun — midday plateau
-            (0.72f, Color.black),                            // ~17:15, faded off
-            (0.80f, new Color(0.15f, 0.07f, 0.03f)),         // ~19:10, dusk warm glow
+            (0.667f, Color.black),                           // 16:00, glare off — dusk glow starts after here
+            (0.75f, new Color(0.20f, 0.07f, 0.03f)),         // 18:00, sunset glare — a touch redder
+            (0.833f, new Color(0.09f, 0.035f, 0.018f)),      // 20:00, fading into night
             (1.00f, Color.black));                           // night, off
 
         // Brightness: near-0 at night (dark; point lights punch through), full 1 through a long day.

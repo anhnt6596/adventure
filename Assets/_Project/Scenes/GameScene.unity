@@ -231,10 +231,14 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 5.0999994
       objectReference: {fileID: 0}
+    - target: {fileID: 6171598702526502832, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
+      propertyPath: margin
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 7422796970273104650, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_TargetTexture
       value: 
-      objectReference: {fileID: 837148848}
+      objectReference: {fileID: 1712033857}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -278,7 +282,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Sprite3D::ShadowComposite
   fillMaterial: {fileID: 0}
-  size: 80
+  padding: 0
   height: 0.03
   sortingLayer: 
   sortingOrder: -1
@@ -585,43 +589,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c14445daa91446da8f49c2a0eb6db05, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!84 &837148848
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: LightMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 910
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 90
-  m_ColorFormat: 48
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &1373120020
 GameObject:
   m_ObjectHideFlags: 0
@@ -685,7 +652,7 @@ MonoBehaviour:
   sunsetHour: 20
   dawnDir: {x: 5, y: 4}
   duskDir: {x: -5, y: 4}
-  maxLength: 2.5
+  maxLength: 2
   noonScale: 0.5
   strength: 1
   groundY: 0
@@ -752,6 +719,43 @@ MonoBehaviour:
   orderOffset: -1
   groundOffset: {x: 0, y: 0}
   yawOffset: 0
+--- !u!84 &1712033857
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LightMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 910
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 90
+  m_ColorFormat: 48
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!212 &1909370399 stripped
 SpriteRenderer:
   m_CorrespondingSourceObject: {fileID: 8142573892274122599, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}

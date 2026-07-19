@@ -13,7 +13,8 @@ using UnityEngine;
 public class ShadowComposite : MonoBehaviour
 {
     [SerializeField] Material fillMaterial;      // GroundShadowFill material (auto-made from the shader if null)
-    [SerializeField] float size = 80f;           // world size of the fill quad — big enough to cover the view
+    [SerializeField] float padding = 30f;        // extra reach past the view edge — crank up if long shadows
+                                                 // (dawn/dusk) get clipped at the far edge of the fill
     [SerializeField] float height = 0.03f;       // just above the shadow-stencil quads
     [SerializeField] string sortingLayer = "";   // blank = keep Default; match the sprites' sorting layer
     [SerializeField] int sortingOrder = -1;      // BELOW billboards; the stencil quads sit one below this
@@ -65,22 +66,32 @@ public class ShadowComposite : MonoBehaviour
     {
         if (_sr == null) return;
         if (_cam == null) _cam = Camera.main;
+        if (_cam == null) return;
 
-        // Centre on where the camera LOOKS at the ground, not on the camera itself — a tilted camera sees
-        // ground well in front of it, so centring on its position leaves distant shadows outside the quad.
-        Vector3 center;
-        if (_cam != null)
+        // Fit the quad to the ground the camera actually sees: project the 4 viewport corners onto the
+        // fill plane and take their bounding box (+ padding for shadows reaching in from just off-screen).
+        // Auto-sizing means distant views never outrun the quad.
+        float minX = float.MaxValue, minZ = float.MaxValue, maxX = float.MinValue, maxZ = float.MinValue;
+        bool any = false;
+        for (int c = 0; c < 4; c++)
         {
-            Vector3 pos = _cam.transform.position;
-            Vector3 fwd = _cam.transform.forward;
-            center = Mathf.Abs(fwd.y) > 1e-4f ? pos + fwd * ((height - pos.y) / fwd.y) : pos;
+            Ray r = _cam.ViewportPointToRay(new Vector3(c & 1, (c >> 1) & 1, 0f));
+            if (Mathf.Abs(r.direction.y) < 1e-4f) continue;
+            float t = (height - r.origin.y) / r.direction.y;
+            if (t <= 0f) continue;
+            Vector3 p = r.origin + r.direction * t;
+            minX = Mathf.Min(minX, p.x); maxX = Mathf.Max(maxX, p.x);
+            minZ = Mathf.Min(minZ, p.z); maxZ = Mathf.Max(maxZ, p.z);
+            any = true;
         }
-        else center = transform.position;
-        center.y = height;
+        if (!any) return;
+
+        var center = new Vector3((minX + maxX) * 0.5f, height, (minZ + maxZ) * 0.5f);
+        float s = Mathf.Max(maxX - minX, maxZ - minZ) + padding * 2f;
 
         // Lie flat on the ground (Cull Off, so facing doesn't matter).
         _sr.transform.SetPositionAndRotation(center, Quaternion.Euler(90f, 0f, 0f));
-        _sr.transform.localScale = new Vector3(size, size, 1f);
+        _sr.transform.localScale = new Vector3(s, s, 1f);
     }
 
     static Material AutoFill()

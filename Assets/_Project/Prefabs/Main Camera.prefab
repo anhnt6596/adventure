@@ -28,8 +28,8 @@ Transform:
   m_GameObject: {fileID: 707132728886697007}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.00000023841858, z: 5.100001}
-  m_LocalScale: {x: 0.9502406, y: 0.53455937, z: 1}
+  m_LocalPosition: {x: 0, y: -0.0000009536743, z: 5.0999994}
+  m_LocalScale: {x: 0.95032775, y: 0.53455937, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3805254027030119076}
@@ -261,8 +261,8 @@ Transform:
   m_GameObject: {fileID: 3543402937694368813}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.0000011920929, y: -0.00000011920929, z: 5}
-  m_LocalScale: {x: 0.93160844, y: 0.52407783, z: 1}
+  m_LocalPosition: {x: 0, y: 0.00000047683716, z: 5}
+  m_LocalScale: {x: 0.9316939, y: 0.52407783, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3805254027030119076}
@@ -353,6 +353,7 @@ GameObject:
   - component: {fileID: 3378789615317792026}
   - component: {fileID: 620481402096309031}
   - component: {fileID: 8846619239206603098}
+  - component: {fileID: 6171598702526502832}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -537,3 +538,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraInput
   rig: {fileID: 620481402096309031}
   snapStep: 45
+--- !u!114 &6171598702526502832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3781071600342696188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d41c6f08aa5252746a09309c07e20918, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Sprite3D::CullingMarginExpander
+  margin: 0.6
