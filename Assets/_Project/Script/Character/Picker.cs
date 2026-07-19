@@ -1,23 +1,31 @@
 using UnityEngine;
 using VContainer;
 
-// Grabs any Pickable within the character's pickup radius. For now only the main character picks up, so
-// the radius comes straight from its stats; if other kinds of picker appear later, give them their own
-// config source (an interface) then — overkill now.
+// Grabs any Pickable within the character's pickup radius and hops it into the picker. Exposes the
+// holder's stores as an IPickupReceiver, so a pickup's payload delivers itself into the right one and
+// this stays generic (no branching on currency/resource/item).
 [DisallowMultipleComponent]
-public class Picker : MonoBehaviour
+public class Picker : MonoBehaviour, IPickupReceiver
 {
-    [SerializeField] float pickHeight = 1f;      // fly-in goal lifts off the ground — the picker's Y is 0
+    [SerializeField] float pickHeight = 1f;        // fly-in goal lifts off the ground — the picker's Y is 0
+    [SerializeField] string inventoryId = "main_char";   // which store in the InventorySystem this picker fills
 
     ICharacterStats _stats;
+    Inventory _inventory;
+
+    public Inventory Inventory => _inventory;
 
     [Inject]
-    public void Construct(ICharacterStats stats) => _stats = stats;
+    public void Construct(ICharacterStats stats, IInventoryConfig inventoryConfig, InventorySystem inventories)
+    {
+        _stats = stats;
+        _inventory = inventories.GetOrCreate(inventoryId, inventoryConfig);
+    }
 
     void Start()
     {
-        if (_stats == null)
-            Debug.LogError($"[{nameof(Picker)}] ICharacterStats not injected — add this GameObject to GameScope's Auto Inject list.", this);
+        if (_stats == null || _inventory == null)   // needs ICharacterStats + IInventoryConfig + InventorySystem
+            Debug.LogError($"[{nameof(Picker)}] not injected — add this GameObject to GameScope's Auto Inject list.", this);
     }
 
     void Update()
@@ -37,7 +45,7 @@ public class Picker : MonoBehaviour
             Vector3 d = pk.Position - p;
             d.y = 0f;
             if (d.x * d.x + d.z * d.z <= r2)
-                pk.CollectTo(transform, pickHeight);
+                pk.CollectTo(this, transform, pickHeight);   // pk gates on its payload; full backpack → stays
         }
     }
 

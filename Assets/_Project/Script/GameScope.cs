@@ -12,7 +12,7 @@ public class GameScope : LifetimeScope
 
     protected override void Configure(IContainerBuilder builder)
     {
-        builder.RegisterInstance(_mainCharStatsConfig);
+        builder.RegisterInstance(_mainCharStatsConfig).AsSelf().As<IInventoryConfig>();
         builder.Register<MainCharStats>(Lifetime.Singleton).As<ICharacterStats>().AsSelf();
 
         builder.RegisterComponent(_character);
@@ -20,6 +20,7 @@ public class GameScope : LifetimeScope
         builder.RegisterComponent(_collisionSystem);
         builder.Register<InteractField>(Lifetime.Singleton);
         builder.RegisterInstance(new CombatWorld());
+        builder.Register<InventorySystem>(Lifetime.Singleton);
         builder.Register<IMapService, MapService>(Lifetime.Singleton);
 
         builder.RegisterInstance(_dayNightConfig);

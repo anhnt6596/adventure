@@ -101,6 +101,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7008679313814361356}
   - component: {fileID: 524150642163139586}
+  - component: {fileID: 1681946665034330151}
   m_Layer: 0
   m_Name: scaleNote
   m_TagString: Untagged
@@ -136,6 +137,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3617457aeb958f74aa38bb4c02e46579, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1681946665034330151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3611344992715772541}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3530b03d379bd254cb69529e857a219b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PickupFlyVisual
+  duration: 0.25
+  arcMultiple: 2
+  endScale: 0.68
 --- !u!1 &9176653165436844561
 GameObject:
   m_ObjectHideFlags: 0
@@ -148,6 +164,7 @@ GameObject:
   - component: {fileID: 5350456925862296279}
   - component: {fileID: 5009892388783555169}
   - component: {fileID: 8886325063542891088}
+  - component: {fileID: 8198401378888941203}
   m_Layer: 0
   m_Name: Log
   m_TagString: Untagged
@@ -183,9 +200,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e31b4ec4e98763d458b7af6a25c98048, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Pickable
-  collectDuration: 0.25
-  collectArcMultiple: 2
-  collectEndScale: 0.68
+  flyVisual: {fileID: 1681946665034330151}
 --- !u!114 &5009892388783555169
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -222,3 +237,17 @@ MonoBehaviour:
   size: {x: 0.5, y: 0.15}
   mass: 0.2
   system: {fileID: 0}
+--- !u!114 &8198401378888941203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9176653165436844561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0178d9fdf213e54786fd708dd15560d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ResourcePayload
+  resource: {fileID: 11400000, guid: 7570bedee54ec164c86879a7fa0fe445, type: 2}
+  amount: 1

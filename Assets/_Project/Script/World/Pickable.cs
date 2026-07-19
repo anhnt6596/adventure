@@ -1,9 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// A thing a Picker can grab when in range. Registers itself so pickers find it without scanning the
-// scene. While a piece is still flying out (FlyingPickup) it's not pickable; it turns pickable on
-// landing. When picked it hops into the picker in an arc, shrinking as it goes, then finishes.
+// A thing a Picker can grab when in range. Registers itself so pickers find it without scanning. While a
+// piece is still flying out (FlyingPickup) it's not pickable; it turns pickable on landing.
+//
+// One pickable = one payload (IPickupPayload) — a pickup gives exactly one kind of thing. When the picker
+// reaches it, the payload takes what FITS immediately. Whatever was taken spawns a throwaway PickupFlyVisual
+// that hops into the picker (juice, even on a partial take). If the whole thing was taken the pickup is
+// gone; if the backpack filled first, the remainder stays here on the ground.
 [DisallowMultipleComponent]
 public class Pickable : MonoBehaviour
 {
@@ -11,20 +15,15 @@ public class Pickable : MonoBehaviour
     // DI-registered service (like CombatWorld) if pickups ever need spatial queries at scale.
     public static readonly List<Pickable> Active = new List<Pickable>();
 
-    [Header("Collect — hop into the picker")]
-    [SerializeField] float collectDuration = 0.25f;
-    [SerializeField] float collectArcMultiple = 2f;                 // arc peak = pickHeight × this
-    [SerializeField, Range(0f, 1f)] float collectEndScale = 0.68f;   // shrinks to ~half on the way in
+    [SerializeField] PickupFlyVisual flyVisual;   // drag the fly-visual prefab (Billboard root + sprite child)
 
     public bool CanPick { get; private set; }
     public Vector3 Position => transform.position;
     public event System.Action<Pickable> Picked;
 
-    Transform _target;
-    float _height;
-    Vector3 _startPos, _startScale;
-    float _t;
-    bool _collecting;
+    IPickupPayload _payload;
+
+    void Awake() => _payload = GetComponent<IPickupPayload>();
 
     void OnEnable()
     {
@@ -36,43 +35,32 @@ public class Pickable : MonoBehaviour
 
     public void SetPickable(bool value) => CanPick = value;
 
-    // Start hopping into the picker; finishes (event + destroy) on arrival. `target` is tracked live so it
-    // homes even if the picker moves; `height` lifts the goal off the ground (the picker's Y is 0).
-    public void CollectTo(Transform target, float height)
+    // Called by a Picker each frame it's in range. Delivers what fits, flies a visual for the taken part,
+    // and vanishes only if fully taken — otherwise the remainder stays on the ground for later.
+    public void CollectTo(IPickupReceiver receiver, Transform target, float height)
     {
-        if (!CanPick || _collecting) return;
-        CanPick = false;          // out of the pick pool right away
-        _collecting = true;
-        _target = target;
-        _height = height;
-        _startPos = transform.position;
-        _startScale = transform.localScale;
-        _t = 0f;
-    }
+        if (!CanPick) return;
 
-    void Update()
-    {
-        if (!_collecting) return;
+        bool fullyTaken = true;
+        if (_payload != null)
+        {
+            if (!_payload.CanDeliver(receiver)) return;   // no room → stay put
+            fullyTaken = _payload.Deliver(receiver);       // take what fits (credits the inventory now)
+        }
 
-        _t += Time.deltaTime / Mathf.Max(0.0001f, collectDuration);
-        float k = Mathf.Clamp01(_t);
-
-        // Live goal so it homes to a moving picker; a parabola on top makes it a jump, back to 0 on arrival.
-        Vector3 goal = _target != null ? _target.position + Vector3.up * _height : _startPos;
-        Vector3 pos = Vector3.Lerp(_startPos, goal, k);
-        pos.y += (_height * collectArcMultiple) * 4f * k * (1f - k);   // arc scales with the pick height
-        transform.position = pos;
-
-        transform.localScale = Vector3.Lerp(_startScale, _startScale * collectEndScale, k);
-
-        if (k >= 1f) Finish();
-    }
-
-    void Finish()
-    {
+        SpawnFlyVisual(target, height);   // juice for what was taken (partial or full)
         Picked?.Invoke(this);
-        // TODO(inventory): add the resource to the backpack here when that system exists.
-        // TODO(fx): spawn a few pickup particles at the picker here.
-        Destroy(gameObject);
+
+        if (!fullyTaken) return;          // backpack filled → the remainder stays on the ground
+
+        CanPick = false;
+        Destroy(gameObject);              // fully taken → the ground piece is gone; the visual carries on
+    }
+
+    void SpawnFlyVisual(Transform target, float height)
+    {
+        if (flyVisual == null) return;
+        var fly = Instantiate(flyVisual, transform.position, transform.rotation);
+        fly.Launch(target, height);
     }
 }

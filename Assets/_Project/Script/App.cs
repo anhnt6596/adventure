@@ -3,6 +3,7 @@ using VContainer;
 using VContainer.Unity;
 using Core;
 using Core.UI;
+using Core.Save;
 
 public class App : LifetimeScope
 {
@@ -19,6 +20,12 @@ public class App : LifetimeScope
             return;
         }
         _instance = this;
+
+        // On a lag spike Time.deltaTime is clamped to this, so a fast body can't jump across water/wall in
+        // one frame (tunneling) before collision can correct it. The game briefly slows instead of
+        // teleporting through. Keep it below (cellSize / fastest speed) so a step never skips a cell.
+        Time.maximumDeltaTime = 0.05f;
+
         DontDestroyOnLoad(gameObject);
         base.Awake();
     }
@@ -26,6 +33,7 @@ public class App : LifetimeScope
     protected override void Configure(IContainerBuilder builder)
     {
         builder.RegisterInstance(_configRegistry);
+        builder.RegisterInstance(new SaveService());   // default JSON serializer; instance dodges the optional-ctor-param resolve
 
         builder.Register<IEventBus, EventBus>(Lifetime.Singleton);
         builder.Register<IDependencyInjector, VContainerInjector>(Lifetime.Singleton);

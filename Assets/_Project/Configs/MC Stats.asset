@@ -18,3 +18,4 @@ MonoBehaviour:
   attackDuration: 0.4
   mass: 1
   pickupRadius: 0.3
+  backpackCapacity: 20

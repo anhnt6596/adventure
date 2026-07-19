@@ -25,6 +25,10 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
   `DamageableConfig`), kéo vào `Damageable` của từng prefab.
 - [ ] **Enemy.** = `Damageable` (máu + loot) **+** AI + di chuyển + tấn công. Hero/quái cận cảnh nên
   dùng **AnimatorController** (blend/attach), crowd thì cân nhắc AnimationInstancing.
+- [ ] **Rương (chest).** *Breakable, KHÔNG phải pickup.* Rơi ra nằm trên map, có `CollisionBody` (chiếm
+  chỗ), là `Damageable` — chém vỡ (`Died`) → `Dropable` rơi đồ khác. Không nhặt trực tiếp. → tái dùng
+  nguyên pattern cây (`Damageable` + `Dropable` + `DropOnDeath` + `CollisionBody`). Thêm: **save các rương
+  trên map** (vị trí + trạng thái) — cần cơ chế persist object trên map (chưa có). Làm sau.
 
 ## 🌤️ Environment (day/night + weather)
 
@@ -62,6 +66,12 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 - [ ] **Config gắn bằng code, phụ thuộc interface.** `Damageable`/`Dropable` đang `[SerializeField]` SO cụ
   thể (`DamageableConfig`) vì Unity không serialize interface — nên phụ thuộc nguyên SO. Sau gắn config bằng
   code (provider theo id) để chỉ phụ thuộc `IDamageableConfig`/`IDeathDropableConfig`. (Xem `// TEMP` ở 2 field.)
+- [ ] **Pool đồ spawn/destroy nhiều (LeanPool).** Log rơi + `PickupFlyVisual` churn (mỗi chặt/nhặt →
+  Instantiate/Destroy → GC spike). Đổi sang pool: (1) spawn `Dropable.Drop` + `Pickable.SpawnFlyVisual` →
+  `LeanPool.Spawn`; (2) tự-huỷ `Pickable` (nhặt hết) + `PickupFlyVisual` (tới nơi) → `LeanPool.Despawn`;
+  (3) **reset state khi spawn** (CanPick, velocity, `_t`, art pos, CollisionBody enabled — verify `OnEnable`/
+  `Launch` reset đủ, hoặc dùng callback `IPoolable`). Cân nhắc bọc sau `ISpawner` mỏng để không dính cứng
+  LeanPool, hoặc gọi thẳng (API static mỏng) — tuỳ.
 - [ ] **Dọn serialized-ref / wiring.** Đang làm từ đầu nên còn bừa; gọn dần khi ổn định.
 
 ---
