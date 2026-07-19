@@ -39,30 +39,30 @@ public class DayNightConfig : ScriptableObject
             (0.92f, Color.white),
             (1.00f, Color.white));
 
-        // Additive light on the Fog overlay = the glare (black = off): off most of the day, a warm
-        // midday glare (#9A9D53) that pushes the scene toward bloom, a faint warm glow at dusk.
+        // Additive light on the Fog overlay = the glare (black = off): off most of the day, a warm olive
+        // midday glare (picked) that pushes the scene toward bloom, a faint warm glow at dusk.
         // TODO(weather): the midday glare really belongs to a "sunny" weather (overcast noon wouldn't
         // glare) — move it into SunnyWeather at the seam later.
         fogColor = Grad(
-            (0.00f, Color.black),                       // night, off
-            (0.30f, Color.black),                       // ~07:00, off — starts rising after
-            (0.42f, new Color(0.675f, 0.682f, 0.447f)), // ~10:00, full sun (#ACAE72)
-            (0.58f, new Color(0.675f, 0.682f, 0.447f)), // ~14:00, full sun — strong 4h midday plateau
-            (0.72f, Color.black),                       // ~17:15, faded off
-            (0.80f, new Color(0.15f, 0.07f, 0.03f)),    // ~19:10, dusk warm glow
-            (1.00f, Color.black));                      // night, off
+            (0.00f, Color.black),                            // night, off
+            (0.30f, Color.black),                            // ~07:00, off — starts rising after
+            (0.42f, new Color(0.3358f, 0.3255f, 0.0602f)),   // ~10:00, full sun (picked olive)
+            (0.58f, new Color(0.3373f, 0.3238f, 0.0588f)),   // ~14:00, full sun — midday plateau
+            (0.72f, Color.black),                            // ~17:15, faded off
+            (0.80f, new Color(0.15f, 0.07f, 0.03f)),         // ~19:10, dusk warm glow
+            (1.00f, Color.black));                           // night, off
 
         // Brightness: near-0 at night (dark; point lights punch through), full 1 through a long day.
         intensity = Smooth(
-            new Keyframe(0.00f, 0.03f),   // midnight, dark
-            new Keyframe(0.22f, 0.03f),   // ~05:15, night
-            new Keyframe(0.28f, 0.50f),   // ~06:40, dawn rising
-            new Keyframe(0.34f, 1.00f),   // ~08:10, full day
-            new Keyframe(0.74f, 1.00f),   // ~17:45, still day
-            new Keyframe(0.80f, 0.55f),   // ~19:10, dusk
-            new Keyframe(0.86f, 0.15f),   // ~20:40, near night
-            new Keyframe(0.92f, 0.03f),   // ~22:00, night
-            new Keyframe(1.00f, 0.03f));  // midnight
+            new Keyframe(0.00f, 0.03f),    // midnight, dark
+            new Keyframe(0.125f, 0.03f),   // ~03:00, night
+            new Keyframe(0.167f, 0.55f),   // 04:00, dawn rising — day begins
+            new Keyframe(0.229f, 1.00f),   // ~05:30, full day
+            new Keyframe(0.74f, 1.00f),    // ~17:45, still day
+            new Keyframe(0.80f, 0.55f),    // ~19:10, dusk
+            new Keyframe(0.86f, 0.15f),    // ~20:40, near night
+            new Keyframe(0.92f, 0.03f),    // ~22:00, night
+            new Keyframe(1.00f, 0.03f));   // midnight
     }
 
     [ContextMenu("Fill Default Palette")]

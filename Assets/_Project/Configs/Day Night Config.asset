@@ -46,8 +46,8 @@ MonoBehaviour:
     serializedVersion: 2
     key0: {r: 0, g: 0, b: 0, a: 1}
     key1: {r: 0, g: 0, b: 0, a: 1}
-    key2: {r: 0.335849, g: 0.3254902, b: 0.06019931, a: 1}
-    key3: {r: 0.3372549, g: 0.3238003, b: 0.05882352, a: 1}
+    key2: {r: 0.3358, g: 0.3255, b: 0.0602, a: 1}
+    key3: {r: 0.3373, g: 0.3238, b: 0.0588, a: 1}
     key4: {r: 0, g: 0, b: 0, a: 1}
     key5: {r: 0.15, g: 0.07, b: 0.03, a: 1}
     key6: {r: 0, g: 0, b: 0, a: 1}
@@ -85,28 +85,28 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.22
+      time: 0.125
       value: 0.03
-      inSlope: 3.9166665
-      outSlope: 3.9166665
+      inSlope: 1.9290226
+      outSlope: 1.9290226
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.6533333
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.167
+      value: 0.55
+      inSlope: 9.8195095
+      outSlope: 9.8195095
       tangentMode: 0
       weightedMode: 0
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.28
-      value: 0.5
-      inSlope: 8.083333
-      outSlope: 8.083333
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 0.34
+      time: 0.229
       value: 1
-      inSlope: 4.1666665
-      outSlope: 4.1666665
+      inSlope: 3.629032
+      outSlope: 3.629032
       tangentMode: 0
       weightedMode: 0
       inWeight: 0.33333334

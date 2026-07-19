@@ -118,6 +118,7 @@ GameObject:
   m_Component:
   - component: {fileID: 752545886070451489}
   - component: {fileID: 7814986666246732847}
+  - component: {fileID: 3981162432466900665}
   m_Layer: 0
   m_Name: scaleNote
   m_TagString: Untagged
@@ -153,6 +154,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3617457aeb958f74aa38bb4c02e46579, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &3981162432466900665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6425603057950927440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c58afa7c51e4f6c48bb4e89f2c53dba7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Sprite3D::SpriteShadow
+  source: {fileID: 2546140312403820391}
+  material: {fileID: 0}
+  sortingLayer: 
+  orderOffset: -1
 --- !u!1 &9173140719518025123
 GameObject:
   m_ObjectHideFlags: 0

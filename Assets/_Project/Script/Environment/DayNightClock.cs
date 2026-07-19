@@ -12,9 +12,15 @@ public class DayNightClock : ITickable
     public int Day { get; private set; }
     public float Hour => Time01 * 24f;
 
+    public bool Paused { get; set; }   // freeze the time of day (dev/test; lighting + shadows hold still)
+
     public void Tick()
     {
+        if (Paused) return;
         Time01 += UnityEngine.Time.deltaTime / DayLengthSeconds;
         while (Time01 >= 1f) { Time01 -= 1f; Day++; }   // wrap into the next day
     }
+
+    // Jump straight to a time of day (0..1, wraps). For scrubbing while paused, or later a save/load.
+    public void SetTime01(float t) => Time01 = t - UnityEngine.Mathf.Floor(t);
 }
