@@ -54,15 +54,16 @@ public class DayNightConfig : ScriptableObject
 
         // Brightness: near-0 at night (dark; point lights punch through), full 1 through a long day.
         intensity = Smooth(
-            new Keyframe(0.00f, 0.03f),    // midnight, dark
-            new Keyframe(0.125f, 0.03f),   // ~03:00, night
-            new Keyframe(0.167f, 0.55f),   // 04:00, dawn rising — day begins
-            new Keyframe(0.229f, 1.00f),   // ~05:30, full day
-            new Keyframe(0.74f, 1.00f),    // ~17:45, still day
-            new Keyframe(0.80f, 0.55f),    // ~19:10, dusk
-            new Keyframe(0.86f, 0.15f),    // ~20:40, near night
-            new Keyframe(0.92f, 0.03f),    // ~22:00, night
-            new Keyframe(1.00f, 0.03f));   // midnight
+            new Keyframe(0.00f,  0.03f),   // midnight, dark
+            new Keyframe(0.146f, 0.03f),   // ~03:30, night
+            new Keyframe(0.167f, 0.18f),   // 04:00, twilight begins — not pitch black, blending in
+            new Keyframe(0.25f,  0.60f),   // 06:00, daytime begins
+            new Keyframe(0.333f, 1.00f),   // 08:00, full day
+            new Keyframe(0.667f, 1.00f),   // 16:00, still full day
+            new Keyframe(0.75f,  0.60f),   // 18:00, daytime ends
+            new Keyframe(0.833f, 0.18f),   // 20:00, twilight fades — still not pitch black
+            new Keyframe(0.854f, 0.03f),   // ~20:30, into night
+            new Keyframe(1.00f,  0.03f));  // midnight
     }
 
     [ContextMenu("Fill Default Palette")]

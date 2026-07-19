@@ -256,7 +256,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerrainRenderer
   mode: 1
   material: {fileID: 2100000, guid: c7c095af2af64314996285b327ce8f4b, type: 2}
-  sortingOrder: -1
+  sortingOrder: -2
   layerHeight: 0.002
 --- !u!1 &2595038459439399900
 GameObject:

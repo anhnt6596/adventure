@@ -18,16 +18,14 @@ public class SpriteShadow : MonoBehaviour
 {
     [SerializeField] SpriteRenderer source;    // the art sprite to cast (auto-found in children if null)
     [SerializeField] Material material;         // GroundShadow material (auto-made from the shader if null)
-    [SerializeField] int orderOffset = -1;      // sorting order vs the source, so the shadow sits under it
+    [SerializeField] int orderOffset = -1;      // sorting order vs the source (non-merge mode only)
     [SerializeField] Vector2 groundOffset;      // XZ nudge if the trunk isn't exactly over the root
     [SerializeField] float yawOffset;           // fine-tune the sun-facing yaw (degrees)
 
-    static Material _autoMaterial;
-    static readonly int SunDirId = Shader.PropertyToID("_SunGroundDir");   // set globally by ShadowSun
+    static Material _autoColor, _autoStencil;
 
     SpriteRenderer _shadow;
     Sprite _lastSprite;
-    Camera _cam;
 
     void Awake()
     {
@@ -39,10 +37,15 @@ public class SpriteShadow : MonoBehaviour
             return;
         }
 
-        var mat = material != null ? material : AutoMaterial();
+        // Merge mode is on whenever a ShadowComposite is in the scene: shadows write stencil (invisible) and
+        // it fills them once, so overlaps don't stack. Otherwise each shadow draws its own colour. The right
+        // material is auto-picked unless you assigned one.
+        var comp = ShadowComposite.Instance;
+        bool merge = comp != null;
+        var mat = material != null ? material : (merge ? AutoStencil() : AutoColor());
         if (mat == null)
         {
-            Debug.LogError($"[{nameof(SpriteShadow)}] shader 'Sprite/GroundShadow' not found.", this);
+            Debug.LogError($"[{nameof(SpriteShadow)}] ground shadow shader not found.", this);
             enabled = false;
             return;
         }
@@ -67,47 +70,65 @@ public class SpriteShadow : MonoBehaviour
         _shadow = go.AddComponent<SpriteRenderer>();
         _shadow.sharedMaterial = mat;
         _shadow.sprite = source.sprite;
-        _shadow.sortingLayerID = source.sortingLayerID;
-        _shadow.sortingOrder = source.sortingOrder + orderOffset;
+        if (merge)
+        {
+            // Sit one below the fill so the stencil is written before the fill reads it.
+            if (!string.IsNullOrEmpty(comp.SortingLayer)) _shadow.sortingLayerName = comp.SortingLayer;
+            else _shadow.sortingLayerID = source.sortingLayerID;
+            _shadow.sortingOrder = comp.SortingOrder - 1;
+        }
+        else
+        {
+            _shadow.sortingLayerID = source.sortingLayerID;
+            _shadow.sortingOrder = source.sortingOrder + orderOffset;
+        }
         _lastSprite = source.sprite;
     }
 
-    void LateUpdate()
+    // Driven once per frame by ShadowManager (no per-object LateUpdate). `orient` is true only when the
+    // sun actually moved, so the yaw write is skipped on still frames — most of the time, for a static tree.
+    public void Tick(float sunYaw, bool orient, Vector4 sun, Vector3 camRight)
     {
         if (_shadow == null) return;
 
+        // Sprite for animation (ref compare, ~free when static).
         if (source.sprite != _lastSprite) { _shadow.sprite = source.sprite; _lastSprite = source.sprite; }
 
-        // Upright, yaw to the sun (width perpendicular to it). Parent (root) never rotates, so this is
-        // camera-independent and X/Z stay 0.
-        Vector4 d = Shader.GetGlobalVector(SunDirId);   // _SunGroundDir.xy = world (X,Z) the shadow points
-        float sunYaw = Mathf.Atan2(d.x, d.y) * Mathf.Rad2Deg;
-        _shadow.transform.localRotation = Quaternion.Euler(0f, sunYaw + yawOffset, 0f);
+        // Upright, yaw to the sun (width perpendicular to it) — same for every shadow, so only on change.
+        if (orient) _shadow.transform.localRotation = Quaternion.Euler(0f, sunYaw + yawOffset, 0f);
 
         // Flip = sprite's own flipX  ^  the caster's facing (scaleNote.scale.x, which the shadow doesn't
         // inherit)  ^  the billboard-shadow mirror: a camera-facing cutout's shadow flips left/right when
-        // the camera crosses to the far side of the sun. Compare camera-right against the shadow's right.
-        if (_cam == null) _cam = Camera.main;
-        bool camMirror = false;
-        if (_cam != null)
-        {
-            Vector3 cr = _cam.transform.right;          // shadow right (world) = (sunZ, -sunX) = (d.y, -d.x)
-            camMirror = cr.x * d.y - cr.z * d.x < 0f;
-        }
-        _shadow.flipX = source.flipX ^ (transform.localScale.x < 0f) ^ camMirror;
+        // the camera crosses to the far side of the sun. shadow-right (world) = (sunZ, -sunX) = (sun.y, -sun.x).
+        bool camMirror = camRight.x * sun.y - camRight.z * sun.x < 0f;
+        bool flip = source.flipX ^ (transform.localScale.x < 0f) ^ camMirror;
+        if (_shadow.flipX != flip) _shadow.flipX = flip;
     }
 
-    // Toggle with the caster so pooled objects (disabled in the pool) don't cast.
-    void OnEnable()  { if (_shadow != null) _shadow.enabled = true; }
-    void OnDisable() { if (_shadow != null) _shadow.enabled = false; }
-
-    static Material AutoMaterial()
+    // Register with the manager and toggle with the caster (pooled objects disabled in the pool don't cast).
+    void OnEnable()
     {
-        if (_autoMaterial == null)
+        if (_shadow == null) return;
+        _shadow.enabled = true;
+        ShadowManager.Register(this);
+    }
+
+    void OnDisable()
+    {
+        if (_shadow != null) _shadow.enabled = false;
+        ShadowManager.Unregister(this);
+    }
+
+    static Material AutoColor()   => Auto("Sprite/GroundShadow",        ref _autoColor);
+    static Material AutoStencil() => Auto("Sprite/GroundShadowStencil", ref _autoStencil);
+
+    static Material Auto(string shaderName, ref Material cache)
+    {
+        if (cache == null)
         {
-            var sh = Shader.Find("Sprite/GroundShadow");
-            if (sh != null) _autoMaterial = new Material(sh) { name = "GroundShadow (auto)" };
+            var sh = Shader.Find(shaderName);
+            if (sh != null) cache = new Material(sh) { name = shaderName + " (auto)" };
         }
-        return _autoMaterial;
+        return cache;
     }
 }

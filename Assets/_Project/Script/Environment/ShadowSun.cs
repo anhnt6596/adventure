@@ -8,6 +8,7 @@ using VContainer;
 //
 // Wiring: drop on a scene object and add it to GameScope's Auto Inject list (needs DayNightClock).
 // Not injected? It still runs off `fixedHour` so you can test the shader before wiring DI.
+[DefaultExecutionOrder(-50)]   // push the sun globals before SpriteShadow reads them (frame-1 correctness)
 [DisallowMultipleComponent]
 public class ShadowSun : MonoBehaviour
 {
