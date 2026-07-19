@@ -62,19 +62,106 @@ public class CollisionWorld
         float invSum = a.InvMass + b.InvMass;
         if (invSum <= 0f) return;
 
-        Vector3 delta = b.Position - a.Position;
-        delta.y = 0f;
+        if (!Contact(a, b, out Vector3 normal, out float depth)) return;
 
-        float rSum = a.Radius + b.Radius;
-        float dist2 = delta.x * delta.x + delta.z * delta.z;
-        if (dist2 >= rSum * rSum || dist2 < 1e-8f) return;
-
-        float dist = Mathf.Sqrt(dist2);
-        Vector3 normal = delta / dist;
-        float depth = rSum - dist;
-
+        // normal points a -> b; separate along it by depth, split by inverse mass.
         a.Position -= normal * (depth * a.InvMass / invSum);
         b.Position += normal * (depth * b.InvMass / invSum);
+    }
+
+    // Contact between two bodies as (normal a->b, depth > 0). Dispatches on shape. Rects are AABB
+    // (axis-aligned), so all three pairings are closed-form — no iteration.
+    static bool Contact(ICollisionBody a, ICollisionBody b, out Vector3 normal, out float depth)
+    {
+        bool aRect = a.Shape == CollisionShape.Rect;
+        bool bRect = b.Shape == CollisionShape.Rect;
+
+        if (!aRect && !bRect)
+            return CircleCircle(a.Position, a.Radius, b.Position, b.Radius, out normal, out depth);
+
+        if (aRect && bRect)
+            return RectRect(a.Position, a.HalfExtents, b.Position, b.HalfExtents, out normal, out depth);
+
+        if (aRect)   // a = rect, b = circle: solve circle(b)->rect(a), then flip to a->b
+        {
+            bool hit = CircleRect(b.Position, b.Radius, a.Position, a.HalfExtents, out normal, out depth);
+            normal = -normal;
+            return hit;
+        }
+
+        // a = circle, b = rect: circle(a)->rect(b) is already a->b
+        return CircleRect(a.Position, a.Radius, b.Position, b.HalfExtents, out normal, out depth);
+    }
+
+    static bool CircleCircle(Vector3 pa, float ra, Vector3 pb, float rb, out Vector3 normal, out float depth)
+    {
+        normal = default; depth = 0f;
+        float dx = pb.x - pa.x, dz = pb.z - pa.z;
+        float rSum = ra + rb;
+        float d2 = dx * dx + dz * dz;
+        if (d2 >= rSum * rSum || d2 < 1e-8f) return false;
+
+        float d = Mathf.Sqrt(d2);
+        normal = new Vector3(dx / d, 0f, dz / d);   // a -> b
+        depth = rSum - d;
+        return true;
+    }
+
+    // normal points from the CIRCLE toward the RECT.
+    static bool CircleRect(Vector3 pc, float r, Vector3 pr, Vector2 he, out Vector3 normal, out float depth)
+    {
+        normal = default; depth = 0f;
+        float dx = pc.x - pr.x, dz = pc.z - pr.z;      // rect centre -> circle centre
+        float cx = Mathf.Clamp(dx, -he.x, he.x);
+        float cz = Mathf.Clamp(dz, -he.y, he.y);
+        float ox = dx - cx, oz = dz - cz;              // closest point on rect -> circle centre
+        float d2 = ox * ox + oz * oz;
+
+        if (d2 > r * r) return false;
+
+        if (d2 > 1e-8f)   // circle centre outside the rect
+        {
+            float d = Mathf.Sqrt(d2);
+            normal = new Vector3(-ox / d, 0f, -oz / d);   // circle -> rect
+            depth = r - d;
+            return true;
+        }
+
+        // circle centre inside the rect → eject out the nearest face
+        float overlapX = he.x - Mathf.Abs(dx);
+        float overlapZ = he.y - Mathf.Abs(dz);
+        if (overlapX < overlapZ)
+        {
+            normal = new Vector3(dx < 0f ? 1f : -1f, 0f, 0f);   // circle -> rect
+            depth = r + overlapX;
+        }
+        else
+        {
+            normal = new Vector3(0f, 0f, dz < 0f ? 1f : -1f);
+            depth = r + overlapZ;
+        }
+        return true;
+    }
+
+    static bool RectRect(Vector3 pa, Vector2 ha, Vector3 pb, Vector2 hb, out Vector3 normal, out float depth)
+    {
+        normal = default; depth = 0f;
+        float dx = pb.x - pa.x, dz = pb.z - pa.z;      // a -> b
+        float ox = (ha.x + hb.x) - Mathf.Abs(dx);
+        float oz = (ha.y + hb.y) - Mathf.Abs(dz);
+        if (ox <= 0f || oz <= 0f) return false;
+
+        if (ox < oz)   // least penetration on x
+        {
+            normal = new Vector3(dx < 0f ? -1f : 1f, 0f, 0f);   // a -> b along x
+            depth = ox;
+        }
+        else
+        {
+            normal = new Vector3(0f, 0f, dz < 0f ? -1f : 1f);
+            depth = oz;
+        }
+        return true;
     }
 
     void ResolveTerrain()

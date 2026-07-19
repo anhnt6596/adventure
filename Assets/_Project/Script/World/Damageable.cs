@@ -1,26 +1,31 @@
 using UnityEngine;
 using VContainer;
 
-// Anything with HP that can be hit and, when it dies, provides something: a tree drops wood, a rock
-// drops stone, a monster drops gold. Stats + drops come from a shared DamageableConfig, so every one
-// of a kind is tuned from one asset. Enemies later reuse this and add movement/AI on top.
+// Anything with HP that can be hit and dies. HP/team/hit-radius come from an IDamageableConfig. What it
+// PROVIDES on death is a separate concern: Damageable just fires Died, and a DeathDropable (or anything
+// else — sound, XP, break FX) listens. Lives in the combat world so attacks find it.
 public class Damageable : MonoBehaviour, IDamageable
 {
-    [SerializeField] DamageableConfig config;   // drag the kind's SO (OakConfig, RockConfig, SlimeConfig, ...)
+    // TEMP: serialized concrete SO so it can be dragged in the editor (Unity can't serialize an
+    // interface). Later assign by code (config provider keyed by id) and depend only on IDamageableConfig.
+    [SerializeField] DamageableConfig config;
+
+    IDamageableConfig Cfg => config;
 
     float _hp;
     CombatWorld _combat;
 
     public Vector3 Position => transform.position;
-    public float HitRadius => config != null ? config.hitRadius : 0.5f;
+    public float HitRadius => config != null ? Cfg.HitRadius : 0.5f;
     public bool IsAlive => _hp > 0f;
-    public int Team => config != null ? config.team : 2;
+    public int Team => config != null ? Cfg.Team : 2;
 
-    public event System.Action Damaged;   // raised on a non-fatal hit; views (HitFlash) listen
+    public event System.Action Damaged;        // non-fatal hit — views like HitFlash listen
+    public event System.Action<object> Died;   // killed — the arg is the damage source (force origin for drops)
 
     void Awake()
     {
-        if (config != null) _hp = config.maxHp;
+        if (config != null) _hp = Cfg.MaxHp;
     }
 
     // Injected when its map is instantiated through the container (MapService does this).
@@ -34,7 +39,7 @@ public class Damageable : MonoBehaviour, IDamageable
     void Start()
     {
         if (config == null)
-            Debug.LogError($"[{nameof(Damageable)}] no DamageableConfig assigned — drag the kind's SO; it has no HP and drops nothing.", this);
+            Debug.LogError($"[{nameof(Damageable)}] no DamageableConfig assigned — drag the kind's SO; it has no HP.", this);
         if (_combat == null)
             Debug.LogError($"[{nameof(Damageable)}] not injected — its map must be instantiated through the DI container, or add it to GameScope's Auto Inject list.", this);
     }
@@ -45,36 +50,22 @@ public class Damageable : MonoBehaviour, IDamageable
     {
         if (!IsAlive) return;
         _hp -= amount;
-        if (_hp <= 0f) { Die(); return; }
+        if (_hp <= 0f) { Die(source); return; }
         Damaged?.Invoke();
     }
 
-    void Die()
+    void Die(object source)
     {
         _combat?.Remove(this);
-        SpawnDrops();
+        Died?.Invoke(source);          // DeathDropable (and anything else) reacts before we vanish
         gameObject.SetActive(false);
-    }
-
-    // Spawns what this provides on death. TODO(gỗ-văng): launch each piece away from the attack's
-    // force origin instead of dropping it in place.
-    void SpawnDrops()
-    {
-        if (config == null || config.drops == null) return;
-        foreach (var drop in config.drops)
-        {
-            if (drop.prefab == null) continue;
-            int count = Random.Range(drop.min, drop.max + 1);
-            for (int i = 0; i < count; i++)
-                Instantiate(drop.prefab, transform.position, Quaternion.identity);
-        }
     }
 
     // The hit circle sits at transform.position — this must line up with where the thing is drawn,
     // or an attack that visually connects will miss.
     void OnDrawGizmos()
     {
-        float r = config != null ? config.hitRadius : 0.5f;
+        float r = config != null ? Cfg.HitRadius : 0.5f;
         Gizmos.color = new Color(0.5f, 1f, 0.4f, 0.7f);
         const int seg = 24;
         Vector3 c = transform.position;

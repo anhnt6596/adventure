@@ -14,3 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MainCharStatsConfig
   moveSpeed: 2
   attackSpeed: 1
+  attackPower: 5
+  attackDuration: 0.4
+  mass: 1
+  pickupRadius: 0.3

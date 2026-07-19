@@ -5,4 +5,5 @@ public interface ICharacterStats
     Stat AttackPower { get; }
     float AttackDuration { get; }
     float Mass { get; }
+    float PickupRadius { get; }
 }

@@ -7,6 +7,7 @@ public class MainCharStats : ICharacterStats
     public Stat AttackPower { get; }
     public float AttackDuration { get; }
     public float Mass { get; }
+    public float PickupRadius { get; }
 
     [Inject]
     public MainCharStats(MainCharStatsConfig config)
@@ -16,5 +17,6 @@ public class MainCharStats : ICharacterStats
         AttackPower = new Stat(config.attackPower);
         AttackDuration = config.attackDuration;
         Mass = config.mass;
+        PickupRadius = config.pickupRadius;
     }
 }

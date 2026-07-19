@@ -8,4 +8,5 @@ public class MainCharStatsConfig : ScriptableObject
     public float attackPower = 5f;
     public float attackDuration = 0.4f;
     public float mass = 1f;             // how hard to shove aside in collisions (not physics)
+    public float pickupRadius = 1.5f;   // how close a pickable must be for the character to grab it
 }

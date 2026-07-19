@@ -234,7 +234,7 @@ PrefabInstance:
     - target: {fileID: 7422796970273104650, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_TargetTexture
       value: 
-      objectReference: {fileID: 1006550719}
+      objectReference: {fileID: 270571899}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -248,6 +248,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3805254027030119076, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
   m_PrefabInstance: {fileID: 143667938}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &270571899
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LightMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 910
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 90
+  m_ColorFormat: 48
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &616452065
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -332,6 +369,9 @@ PrefabInstance:
       addedObject: {fileID: 616452077}
     - targetCorrespondingSourceObject: {fileID: 5431757174141155505, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
       insertIndex: -1
+      addedObject: {fileID: 616452081}
+    - targetCorrespondingSourceObject: {fileID: 5431757174141155505, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
+      insertIndex: -1
       addedObject: {fileID: 616452078}
   m_SourcePrefab: {fileID: 100100000, guid: b0c9d053e217a9f478140c267e917eb1, type: 3}
 --- !u!4 &616452066 stripped
@@ -356,7 +396,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7827bdbcbaf24e943b9e07bb4e1ea47b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CollisionBody
+  shape: 0
   radius: 0.15
+  size: {x: 1, y: 1}
   mass: 1
   system: {fileID: 693011998}
 --- !u!114 &616452075 stripped
@@ -397,6 +439,19 @@ MonoBehaviour:
   radius: 1
   team: 0
   animatorSource: {fileID: 780344539}
+--- !u!114 &616452081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 616452067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e681c6d85851ac744b69b525c2a5a485, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Picker
+  pickHeight: 0.3
 --- !u!1 &642295460
 GameObject:
   m_ObjectHideFlags: 0
@@ -512,43 +567,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c14445daa91446da8f49c2a0eb6db05, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!84 &1006550719
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: LightMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 910
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 90
-  m_ColorFormat: 48
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &1534016988 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3781071600342696188, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
