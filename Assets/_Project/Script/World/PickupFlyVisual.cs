@@ -1,8 +1,10 @@
+using Lean.Pool;
 using UnityEngine;
 
-// A throwaway visual: spawned where a pickup was taken, it hops into the picker, shrinks, and destroys.
+// A throwaway visual: spawned where a pickup was taken, it hops into the picker, shrinks, and despawns.
 // Pure effect — the inventory is already credited, so this never touches logic. Put it on the ROOT of
 // your fly prefab (root = Billboard, sprite is a child); it moves the root, the billboard keeps facing.
+// Pooled via LeanPool, so it must restore its own scale on Launch (the last flight left it shrunk).
 [DisallowMultipleComponent]
 public class PickupFlyVisual : MonoBehaviour
 {
@@ -12,16 +14,19 @@ public class PickupFlyVisual : MonoBehaviour
 
     Transform _target;
     float _height;
-    Vector3 _startPos, _startScale;
+    Vector3 _startPos, _startScale, _restScale;
     float _t;
     bool _launched;
 
+    void Awake() => _restScale = transform.localScale;   // the true, un-shrunk scale; captured once
+
     public void Launch(Transform target, float height)
     {
+        transform.localScale = _restScale;   // pooled reuse: undo the previous flight's shrink first
         _target = target;
         _height = height;
         _startPos = transform.position;
-        _startScale = transform.localScale;
+        _startScale = _restScale;
         _t = 0f;
         _launched = true;
     }
@@ -40,6 +45,6 @@ public class PickupFlyVisual : MonoBehaviour
         transform.position = pos;
         transform.localScale = Vector3.Lerp(_startScale, _startScale * endScale, k);
 
-        if (k >= 1f) Destroy(gameObject);
+        if (k >= 1f) LeanPool.Despawn(gameObject);
     }
 }

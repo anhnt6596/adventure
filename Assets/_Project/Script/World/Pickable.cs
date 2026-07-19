@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Lean.Pool;
 using UnityEngine;
 
 // A thing a Picker can grab when in range. Registers itself so pickers find it without scanning. While a
@@ -54,13 +55,13 @@ public class Pickable : MonoBehaviour
         if (!fullyTaken) return;          // backpack filled → the remainder stays on the ground
 
         CanPick = false;
-        Destroy(gameObject);              // fully taken → the ground piece is gone; the visual carries on
+        LeanPool.Despawn(gameObject);     // fully taken → recycle the piece (falls back to Destroy if unpooled)
     }
 
     void SpawnFlyVisual(Transform target, float height)
     {
         if (flyVisual == null) return;
-        var fly = Instantiate(flyVisual, transform.position, transform.rotation);
+        var fly = LeanPool.Spawn(flyVisual, transform.position, transform.rotation);
         fly.Launch(target, height);
     }
 }

@@ -66,12 +66,14 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 - [ ] **Config gắn bằng code, phụ thuộc interface.** `Damageable`/`Dropable` đang `[SerializeField]` SO cụ
   thể (`DamageableConfig`) vì Unity không serialize interface — nên phụ thuộc nguyên SO. Sau gắn config bằng
   code (provider theo id) để chỉ phụ thuộc `IDamageableConfig`/`IDeathDropableConfig`. (Xem `// TEMP` ở 2 field.)
-- [ ] **Pool đồ spawn/destroy nhiều (LeanPool).** Log rơi + `PickupFlyVisual` churn (mỗi chặt/nhặt →
-  Instantiate/Destroy → GC spike). Đổi sang pool: (1) spawn `Dropable.Drop` + `Pickable.SpawnFlyVisual` →
-  `LeanPool.Spawn`; (2) tự-huỷ `Pickable` (nhặt hết) + `PickupFlyVisual` (tới nơi) → `LeanPool.Despawn`;
-  (3) **reset state khi spawn** (CanPick, velocity, `_t`, art pos, CollisionBody enabled — verify `OnEnable`/
-  `Launch` reset đủ, hoặc dùng callback `IPoolable`). Cân nhắc bọc sau `ISpawner` mỏng để không dính cứng
-  LeanPool, hoặc gọi thẳng (API static mỏng) — tuỳ.
+- [x] **Pool đồ spawn/destroy nhiều (LeanPool).** ✅ Plugin copy vào `Assets/Plugins/CW` (LeanPool +
+  LeanCommon + CW.Common, chỉ `Required`, bỏ Examples/Extras; trim ref HDRP khỏi `CW.Common.asmdef` vì
+  project URP). Gọi **thẳng** `LeanPool.Spawn/Despawn` (đã là API static mỏng, không bọc `ISpawner` — rule
+  of two). Sites: `Dropable.Drop` + `Pickable.SpawnFlyVisual` → `Spawn`; `Pickable` (nhặt hết) +
+  `PickupFlyVisual` (tới nơi) → `Despawn`. Reset khi tái dùng: `Pickable.OnEnable` (CanPick) +
+  `FlyingPickup.Launch` (vel/height/body) sẵn đủ; **`PickupFlyVisual.Launch` phải khôi phục scale** (bay
+  xong bị co lại → cache `_restScale` ở Awake). Cây KHÔNG pool (đặt tay, churn thấp). Pool tự tạo theo
+  prefab lần Spawn đầu — muốn **prewarm** thì gắn `LeanGameObjectPool` + set Preload, tuỳ sau.
 - [ ] **Dọn serialized-ref / wiring.** Đang làm từ đầu nên còn bừa; gọn dần khi ổn định.
 
 ---

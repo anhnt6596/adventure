@@ -1,3 +1,4 @@
+using Lean.Pool;
 using UnityEngine;
 using VContainer;
 
@@ -39,7 +40,7 @@ public class Dropable : MonoBehaviour
             int count = Random.Range(drop.min, drop.max + 1);
             for (int i = 0; i < count; i++)
             {
-                var obj = Instantiate(drop.prefab, transform.position, Quaternion.identity);
+                var obj = LeanPool.Spawn(drop.prefab, transform.position, Quaternion.identity);
                 if (obj.TryGetComponent<FlyingPickup>(out var fly))
                     fly.Launch(flingDir, _collision);
             }
