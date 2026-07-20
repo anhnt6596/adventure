@@ -83,6 +83,57 @@ camera, UI and services all persist. Only the map contents are destroyed and reb
 - The current code still stores terrain ids and layer-level walkability; this section describes the
   migration target. See `Docs/TODO.md` for the implementation boundary.
 
+#### XZ is the simulation; depth is presentation
+
+- Position, collision, combat overlap, AI, pathfinding and interaction remain entirely on **XZ**.
+  Render Y may shape pits, cliffs, bevels, water and visual projectile arcs, but it never creates a
+  second gameplay floor.
+- The depth grid is the source of terrain shape and the default navigation mask. Render mesh and
+  mesh colliders must not become the authority for movement.
+- Knockback, loot landing and similar placement must resolve to final walkable XZ. Screen picking
+  resolves onto the gameplay plane/navigation surface rather than accepting an accidental hit on a
+  decorative cliff mesh.
+- Two independently playable surfaces at the same XZ (for example a swimmer below a bridge) remain
+  out of scope. That would require a surface/layer identity, not merely visual Y.
+
+#### Final walkability = terrain + added surfaces
+
+`height == 0` is only the **base** walkability. Objects may add walkable space without changing the
+depth map:
+
+```text
+IsWalkable(XZ) = TerrainDepthIsZero(XZ) || WalkableSurfaceContains(XZ)
+```
+
+- Bridges, docks, placed floors and unlocked shortcuts are objects with a `WalkableSurface`
+  footprint. Adding/removing one updates navigation only around its footprint and entrances; it does
+  **not** change depth, water, cliffs or rebuild the terrain mesh.
+- A cell counter is safer than a bool for coarse pathfinding because overlapping surfaces can be
+  removed independently. Narrow or diagonal surfaces still need an exact polygon/shape for movement;
+  the coarse cells only tell pathfinding that a connection exists.
+- A bridge should expose deliberate entrances at its ends and block stepping over its sides. Its
+  visual, persistence and destructible state belong to the bridge object, while the riverbed remains
+  unchanged below it.
+
+#### Boat — deferred, cheap vehicle mode
+
+A boat does **not** add a walkable deck and the character never walks around on it. Boarding changes
+the controlled movement body:
+
+```text
+OnGround -> Boarding -> DrivingBoat -> Landing -> OnGround
+```
+
+- On boarding, a short jump is visual presentation; control/camera move to `BoatMotor`, and the
+  character visual rides with the boat. The boat can move on low/water cells and treats normal ground
+  as shore.
+- Driving into/holding toward a valid shore finds a free `height == 0` landing point, plays the jump
+  ashore, then returns control to the character motor. The exact input feel is deferred.
+- Bridges may explicitly `BlocksBoat`; this avoids introducing simultaneous over/under-bridge
+  gameplay into the XZ-only simulation.
+- This feature does not mutate navigation or rebuild terrain. It is deliberately lower priority than
+  depth data, painter, cliff/bevel topology, chunk baking and walkability composition.
+
 ## Menu & characters
 
 The start screen is a **menu laid over the live game** — the scene runs behind it as the
