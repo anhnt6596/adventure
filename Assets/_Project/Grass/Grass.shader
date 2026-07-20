@@ -17,6 +17,8 @@ Shader "Grass/Billboard"
         _WindScale ("Wind Scale", Float) = 0.08
         _WindSpeed ("Wind Speed", Float) = 0.4
         _WindBend ("Wind Bend (deg)", Float) = 22
+
+        _PushStrength ("Interactor Push", Float) = 0.6
     }
 
     SubShader
@@ -51,7 +53,11 @@ Shader "Grass/Billboard"
 
             float _Cutoff;
             float4 _Tint, _ColorDark, _ColorLight;
-            float _ColorNoiseScale, _WindScale, _WindSpeed, _WindBend;
+            float _ColorNoiseScale, _WindScale, _WindSpeed, _WindBend, _PushStrength;
+
+            // xyz = world position, w = radius. Set globally by GrassInteractorManager.
+            float4 _GrassInteractors[16];
+            float _GrassInteractorCount;
 
             // cheap value noise
             float Hash(float2 p) { return frac(sin(dot(p, float2(127.1, 311.7))) * 43758.5453); }
@@ -84,6 +90,22 @@ Shader "Grass/Billboard"
                 float3 right  = normalize(cross(float3(0, 1, 0), camFwd));
                 float3 up     = cross(camFwd, right);
                 float3 posWS  = rootWS + right * (bent.x * scale.x) + up * (bent.y * scale.y);
+
+                // Interactors (player, enemies) push the grass away, more toward the top.
+                float3 push = 0;
+                int count = (int)_GrassInteractorCount;
+                for (int k = 0; k < count; k++)
+                {
+                    float2 d = rootWS.xz - _GrassInteractors[k].xz;
+                    float r = _GrassInteractors[k].w;
+                    float dist = length(d);
+                    if (dist < r && dist > 1e-4)
+                    {
+                        float t = 1.0 - dist / r;
+                        push.xz += (d / dist) * (t * t);
+                    }
+                }
+                posWS += push * (_PushStrength * IN.positionOS.y);
 
                 OUT.positionHCS = TransformWorldToHClip(posWS);
                 OUT.uv = IN.uv;
