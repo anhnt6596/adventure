@@ -59,10 +59,11 @@ public class ShadowSun : MonoBehaviour
         float alpha = 0f;
         if (isDay)
         {
-            // Length changes at a constant rate and reaches its noon minimum smoothly. The old
-            // sin(day)-with-a-floor stalled for a third of the day around noon (only rotation
-            // showed) and changed fastest at the ends - so the resize looked uneven and paused.
-            float noonT = 1f - Mathf.Abs(day - 0.5f) * 2f;                     // 0 at dawn/dusk, 1 at noon
+            // Cosine curve, not a triangle: the minimum at noon is a rounded bottom, so length
+            // eases in and out of the stub instead of snapping there and back. The old plateau came
+            // from the max() floor, not the curve - lerping to noonScale keeps the smooth minimum
+            // without ever pinning the length flat.
+            float noonT = Mathf.Sin(Mathf.Clamp01(day) * Mathf.PI);            // 0 at dawn/dusk, 1 at noon
             float length = maxLength * Mathf.Lerp(1f, noonScale, noonT);
             shear = dir * length;
 
