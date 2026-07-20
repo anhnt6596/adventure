@@ -116,6 +116,8 @@ Material:
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
+    - _ToonBands: 4
+    - _ToonBlend: 0.69
     - _WindBend: 22
     - _WindScale: 2
     - _WindSpeed: 0.5
@@ -123,13 +125,14 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 0.70507556, g: 0.82641506, b: 0.4225631, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _ColorDark: {r: 0.75, g: 0.8, b: 0.54999995, a: 1}
     - _ColorLight: {r: 1, g: 1, b: 0.85, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _Tint: {r: 1, g: 1, b: 1, a: 1}
+    - _TipColor: {r: 0.59375, g: 1, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &2173429608440646382

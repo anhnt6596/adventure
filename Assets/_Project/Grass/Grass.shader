@@ -15,6 +15,12 @@ Shader "Grass/Billboard"
         _ColorLight ("Patch Light", Color) = (1,1,0.85,1)
         _BladeVariation ("Per-Blade Variation", Range(0,1)) = 0.2
 
+        [Header(Toon)]
+        _ToonBlend ("Toon Blend", Range(0,1)) = 0                 // 0 = texture colour, 1 = flat toon
+        _BaseColor ("Toon Base (root)", Color) = (0.35,0.55,0.2,1)
+        _TipColor ("Toon Tip", Color) = (0.7,0.9,0.4,1)
+        _ToonBands ("Toon Bands (0 = smooth)", Range(0,6)) = 3
+
         _WindScale ("Wind Scale", Float) = 0.08
         _WindSpeed ("Wind Speed", Float) = 0.4
         _WindBend ("Wind Bend (deg)", Float) = 22
@@ -54,8 +60,9 @@ Shader "Grass/Billboard"
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 
             float _Cutoff;
-            float4 _Tint, _ColorDark, _ColorLight;
+            float4 _Tint, _ColorDark, _ColorLight, _BaseColor, _TipColor;
             float _ColorNoiseScale, _WindScale, _WindSpeed, _WindBend, _PushStrength, _BladeVariation, _BendShade;
+            float _ToonBlend, _ToonBands;
 
             // xyz = world position, w = radius. Set globally by GrassInteractorManager.
             float4 _GrassInteractors[16];
@@ -125,7 +132,15 @@ Shader "Grass/Billboard"
             {
                 half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
                 clip(tex.a - _Cutoff);
-                return half4(tex.rgb * IN.tint, 1);
+
+                // Flat toon: colour from a base->tip gradient (banded for cel steps), shape from the
+                // texture alpha. Blended with the texture's own colour so it can be a hybrid.
+                float h = IN.uv.y;
+                if (_ToonBands >= 2) h = floor(h * _ToonBands) / (_ToonBands - 1);
+                float3 toon = lerp(_BaseColor.rgb, _TipColor.rgb, saturate(h));
+                float3 base = lerp(tex.rgb, toon, _ToonBlend);
+
+                return half4(base * IN.tint, 1);
             }
             ENDHLSL
         }
