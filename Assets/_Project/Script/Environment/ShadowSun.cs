@@ -23,6 +23,10 @@ public class ShadowSun : MonoBehaviour
     [SerializeField, Range(0f, 1f)] float noonScale = 0.12f;       // stub length at midday (× maxLength)
     [SerializeField, Range(0f, 1f)] float strength = 0.4f;         // shadow alpha at full day
 
+    [Tooltip("Fraction of the day at each end over which the shadow fades in/out. Only this window " +
+             "touches alpha, so the long low-sun shadows stay visible instead of fading with length.")]
+    [SerializeField, Range(0.01f, 0.5f)] float twilight = 0.07f;
+
     [Header("World")]
     [SerializeField] float groundY = 0f;   // world Y of the flat ground the shadows lie on
 
@@ -46,7 +50,11 @@ public class ShadowSun : MonoBehaviour
         bool isDay = hour > sunriseHour && hour < sunsetHour;
         float elevation = Mathf.Sin(Mathf.Clamp01(day) * Mathf.PI);      // 0 at edges, 1 at noon
 
-        Vector2 dir = Vector2.Lerp(dawnDir, duskDir, Mathf.Clamp01(day)).normalized;
+        // Sweep the direction by ANGLE, so it rotates evenly instead of whipping through the middle.
+        float dawnYaw = Mathf.Atan2(dawnDir.y, dawnDir.x);
+        float duskYaw = Mathf.Atan2(duskDir.y, duskDir.x);
+        float yaw = Mathf.LerpAngle(dawnYaw * Mathf.Rad2Deg, duskYaw * Mathf.Rad2Deg, Mathf.Clamp01(day)) * Mathf.Deg2Rad;
+        Vector2 dir = new Vector2(Mathf.Cos(yaw), Mathf.Sin(yaw));
 
         Vector2 shear = Vector2.zero;
         float alpha = 0f;
@@ -54,7 +62,11 @@ public class ShadowSun : MonoBehaviour
         {
             float length = maxLength * Mathf.Max(noonScale, 1f - elevation);   // long low sun, stub at noon
             shear = dir * length;
-            alpha = strength * Mathf.SmoothStep(0f, 0.2f, elevation);          // ease in/out near dawn/dusk
+
+            // Fade is a dawn/dusk window on its own knob, decoupled from length, so the twilight
+            // ramp can be tuned without touching how long the low-sun shadows stretch.
+            float fade = Mathf.Min(day, 1f - day) / twilight;
+            alpha = strength * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(fade));
         }
 
         Shader.SetGlobalVector(SunDirId, new Vector4(shear.x, shear.y, 0f, 0f));
