@@ -24,7 +24,15 @@ public class ResourcePayload : MonoBehaviour, IPickupPayload
     public bool Deliver(IPickupReceiver receiver)
     {
         if (resource == null) return true;
-        _remaining -= receiver.Inventory.Add(resource, _remaining);
+        int taken = receiver.Inventory.Add(resource, _remaining);
+        _remaining -= taken;
+        if (taken > 0)
+        {
+            var sr = GetComponentInChildren<SpriteRenderer>();
+            Vector3 spawnPos = sr != null ? sr.bounds.center : transform.position;   // the art's center, not the ground pivot
+            float worldSize = sr != null ? Mathf.Max(sr.bounds.size.x, sr.bounds.size.y) : 1f;
+            PickupFly.Request(spawnPos, resource, taken, worldSize);   // fly an icon to the HUD
+        }
         return _remaining <= 0;
     }
 }

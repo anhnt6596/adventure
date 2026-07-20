@@ -60,6 +60,7 @@ public class Pickable : MonoBehaviour
 
     void SpawnFlyVisual(Transform target, float height)
     {
+        if (PickupFly.HasHandler) return;   // the HUD flies an icon to the UI instead
         if (flyVisual == null) return;
         var fly = LeanPool.Spawn(flyVisual, transform.position, transform.rotation);
         fly.Launch(target, height);

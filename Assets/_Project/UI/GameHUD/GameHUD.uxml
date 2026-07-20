@@ -3,10 +3,11 @@
     <ui:VisualElement name="hud" class="hud" picking-mode="Ignore">
         <ui:VisualElement name="inventory" class="inventory">
             <ui:Button name="capacity-button" class="capacity">
-                <ui:VisualElement class="bag-icon" picking-mode="Ignore" />
+                <ui:VisualElement name="bag-icon" class="bag-icon" picking-mode="Ignore" />
                 <ui:Label name="capacity-label" class="cap-text" text="0/0" />
             </ui:Button>
             <ui:VisualElement name="item-list" class="item-list" picking-mode="Ignore" />
         </ui:VisualElement>
+        <ui:VisualElement name="fly-layer" class="fly-layer" picking-mode="Ignore" />
     </ui:VisualElement>
 </ui:UXML>

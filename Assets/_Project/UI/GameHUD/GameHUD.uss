@@ -25,16 +25,19 @@
 }
 
 .bag-icon {
-    width: 30px;
-    height: 30px;
+    width: 109px;
+    height: 109px;
     background-image: url("project://database/Assets/_Project/Art/Icons/Backpack_Build.png");
     -unity-background-scale-mode: scale-to-fit;
-    margin-right: 8px;
+    margin-right: 10px;
+    transition-property: scale;
+    transition-duration: 0.09s;
+    transform-origin: center;
 }
 
 .cap-text {
     color: rgb(255, 255, 255);
-    font-size: 18px;
+    font-size: 34px;
     -unity-font-style: bold;
 }
 
@@ -54,15 +57,32 @@
 
 .item-count {
     color: rgb(255, 255, 255);
-    font-size: 16px;
+    font-size: 29px;
     -unity-font-style: bold;
-    margin-right: 6px;
-    min-width: 26px;
+    margin-right: 8px;
+    min-width: 44px;
     -unity-text-align: middle-right;
 }
 
 .item-icon {
-    width: 26px;
-    height: 26px;
+    width: 86px;
+    height: 86px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.fly-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.fly-icon {
+    position: absolute;
+    left: -9999px;              /* parked off-screen until rented; Place() drives the real position */
+    top: -9999px;
+    width: 86px;
+    height: 86px;
     -unity-background-scale-mode: scale-to-fit;
 }
