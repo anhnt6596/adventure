@@ -32,8 +32,8 @@ public class ShadowSun : MonoBehaviour
     [SerializeField] float nightLength = 1.2f;                        // fixed shear length at night
     [SerializeField, Range(0f, 1f)] float nightStrength = 0.4f;       // shadow alpha at night (0 = no night shadow)
 
-    [Tooltip("Hours over which the night shadow fades in after sunset and out before sunrise.")]
-    [SerializeField] float nightFade = 0.25f;   // 15 minutes
+    [Tooltip("Hours the night shadow fades in/out at the sunset and sunrise edges. 0 = snap on.")]
+    [SerializeField] float nightFade = 0f;
 
     [Header("World")]
     [SerializeField] float groundY = 0f;   // world Y of the flat ground the shadows lie on
@@ -78,13 +78,10 @@ public class ShadowSun : MonoBehaviour
         }
         else
         {
-            // Fixed direction and length; only alpha eases, over a short window after sunset and
-            // before sunrise, so the night shadow fades in and out at the day boundary.
             shear = nightDir.normalized * nightLength;
 
-            float sinceSunset = Mathf.Repeat(hour - sunsetHour, 24f);   // hours into the night
-            float untilSunrise = Mathf.Repeat(sunriseHour - hour, 24f); // hours left of the night
-            float edge = Mathf.Min(sinceSunset, untilSunrise) / Mathf.Max(0.001f, nightFade);
+            float edge = Mathf.Min(Mathf.Repeat(hour - sunsetHour, 24f),
+                                   Mathf.Repeat(sunriseHour - hour, 24f)) / Mathf.Max(0.001f, nightFade);
             alpha = nightStrength * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(edge));
         }
 
