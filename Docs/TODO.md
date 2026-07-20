@@ -23,8 +23,32 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 - [ ] **Logic rơi đồ phức tạp hơn.** Loot table, trọng số, điều kiện rơi. `DeathDrop` là seam.
 - [ ] **Config cho từng loại cây/đá.** Tạo `OakConfig`, `PineConfig`, `RockConfig`... (mỗi loại 1 SO
   `DamageableConfig`), kéo vào `Damageable` của từng prefab.
-- [ ] **Enemy.** = `Damageable` (máu + loot) **+** AI + di chuyển + tấn công. Hero/quái cận cảnh nên
-  dùng **AnimatorController** (blend/attach), crowd thì cân nhắc AnimationInstancing.
+- [ ] **Enemy** = `Damageable` (máu + loot) **+** não (AI) **+** chân (di chuyển) **+** đòn. Nền đã dựng
+  sẵn — tối nay chỉ ráp 3 cái sau, đừng dựng lại nền.
+  - **Nền tái dùng (đã có):**
+    - `Damageable` lo máu + `Died`→loot. **HP đang ở `DamageableConfig.MaxHp`**, mà `EnemyConfig` cũng có
+      `hp` → chọn **1 chủ máu**, tránh 2 nguồn (đề xuất: bỏ `hp` khỏi `EnemyConfig`, để `Damageable` giữ
+      máu+loot; `EnemyConfig` chỉ còn move/attack).
+    - `CombatWorld.Overlap(centre, radius, attackerTeam, results)` — dò mục tiêu quanh quái (query **team 1**
+      = player trong bán kính aggro).
+    - `SwingAttack` là **khuôn đòn**: ở frame `Hit` của `CharacterAnimator` → `Overlap` quanh origin →
+      `TakeDamage`. Đòn quái mirror y hệt nhưng **team 2**, đánh player.
+    - Di chuyển: khuôn `Character.Move` + `CollisionBody` (không xuyên đá). Quái thay input tay bằng input
+      do AI sinh (hướng tới target).
+    - Team: 0 trung lập / 1 player / 2 địch — không friendly-fire cùng team. Spawn **qua DI container** (hoặc
+      Auto Inject của `GameScope`) để `CombatWorld` được inject vào `Damageable`/đòn.
+  - **Phải làm tối nay:**
+    - [ ] **Player hittable TRƯỚC** (mục "Máu Player" ở đầu file) — hiện `Character` chưa implement
+      `IDamageable`, chưa `combat.Add` → **quái không có gì để đánh**. Đây là chặn đầu tiên.
+    - [ ] **AI brain** — FSM **code thuần** (idle → phát hiện theo aggro radius → đuổi → đánh khi trong tầm +
+      cooldown → mất dấu/về). KHÔNG behavior-tree SO, KHÔNG data-driven (xem quy ước "runtime là plain code").
+    - [ ] **EnemyMelee** — mirror `SwingAttack`, team 2, dmg/tầm/nhịp từ `EnemyConfig`.
+    - [ ] **EnemyMotor** — steer tới target qua `CollisionBody`, tốc độ từ `EnemyConfig.moveSpeed`.
+    - [ ] **Spawn** — tạm đặt tay 1-2 con để test (nhớ cho vào Auto Inject); spawner thật sau.
+    - [ ] Art: hero/quái cận cảnh → **AnimatorController** (blend/attach); crowd đông → cân nhắc
+      AnimationInstancing. `CharacterAnimator.Hit` là seam frame-đánh.
+  - **Gotcha:** bán kính `Overlap` phải ≤ cell hash (`4`) không thì miss (có warning); đòn tự `Rebuild()`
+    trước query — xem `SwingAttack.OnSwingHit`.
 - [ ] **Rương (chest).** *Breakable, KHÔNG phải pickup.* Rơi ra nằm trên map, có `CollisionBody` (chiếm
   chỗ), là `Damageable` — chém vỡ (`Died`) → `Dropable` rơi đồ khác. Không nhặt trực tiếp. → tái dùng
   nguyên pattern cây (`Damageable` + `Dropable` + `DropOnDeath` + `CollisionBody`). Thêm: **save các rương
