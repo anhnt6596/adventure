@@ -33,7 +33,7 @@ public class ShadowSun : MonoBehaviour
     [SerializeField, Range(0f, 1f)] float nightStrength = 0.4f;       // shadow alpha at night (0 = no night shadow)
 
     [Tooltip("Hours over which the night shadow fades in after sunset and out before sunrise.")]
-    [SerializeField] float nightFade = 0.75f;
+    [SerializeField] float nightFade = 0.25f;   // 15 minutes
 
     [Header("World")]
     [SerializeField] float groundY = 0f;   // world Y of the flat ground the shadows lie on
