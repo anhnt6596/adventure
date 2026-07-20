@@ -1,20 +1,28 @@
 using System;
+using Core.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
 
-// Scene UI for GameScene (its own UIDocument, not part of the UISystem registry).
-// Blocks gameplay input until START is pressed.
+// The start menu: its own UIDocument (not the UISystem registry), holding START and later settings,
+// change-character, etc. Blocks gameplay input until START, then reveals the game HUD.
 [RequireComponent(typeof(UIDocument))]
 public class GameUI : MonoBehaviour
 {
     IInputGate _gate;
+    IUISystem _ui;
+    Inventory _inventory;
     IDisposable _block;
     UIDocument _document;
     VisualElement _screen;
 
     [Inject]
-    public void Construct(IInputGate gate) => _gate = gate;
+    public void Construct(IInputGate gate, IUISystem ui, InventorySystem inventories, IInventoryConfig config)
+    {
+        _gate = gate;
+        _ui = ui;
+        _inventory = inventories.GetOrCreate("main_char", config);
+    }
 
     void Awake() => _document = GetComponent<UIDocument>();
 
@@ -37,7 +45,9 @@ public class GameUI : MonoBehaviour
     {
         Release();
         if (_screen != null) _screen.style.display = DisplayStyle.None;
-        // or: _document.rootVisualElement.style.display = DisplayStyle.None;  /  gameObject.SetActive(false)
+
+        _ui?.Show<GameHUD>();                          // reveal the in-game HUD
+        _ui?.Get<GameHUD>()?.SetInventory(_inventory); // hand it the GameScope inventory
     }
 
     void Release()

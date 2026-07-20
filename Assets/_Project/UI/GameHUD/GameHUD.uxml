@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/GameHUD/GameHUD.uss" />
+    <ui:VisualElement name="hud" class="hud" picking-mode="Ignore">
+        <ui:VisualElement name="inventory" class="inventory">
+            <ui:Button name="capacity-button" class="capacity">
+                <ui:VisualElement class="bag-icon" picking-mode="Ignore" />
+                <ui:Label name="capacity-label" class="cap-text" text="0/0" />
+            </ui:Button>
+            <ui:VisualElement name="item-list" class="item-list" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

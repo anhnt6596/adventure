@@ -6,4 +6,5 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Inventory/Resource")]
 public class ResourceDef : Config
 {
+    public Sprite icon;   // shown in the inventory HUD
 }

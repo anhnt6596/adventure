@@ -1,0 +1,68 @@
+.hud {
+    flex-grow: 1;
+}
+
+.inventory {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    align-items: flex-end;
+}
+
+.capacity {
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.55);
+    border-radius: 8px;
+    padding: 6px 10px;
+    border-width: 0;
+    transition-duration: 0.08s;
+}
+
+.capacity:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+    scale: 1.03 1.03;
+}
+
+.bag-icon {
+    width: 30px;
+    height: 30px;
+    background-image: url("project://database/Assets/_Project/Art/Icons/Backpack_Build.png");
+    -unity-background-scale-mode: scale-to-fit;
+    margin-right: 8px;
+}
+
+.cap-text {
+    color: rgb(255, 255, 255);
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+
+.item-list {
+    margin-top: 6px;
+    align-items: flex-end;
+}
+
+.item-row {
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    padding: 3px 8px;
+    margin-top: 4px;
+}
+
+.item-count {
+    color: rgb(255, 255, 255);
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-right: 6px;
+    min-width: 26px;
+    -unity-text-align: middle-right;
+}
+
+.item-icon {
+    width: 26px;
+    height: 26px;
+    -unity-background-scale-mode: scale-to-fit;
+}
