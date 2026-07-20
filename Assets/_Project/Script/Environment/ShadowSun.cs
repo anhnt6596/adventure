@@ -84,8 +84,8 @@ public class ShadowSun : MonoBehaviour
 
             float sinceSunset = Mathf.Repeat(hour - sunsetHour, 24f);   // hours into the night
             float untilSunrise = Mathf.Repeat(sunriseHour - hour, 24f); // hours left of the night
-            float edge = Mathf.Min(sinceSunset, untilSunrise);
-            alpha = nightStrength * Mathf.SmoothStep(0f, Mathf.Max(0.001f, nightFade), edge);
+            float edge = Mathf.Min(sinceSunset, untilSunrise) / Mathf.Max(0.001f, nightFade);
+            alpha = nightStrength * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(edge));
         }
 
         Shader.SetGlobalVector(SunDirId, new Vector4(shear.x, shear.y, 0f, 0f));
