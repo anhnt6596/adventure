@@ -94,9 +94,16 @@ soil       SPARSE dict, NGƯỜI CHƠI ghi → cày/ướt/cháy + data → tron
 - **Đá/gạch/tường = OBJECT, không phải terrain** (đang làm đúng rồi: prefab + `Damageable` + `CollisionBody`).
   Ranh giới: **terrain là thứ đi lên trên, object là thứ đứng trên nó.** Tường xây sau cũng vào nhóm object,
   đặt theo cao độ của ô.
-- **Hệ quả phải lường: rebuild theo CHUNK.** `TerrainRenderer.Build()` hiện dựng lại **toàn bộ** mesh — cày
-  một ô mà rebuild cả map 64×64 thì khựng thấy rõ. Khi làm tới ruộng đồng phải chia mesh theo chunk, chỉ
-  rebuild chunk bị đụng. Map lớn rồi cũng cần, nên không phí.
+- **Hệ quả phải lường: rebuild theo CHUNK.** `TerrainRenderer.Build()` hiện phá sạch rồi dựng lại **toàn bộ
+  layer × toàn map**, kèm tạo mới GameObject + mesh + material từng layer. Cày/phá một ô mà chạy cái đó là
+  khựng thấy rõ. Chia mesh theo chunk (16×16 ô), chỉ dựng lại chunk bị đụng. Map lớn rồi cũng cần.
+  - **⚠️ Phải bẩn cả chunk HÀNG XÓM.** Auto-tiling nhìn ô kề, và vách đá phụ thuộc height ô bên cạnh — nên
+    ô nằm sát mép chunk thì chunk kế bên cũng phải dựng lại. Quên là ra **đường nối hở / sai tile ngay biên
+    chunk**, loại bug rất khó lần ra vì chỗ sai không phải chỗ vừa sửa.
+  - **Gom lại, dựng một lần.** Đánh dấu chunk bẩn vào một `HashSet`, `LateUpdate` mới rebuild. Người chơi
+    phá 5 ô trong một nhát → **một** lần dựng, không phải năm.
+  - Nước / cỏ / bóng đều **suy ra** nên tự đúng theo, chỉ cần mỗi bên cũng rebuild theo chunk của nó.
+    `GrassField` **đã chia chunk sẵn** (`chunkSize`, `_chunks`) → nhẹ đô hơn terrain nhiều.
 - **Terraforming (người chơi đào/nâng đất):** hiện coi như KHÔNG có, `height` là authored-only. Nếu sau muốn
   thì lưu **sparse diff** so với map gốc vào save, đừng copy cả mảng.
 
