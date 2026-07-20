@@ -68,13 +68,20 @@ The world *feels* large; the runtime holds one prefab.
 Because the map is a prefab and not a scene, **`GameScope` survives a jump** — character,
 camera, UI and services all persist. Only the map contents are destroyed and rebuilt.
 
-### Ground & movement — TO RESEARCH
+### Ground & movement
 
-- Ground is drawn as a **grid of 2D tiles**.
-- The same grid carries **obstacles**: cells are walkable or not.
-- Not designed yet: tile authoring, how the walkable mask is defined/baked, how movement reads
-  it (free movement clamped by cells vs cell-to-cell). `Framework/GridBuild` already has grid
-  math + polygon-baked blocked cells — likely the starting point.
+- Ground is a **flat grid of 2D tiles**. It does not form raised walkable platforms or stacked
+  terrain; apparent height must not require ground to sort in front of billboards.
+- Each cell has authored height metadata. Normal ground is `height == 0`, and **only those cells are
+  walkable**. Any other value is blocked; most non-zero cells are expected to be depressions.
+- Height is a gameplay/visual mask, not a climbing system. There is no terrain climbing, ramp,
+  per-character climb ability, swimming or wading in the current design.
+- A low cell can receive a **water shader overlay**. Water is derived from height rather than painted
+  as a terrain type, and water cells remain blocked.
+- Raised forms, walls and sight blockers are discrete objects. Real multi-floor spaces use separate
+  maps through `MapService`.
+- The current code still stores terrain ids and layer-level walkability; this section describes the
+  migration target. See `Docs/TODO.md` for the implementation boundary.
 
 ## Menu & characters
 

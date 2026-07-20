@@ -1,5 +1,30 @@
 # Decisions
 
+## 2026-07-20 — Terrain stays flat; height is a blocked-cell mask
+
+*Supersedes the unimplemented multi-height terrain direction formerly recorded in `TODO.md`.*
+
+The tile map remains one flat ground system. A cell may carry authored height metadata, but only
+`height == 0` is walkable; every other height is blocked, with most non-zero cells expected to be
+lower depressions. Low cells may be covered by a water shader derived from the height mask. Water is
+not a painted terrain type.
+
+**Why:** ground currently renders below billboard objects. Raised walkable terrain would sometimes
+need to occlude those objects, which cannot be represented by one ground sorting order and becomes
+incorrect as the camera rotates. Solving that honestly requires a depth-writing terrain pipeline,
+vertical walls, ramps, multi-level shadows and new movement rules. That cost is for a different
+world model, not a small extension of this 2D-perspective one.
+
+**What this rejects:** raised walkable tile platforms, terrain walls, ramps, `climbHeight`, wading by
+depth, and using height differences as traversal gates. Raised scenery and sight blockers remain
+objects; genuinely separate floors remain separate maps.
+
+**Migration boundary:** code has not changed with this decision. The existing `TerrainSet`, terrain
+ids, auto-tiling and layer `walkable` flags remain the current implementation until the explicit
+migration in `TODO.md` is done.
+
+---
+
 Dated log. Each entry: what was decided, and **why** — including what it costs and when to revisit.
 If a decision turns out wrong, add a new entry rather than editing history.
 

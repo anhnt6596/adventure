@@ -54,113 +54,102 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
   nguyên pattern cây (`Damageable` + `Dropable` + `DropOnDeath` + `CollisionBody`). Thêm: **save các rương
   trên map** (vị trí + trạng thái) — cần cơ chế persist object trên map (chưa có). Làm sau.
 
-## ⛰️ Terrain elevation (độ cao) — hướng đã chốt, triển dần
+## 🏞️ Flat tile map + height mask — hướng đã chốt, chưa implement
 
-**Ý tưởng:** ô tile có **độ cao** (thấp/cao), cạnh giữa 2 ô lệch cao thì sinh **quad dựng đứng** nối
-xuống làm vách. Art vách để **màu trơn hoặc hơi nhờ** trước, đẹp sau. Chấp nhận chưa tối ưu, tối ưu sau.
+**Sửa lại quyết định cũ:** không làm terrain nhiều tầng, không cho nhân vật đi trên các mặt
+cao khác nhau. Cách renderer hiện tại luôn đặt ground ở sorting layer thấp hơn billboard; nó không
+thể diễn tả đúng việc một mặt đất cao che nhân vật ở phía sau. Giữ tham vọng đó sẽ kéo theo
+depth thật, vách, ramp, sorting và shadow nhiều tầng — không còn hợp với game 2D perspective này.
 
-### 🏛️ Kiến trúc dữ liệu map — CHỐT
+### Mô hình map đích
 
-**CHỐT: 2 chiều + độ cao (heightmap), KHÔNG voxel 3D.** Lý do, cái đầu là quyết định:
-1. **Toàn bộ logic đang là 2D trên XZ** — `WorldToCell` trả `(x,y)`, collision, spatial hash của
-   `CombatWorld`, di chuyển, AI. Lên voxel là **viết lại cả tầng logic**, không phải thêm feature.
-2. Camera gần ortho nhìn từ trên → hang/mái đua/cầu vượt (thứ duy nhất voxel cho thêm) **gần như không
-   nhìn thấy**. Trả giá cực đắt cho thứ khuất tầm nhìn.
-3. Nhiều tầng thật (hang, nhà nhiều tầng) → **map/scene riêng qua `MapService`** (đã có), không phải voxel.
-   Stardew và Don't Starve đều làm vậy.
+- **Tile map vẫn là một ground grid, không có mặt cao để đi.** Không có platform chồng tầng, ramp hay
+  cầu vượt. Mesh có thể hạ cell xuống và sinh cliff ở biên hố, nhưng cliff chỉ là visual của vùng bị
+  chặn. Hang/nhà nhiều tầng nếu cần sẽ là map/scene riêng qua `MapService`.
+- Mỗi cell có một giá trị **height authored theo map**, nhưng height là **mask gameplay/visual**, không
+  biến tile map thành terrain 3D có thể leo. Mốc ground bình thường là `height == 0`.
+- **Chỉ cell `height == 0` là walkable.** Mọi height khác 0 đều bị chặn; phần lớn cell khác
+  0 dự kiến là chỗ trũng thấp. Không có `climbHeight`, `wadeDepth`, ramp hay luật so chênh cao
+  giữa hai cell.
+- **Nước là một shader overlay**, không phải terrain id được paint. Nơi cell thấp hơn mặt
+  ground/nước quy ước sẽ được water shader phủ lên. Cell đó vẫn không walkable; chưa thiết
+  kế bơi hay lội.
+- Đá, tường, bục cao và vật che tầm nhìn là **object/billboard**, không phải tile cao.
+  Tile không bao giờ block sight; object dùng `CollisionBody` và `blocksSight` như thiết kế hiện có.
+- `height` là authored-only. Chưa có terraforming; nếu sau này cho người chơi sửa thì lưu sparse
+  diff so với map gốc, không copy cả grid vào save.
 
-**CHỐT: height và vật liệu là 2 TRỤC ĐỘC LẬP.** Không ép vật liệu = f(height) — sẽ mất "đường đất vắt qua
-bãi cỏ" (cùng cao khác chất) và "đường mòn leo đồi" (đổi cao không đổi chất). Map là open world **dựng tay**
-nên đúng lúc cần kiểm soát thủ công nhất. Với lại `TerrainSet` + auto-tiling 3 chế độ đã đầu tư sẵn.
+### Ranh giới với code hiện tại
 
-**Nhưng suy ra làm MẶC ĐỊNH, cho phép ghi đè** — sculpt xong là map tự đẹp, chỉ paint chỗ muốn khác:
-- `height < waterLevel` → **nước** (tuyệt đối, không ghi đè được)
-- sát ô ngập → **cát** · còn lại → **cỏ**
+Code hiện tại vẫn là tile map phẳng có nhiều terrain id trong `cells` (`TerrainSet`, auto-tiling,
+`walkable` theo layer). **Không đổi ngầm nghĩa code cũ trong lúc sửa note.** Khi implement hướng mới
+cần migrate rõ ràng: cell trở thành ground, height quyết định walkability, water tách khỏi terrain
+palette. `Assets/_Project/Art/Terrain/TERRAIN.md` tiếp tục mô tả **renderer hiện tại** cho tới khi
+migration này được code thật.
 
-**CHỐT: 3 tầng dữ liệu, tách theo VÒNG ĐỜI** (đây là chỗ dễ làm sai nhất):
-```
-height[]   dense byte,  MÌNH dựng      → hình dáng           → trong prefab map
-cells[]    dense byte,  MÌNH dựng      → ngoại lệ vật liệu   → trong prefab map   (0 = Auto)
-soil       SPARSE dict, NGƯỜI CHƠI ghi → cày/ướt/cháy + data → trong FILE SAVE
-```
-- **`cells` đã tồn tại rồi** — chỉ cần định nghĩa **id 0 = "Auto"** (suy ra từ height). Không thêm mảng,
-  không migrate: map hiện tại `cells` toàn 0 → tự thành "auto hết". Painter thêm ô "Auto" đầu palette để
-  **xóa ngoại lệ về mặc định**. Giữ **dense**, đừng sparse — 256×256 = 64KB, không đáng tối ưu, mà mesh
-  builder vốn duyệt hết mọi ô.
-- **ĐỪNG nhét "đất cày" chung vào `cells`.** Nhìn thì cùng là "ô này vẽ khác đi", nhưng: ai ghi (mình vs
-  người chơi), sống ở đâu (prefab vs save), cần bao nhiêu data (1 byte vs cây trồng gì/lớn tới đâu/độ ẩm/
-  timer), mật độ (rải khắp vs **thưa thật**). Nhét chung → designer tô nhầm "đất cày" trong palette, và save
-  phải diff nguyên mảng 64KB để biết người chơi đổi gì. Trạng thái runtime **sparse mới đúng**.
-- **Đá/gạch/tường = OBJECT, không phải terrain** (đang làm đúng rồi: prefab + `Damageable` + `CollisionBody`).
-  Ranh giới: **terrain là thứ đi lên trên, object là thứ đứng trên nó.** Tường xây sau cũng vào nhóm object,
-  đặt theo cao độ của ô.
-- **Hệ quả phải lường: rebuild theo CHUNK.** `TerrainRenderer.Build()` hiện phá sạch rồi dựng lại **toàn bộ
-  layer × toàn map**, kèm tạo mới GameObject + mesh + material từng layer. Cày/phá một ô mà chạy cái đó là
-  khựng thấy rõ. Chia mesh theo chunk (16×16 ô), chỉ dựng lại chunk bị đụng. Map lớn rồi cũng cần.
-  - **⚠️ Phải bẩn cả chunk HÀNG XÓM.** Auto-tiling nhìn ô kề, và vách đá phụ thuộc height ô bên cạnh — nên
-    ô nằm sát mép chunk thì chunk kế bên cũng phải dựng lại. Quên là ra **đường nối hở / sai tile ngay biên
-    chunk**, loại bug rất khó lần ra vì chỗ sai không phải chỗ vừa sửa.
-  - **Gom lại, dựng một lần.** Đánh dấu chunk bẩn vào một `HashSet`, `LateUpdate` mới rebuild. Người chơi
-    phá 5 ô trong một nhát → **một** lần dựng, không phải năm.
-  - Nước / cỏ / bóng đều **suy ra** nên tự đúng theo, chỉ cần mỗi bên cũng rebuild theo chunk của nó.
-    `GrassField` **đã chia chunk sẵn** (`chunkSize`, `_chunks`) → nhẹ đô hơn terrain nhiều.
-- **Terraforming (người chơi đào/nâng đất):** hiện coi như KHÔNG có, `height` là authored-only. Nếu sau muốn
-  thì lưu **sparse diff** so với map gốc vào save, đừng copy cả mảng.
+### Việc cần làm
 
-**Logic di chuyển đổi hướng:** thay vì `IsWalkable` bool như hiện tại, chặn theo **chênh lệch độ cao**
-giữa 2 ô + một setting **"khả năng leo"** trên từng mover → con **cao lớn vượt được bậc cao hơn**, con
-nhỏ thì không. Vừa là luật đi lại, vừa là công cụ design (gating khu vực bằng địa hình).
-
-- [ ] **① SPIKE trước — đừng làm gì khác cho tới khi cái này xanh đèn.** Chỉ **2 mức cao** (0 và 1), một
-  loại vách, hard-code, chưa paint tool, chưa ramp. Câu hỏi duy nhất cần trả lời: *bật depth rồi
-  sprite/billboard/shadow/cỏ có sống sót không?* Nửa ngày.
-- [ ] **② Mesh.** `TerrainRenderer.AddQuadUV` đang hard-code `y = 0f` — đổi thành `heights[cell] * stepHeight`.
-  Thêm `byte[] heights` song song `cells` trong `TerrainGrid`. Vách: mỗi ô so 4 hàng xóm, ô nào thấp hơn
-  thì emit quad đứng dọc cạnh chung từ `myY` xuống `neighbourY`.
-  - **Gotcha:** giữ height **per-cell**. Đừng bắt `DualGrid` (chạy theo góc, mỗi góc chạm 4 ô) xử height
-    khác nhau — auto-tiling chỉ chạy trên **mặt trên**, vách dựng riêng.
-- [ ] **③ Sorting/che khuất — cái nặng nhất, đụng nền móng.** Terrain đang xếp bằng `sortingOrder`, material
-  **không ghi depth** (xem comment trong `TerrainRenderer.Build`). Có độ cao thì vách phải che vật đứng
-  sau-dưới, mà vật đứng **trên** vách lại phải vẽ đè — một con số sorting order không tả nổi.
-  - Mẹo "sorting order theo mức cao" kiểu Stardew **vỡ khi xoay camera** (`RotateYawCommand`) — cái đang
-    sau thành trước. Nên với game này gần như **bắt buộc dùng depth thật**: terrain **bật ZWrite**, sprite
-    **depth-test nhưng không depth-write**.
-- [ ] **④ Shadow phải bỏ giả định "đất phẳng".**
-  - `_ShadowGroundY` đang là **float global** → cây trên đồi đổ bóng rơi tuột xuống y=0. Phải thành
-    per-object (sample height tại ô của nó → đẩy qua `MaterialPropertyBlock`).
-  - `ShadowComposite` tệ hơn: quad fill là **một mặt phẳng ở `height = 0.03`** → chỉ phủ đúng một tầng.
-    **Fix gọn hơn cả code hiện tại:** đổi fill thành **fullscreen quad stencil-test** — tô tối theo pixel
-    đã đánh dấu, bất kể pixel đó ở độ cao nào. Bỏ luôn được đống auto-size theo viewport corner.
-- [ ] **⑤ Logic di chuyển.** `TerrainGrid.IsWalkable`/`CanPass` thêm luật chênh cao + `climbHeight` trên
-  mover. Kèm tile **dốc/ramp** để lên xuống có chủ đích. Làm SAU khi ③ ổn.
-- [ ] **⑥ Paint tool.** `TerrainGridEditor` thêm brush cho height (cùng khuôn brush terrain sẵn có).
-- [ ] **⑦ Cỏ.** `GrassField` đang scatter phẳng theo `transform.position` (`-sink`) → phải sample height.
-
-### 🌊 Nước — mọc thẳng ra từ height, không phải hệ riêng
-
-**CHỐT: KHÔNG paint nước, không có cờ "ô này có nước".** Một `waterLevel` (float), ô nào `height < waterLevel` là ngập. Tự nhất quán: đào hố
-là nước tràn vào, nâng đất là nước rút. (Muốn hồ trên cao thì sau thêm `waterLevel` theo vùng — bắt đầu global.)
-
-- [ ] **Mesh nước.** Thêm một layer trong `BuildLayerMesh`: quad phẳng ở `y = waterLevel`, chỉ emit cho ô
-  ngập. Material `Queue = Transparent`, **ZWrite Off**, vẽ sau đất để đáy hiện xuyên qua.
-  → **Phụ thuộc thẳng vào ③.** Với sorting-order-không-depth hiện tại thì cực khổ; ③ xong là gần như tự chạy.
-- [ ] **Độ sâu bake vào vertex — đừng sample `_CameraDepthTexture`.** Lúc build mesh đã **biết sẵn cao độ đáy
-  từng ô**, nên nhét thẳng `waterLevel - groundY` vào **vertex color / UV2**. Không tốn depth prepass (đắt
-  cho mobile), mà lại chính xác hơn.
-  - Tint theo độ sâu: `lerp(_Shallow, _Deep, depth/_DepthFade)`, alpha cũng theo depth (nông thì trong).
-  - **Foam ven bờ free luôn** — bờ chính là chỗ `depth` nhỏ: `foam = 1 - smoothstep(0, _FoamWidth, depth)`,
-    nhân thêm noise scroll. Đây là thứ bán cảm giác "nước" mạnh nhất, đừng bỏ.
-  - Sóng: scroll noise trên tint + lấp lánh là đủ cho tông stylized. **KHÔNG refraction** (cần grab-pass,
-    đắt trên mobile), **KHÔNG reflection**.
-- [ ] **Chặn di chuyển theo ĐỘ SÂU — cùng một luật với chênh cao, chỉ đổi dấu.**
-  Mặt nước coi như mốc; `waterDepth = waterLevel - cellHeight`. Chặn khi `waterDepth > mover.wadeDepth`.
-  - Đúng cùng hình dạng với `heightDiff > mover.climbHeight` ở ⑤ → **một luật, hai công dụng**, không cần
-    hệ thống riêng cho nước.
-  - Con **cao lớn lội được nước sâu hơn** (và trèo bậc cao hơn) — vừa là luật đi lại, vừa là công cụ design
-    để gate khu vực bằng địa hình.
-  - Sau có thể thêm cờ `canSwim` cho nước sâu, và trạng thái "đang lội" (chậm lại, hiệu ứng nước).
-- [ ] **Cỏ KHÔNG spawn trên ô ngập** — `GrassField` phải đọc mask nước (chung với ⑦).
-- [ ] **Bóng đổ trên mặt nước** — với fullscreen stencil quad ở ④ thì tự đúng, không phải làm gì thêm.
+- [ ] **Depth data.** Grid mới mặc định toàn `0`. Dùng kiểu có dấu (`sbyte` hoặc `short`): `0` là mặt
+  đất chuẩn, số âm là từng depth step xuống hố. Thêm dữ liệu per-cell vào `TerrainGrid`; không tự
+  sinh giá trị dương/raised walkable ground.
+- [ ] Sửa `TerrainGrid.IsWalkable`/`CanPass`: chỉ cho phép ô trong map có `height == 0`; bỏ việc
+  quyết định walkable bằng terrain layer sau khi migration.
+- [ ] **Depth painter trong `TerrainGridEditor`.** Có ba tool riêng, không giấu Flatten trong modifier:
+  - `Lower`: giảm depth theo step.
+  - `Raise`: tăng depth theo step nhưng clamp tối đa về `0`.
+  - `Flatten / Reset`: đưa tất cả cell trong brush về **đúng `0`**. Đây là công cụ cào bằng và phải là
+    mode riêng, dễ chọn, vì nó đồng thời khôi phục ground walkable.
+  - Có brush size, drag liên tục, preview màu theo depth, Undo/Redo và lưu đúng vào prefab/scene.
+- [ ] **Ground/cliff mesh từ depth map.** Mặt mỗi cell nằm ở depth của nó. Hai cell cùng depth nối phẳng;
+  hai cell lệch depth sinh profile ở cạnh chung. Rebuild theo chunk và dirty cả chunk hàng xóm khi sửa
+  cell sát biên.
+  - Profile đã chốt: top bevel chiếm **20% chiều cao của một depth step**, rồi tới vách thẳng. Khi phía
+    dưới cạnh đó thực sự có mặt low ground, sinh thêm bottom bevel cao **20% một step**: nó tiếp tục
+    **trồi ra phía ô thấp cùng hướng với top bevel**, không co ngược vào chân vách. Điểm cuối bevel dùng
+    chung đường biên/vertex với mặt low ground, nên mặt thấp bắt đầu ở đó, không chạy dưới bevel.
+    Mặt cắt đúng (cả hai dấu `\` cùng nghiêng/trồi về phía low ground):
+    ```text
+    high ground ──────╲
+                       ╲  top bevel 20% step
+                        │
+                        │  wall
+                        ╲  bottom bevel 20% step — CHỈ khi có low surface
+    low ground ──────────╲────────
+                          ↑ shared boundary; low surface bắt đầu tại đây
+    ```
+    **Không làm profile chữ S** (`top \`, `bottom /`); bottom bevel tuyệt đối không co về phía high ground.
+  - Bottom bevel là topology có điều kiện, không phải trang trí luôn có: không có mặt low ground để
+    tiếp nhận thì không sinh. Chênh 1 step có profile 20% top bevel + 60% wall + 20% bottom bevel;
+    chênh nhiều step vẫn giữ hai bevel theo đúng một step và chỉ kéo dài wall ở giữa. Không scale bevel
+    theo tổng độ sâu.
+  - Cạnh có đủ hai bevel cần 3 quad = 6 tris; con số 20% không tự đẻ thêm tris. Chỉ thêm segment nếu sau
+    này thật sự muốn bevel cong.
+  - **Corner geometry riêng là bắt buộc** cho góc lồi, góc lõm và nơi nhiều depth gặp nhau; không chồng
+    các edge strip độc lập vì sẽ hở hoặc overlap. Đặc biệt phải giải quyết chỗ hai bottom bevel cùng
+    lấn vào một ô thấp. Bevel là visual, không ảnh hưởng walkability.
+- [ ] **Bake theo chunk trong Editor.** Depth grid là source of truth; mesh chỉ là cache hiển thị. Painter
+  chỉ preview/đánh dấu dirty, còn `Bake Dirty Chunks` hoặc `Bake All` sinh ground, cliff, bevel, corner,
+  water mask và bounds theo chunk rồi lưu cùng map. Không rebuild toàn map lúc load runtime.
+- [ ] **Runtime mutation — hiếm, tối ưu vừa đủ.** Game sau này có thể phá/hạ một vài tile hoặc lấp hố,
+  nhưng thay đổi map xảy ra rất hiếm; chưa xây hệ terraforming liên tục.
+  - Khi cell đổi: cập nhật depth grid ngay, lấy bounds các cell vừa sửa rồi `Expand(1)` theo bốn hướng;
+    mọi chunk giao vùng đó vào một `HashSet` dirty. Cách này tự kéo cả chunk cạnh/góc cần thiết vì cliff
+    và corner phụ thuộc hàng xóm.
+  - Gom toàn bộ thay đổi của một action/vụ nổ, rồi mỗi dirty chunk chỉ rebuild **một lần** ở cuối action
+    hoặc `LateUpdate`; không rebuild sau từng hit/từng cell.
+  - Chunk chưa từng đổi dùng mesh asset đã bake. Lần đầu bị đổi thì tạo runtime mesh cho chunk đó; các
+    lần sau `Clear`/tái dùng cùng mesh và buffer, không tạo lại GameObject/material.
+  - Cập nhật walkability/collision ngay theo depth data; mesh, water mask và grass chỉ rebuild cho dirty
+    chunks. Nếu sau này một action làm bẩn quá nhiều chunk mới cân nhắc budget rebuild theo frame.
+  - Theo luật hiện tại, phá/hạ tạo depth âm; tăng depth chỉ là lấp dần và clamp về `0`, không tạo platform
+    dương. Cách save runtime diff sẽ chốt riêng khi feature phá map thật sự được làm.
+- [ ] **Water.** Tách water khỏi `TerrainSet`/palette; build world-space mask cho cell thấp. Có thể dùng
+  một water render plane/proxy lớn đi theo camera (nên snap theo cell/chunk), nhưng mask, UV/noise và
+  đường bờ phải bám **world-space** để nước không trượt khi camera di chuyển hoặc xoay. Giữ material
+  trong suốt, stylized (tint/noise/foam); chưa làm refraction, reflection, bơi hay lội.
+- [ ] `GrassField` không scatter trên cell `height != 0`/cell có water overlay.
+- [ ] Kiểm tra billboard, shadow và camera xoay trên map có hố trũng. Không đổi terrain sang
+  ZWrite/depth pipeline trừ khi spike thật sự chứng minh là cần.
 
 ## 🌤️ Environment (day/night + weather)
 
