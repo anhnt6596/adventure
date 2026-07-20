@@ -60,29 +60,25 @@ public class ShadowSun : MonoBehaviour
         float yaw = Mathf.LerpAngle(dawnYaw * Mathf.Rad2Deg, duskYaw * Mathf.Rad2Deg, Mathf.Clamp01(day)) * Mathf.Deg2Rad;
         Vector2 dir = new Vector2(Mathf.Cos(yaw), Mathf.Sin(yaw));
 
-        // Day presence: 1 through the middle of the day, 0 at night and at the exact sun edges,
-        // ramping over the twilight window. Everything crossfades on it, so day hands off to the
-        // fixed night shadow with no snap - the sun's shadow and the moon's are one global cast, so
-        // they blend rather than coexist.
-        float dayPresence = 0f;
+        Vector2 shear;
+        float alpha;
         if (isDay)
         {
+            // Cosine curve, not a triangle: the minimum at noon is a rounded bottom, so length
+            // eases in and out of the stub instead of snapping there and back. Lerping to noonScale
+            // keeps that smooth minimum without the old max() floor pinning the length flat.
+            float noonT = Mathf.Sin(Mathf.Clamp01(day) * Mathf.PI);            // 0 at dawn/dusk, 1 at noon
+            shear = dir * (maxLength * Mathf.Lerp(1f, noonScale, noonT));
+
             float fade = Mathf.Min(day, 1f - day) / twilight;
-            dayPresence = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(fade));
+            alpha = strength * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(fade));
         }
-
-        // Cosine curve, not a triangle: the minimum at noon is a rounded bottom, so length eases in
-        // and out of the stub instead of snapping there and back. Lerping to noonScale keeps that
-        // smooth minimum without the old max() floor pinning the length flat around midday.
-        float noonT = Mathf.Sin(Mathf.Clamp01(day) * Mathf.PI);                // 0 at dawn/dusk, 1 at noon
-        Vector2 dayShear = dir * (maxLength * Mathf.Lerp(1f, noonScale, noonT));
-
-        Vector2 nightShear = nightDir.sqrMagnitude > 1e-6f
-            ? nightDir.normalized * nightLength
-            : Vector2.zero;
-
-        Vector2 shear = Vector2.Lerp(nightShear, dayShear, dayPresence);
-        float alpha = Mathf.Lerp(nightStrength, strength, dayPresence);
+        else
+        {
+            // Night snaps to a fixed cast, no easing.
+            shear = nightDir.normalized * nightLength;
+            alpha = nightStrength;
+        }
 
         Shader.SetGlobalVector(SunDirId, new Vector4(shear.x, shear.y, 0f, 0f));
         Shader.SetGlobalFloat(StrengthId, alpha);
