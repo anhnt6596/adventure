@@ -48,7 +48,6 @@ public class ShadowSun : MonoBehaviour
 
         float day = Mathf.InverseLerp(sunriseHour, sunsetHour, hour);   // 0..1 across the daylit window
         bool isDay = hour > sunriseHour && hour < sunsetHour;
-        float elevation = Mathf.Sin(Mathf.Clamp01(day) * Mathf.PI);      // 0 at edges, 1 at noon
 
         // Sweep the direction by ANGLE, so it rotates evenly instead of whipping through the middle.
         float dawnYaw = Mathf.Atan2(dawnDir.y, dawnDir.x);
@@ -60,7 +59,11 @@ public class ShadowSun : MonoBehaviour
         float alpha = 0f;
         if (isDay)
         {
-            float length = maxLength * Mathf.Max(noonScale, 1f - elevation);   // long low sun, stub at noon
+            // Length changes at a constant rate and reaches its noon minimum smoothly. The old
+            // sin(day)-with-a-floor stalled for a third of the day around noon (only rotation
+            // showed) and changed fastest at the ends - so the resize looked uneven and paused.
+            float noonT = 1f - Mathf.Abs(day - 0.5f) * 2f;                     // 0 at dawn/dusk, 1 at noon
+            float length = maxLength * Mathf.Lerp(1f, noonScale, noonT);
             shear = dir * length;
 
             // Fade is a dawn/dusk window on its own knob, decoupled from length, so the twilight
