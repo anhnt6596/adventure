@@ -21,6 +21,7 @@ public class SpriteShadow : MonoBehaviour
     [SerializeField] int orderOffset = -1;      // sorting order vs the source (non-merge mode only)
     [SerializeField] Vector2 groundOffset;      // XZ nudge if the trunk isn't exactly over the root
     [SerializeField] float yawOffset;           // fine-tune the sun-facing yaw (degrees)
+    [SerializeField] float scale = 1.05f;       // shadow size relative to the art
 
     static Material _autoColor, _autoStencil;
 
@@ -65,7 +66,7 @@ public class SpriteShadow : MonoBehaviour
         // Captured now, before the billboard tilts the art. localScale matches the art's world size.
         go.transform.localPosition = anchor.InverseTransformPoint(source.transform.position)
                                      + new Vector3(groundOffset.x, 0f, groundOffset.y);
-        go.transform.localScale = source.transform.lossyScale;
+        go.transform.localScale = source.transform.lossyScale * scale;
 
         _shadow = go.AddComponent<SpriteRenderer>();
         _shadow.sharedMaterial = mat;

@@ -5,7 +5,7 @@ using VContainer.Unity;
 public class DayNightClock : ITickable
 {
     // Hard-coded for now (config + save come later): 3 real minutes per in-game day, start at 7am.
-    const float DayLengthSeconds = 60;
+    const float DayLengthSeconds = 300;
     const float StartTime = 7f / 24f;
 
     public float Time01 { get; private set; } = StartTime;   // TODO: load from save instead of StartTime
