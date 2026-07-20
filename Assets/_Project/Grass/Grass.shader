@@ -13,10 +13,12 @@ Shader "Grass/Billboard"
         _ColorNoiseScale ("Colour Patch Scale", Float) = 0.05
         _ColorDark ("Patch Dark", Color) = (0.75,0.8,0.55,1)
         _ColorLight ("Patch Light", Color) = (1,1,0.85,1)
+        _BladeVariation ("Per-Blade Variation", Range(0,1)) = 0.2
 
         _WindScale ("Wind Scale", Float) = 0.08
         _WindSpeed ("Wind Speed", Float) = 0.4
         _WindBend ("Wind Bend (deg)", Float) = 22
+        _BendShade ("Bend Shading", Range(-1,1)) = 0.2
 
         _PushStrength ("Interactor Push", Float) = 0.6
     }
@@ -53,7 +55,7 @@ Shader "Grass/Billboard"
 
             float _Cutoff;
             float4 _Tint, _ColorDark, _ColorLight;
-            float _ColorNoiseScale, _WindScale, _WindSpeed, _WindBend, _PushStrength;
+            float _ColorNoiseScale, _WindScale, _WindSpeed, _WindBend, _PushStrength, _BladeVariation, _BendShade;
 
             // xyz = world position, w = radius. Set globally by GrassInteractorManager.
             float4 _GrassInteractors[16];
@@ -110,8 +112,12 @@ Shader "Grass/Billboard"
                 OUT.positionHCS = TransformWorldToHClip(posWS);
                 OUT.uv = IN.uv;
 
-                float n = Noise(rootWS.xz * _ColorNoiseScale);
-                OUT.tint = lerp(_ColorDark.rgb, _ColorLight.rgb, n) * _Tint.rgb;
+                float n = Noise(rootWS.xz * _ColorNoiseScale);              // large soft patches
+                float blade = Hash(rootWS.xz * 41.3 + 7.0);                 // one value per tuft
+                float3 tint = lerp(_ColorDark.rgb, _ColorLight.rgb, n) * _Tint.rgb;
+                tint *= 1.0 + (blade - 0.5) * 2.0 * _BladeVariation;        // brighten/darken each tuft
+                tint *= 1.0 + (w * IN.positionOS.y) * _BendShade;          // lean shifts shade -> wind shimmer
+                OUT.tint = tint;
                 return OUT;
             }
 
