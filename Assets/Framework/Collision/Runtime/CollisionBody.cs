@@ -9,7 +9,10 @@ public class CollisionBody : MonoBehaviour, ICollisionBody
     [Tooltip("0 = immovable (wall, boss). Higher = harder to shove aside.")]
     [SerializeField, Min(0f)] float mass = 1f;
 
-    [SerializeField] CollisionSystem system;
+    // Bound at runtime via BindSystem, never serialized: a body always lives in a prefab (character,
+    // map, pooled drop) and a prefab can't reference a scene object. Kept as a field so OnEnable can
+    // re-register a pooled body on respawn and OnDisable can clean up.
+    CollisionSystem system;
 
     void OnEnable()
     {

@@ -7,6 +7,7 @@ public class Character : MonoBehaviour
     [SerializeField] CollisionBody body;   // the character's body; its mass comes from stats, not the inspector
 
     ICharacterStats _stats;
+    CollisionSystem _collision;
     Vector2 _input;
     float _busyTimer;
 
@@ -15,12 +16,22 @@ public class Character : MonoBehaviour
     public event Action Attacked;
 
     [Inject]
-    public void Construct(ICharacterStats stats) => _stats = stats;
+    public void Construct(ICharacterStats stats, CollisionSystem collision)
+    {
+        _stats = stats;
+        _collision = collision;
+    }
 
     void Start()
     {
-        if (body != null) body.SetMass(_stats.Mass);
-        else Debug.LogError($"[{nameof(Character)}] CollisionBody not assigned — mass from stats won't apply.", this);
+        if (body == null)
+        {
+            Debug.LogError($"[{nameof(Character)}] CollisionBody not assigned — no collision, no mass.", this);
+            return;
+        }
+
+        body.SetMass(_stats.Mass);
+        body.BindSystem(_collision);
     }
 
     public void Move(Vector2 worldDir)
