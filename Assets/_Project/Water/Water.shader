@@ -14,6 +14,10 @@ Shader "World/StylizedWater"
         [Header(Depth)]
         _DepthRange ("Shallow to Deep (world units)", Float) = 6
 
+        [Header(Shore rim)]
+        _EdgeColor ("Shore Rim (sand)", Color) = (0.72, 0.66, 0.5, 0.7)   // a = strength
+        _EdgeWidth ("Shore Rim Width (world units)", Float) = 1.5
+
         [Header(Caustics)]
         _CausticScale ("Caustic Scale", Float) = 0.25
         _CausticSpeed ("Caustic Speed", Float) = 0.05
@@ -58,8 +62,8 @@ Shader "World/StylizedWater"
             struct Attributes { float3 positionOS : POSITION; float2 uv1 : TEXCOORD1; };
             struct Varyings   { float4 positionHCS : SV_POSITION; float3 worldPos : TEXCOORD0; float shore : TEXCOORD1; };
 
-            float4 _DeepColor, _ShallowColor, _FoamColor;
-            float _DepthRange;
+            float4 _DeepColor, _ShallowColor, _FoamColor, _EdgeColor;
+            float _DepthRange, _EdgeWidth;
             float _CausticScale, _CausticSpeed, _CausticSharp, _CausticStrength;
             float _DistortScale, _DistortAmount;
             float _FoamWidth, _FoamWobble, _FoamNoiseScale, _CrestDist, _CrestWidth;
@@ -114,10 +118,18 @@ Shader "World/StylizedWater"
                 float clump = Noise(IN.worldPos.xz * _FoamNoiseScale * 2.7 - ft);
                 float shore = IN.shore + (wob - 0.5) * _FoamWobble;
 
-                float edge = 1.0 - smoothstep(0.0, _CrestWidth, abs(shore - _CrestDist));  // the lapping line
-                float wash = 1.0 - smoothstep(0.0, _FoamWidth, shore);                     // broad wash
-                wash *= clump * clump;                                                      // break it into clumps
-                float foam = saturate(max(edge, wash));
+                // Shore rim: a warm sandy band hugging the waterline, tinting the blue toward the ground so
+                // the very edge reads like a lowland/river bank. Sits over the depth colour, under the foam.
+                float rim = 1.0 - smoothstep(0.0, _EdgeWidth, shore);
+                col = lerp(col, _EdgeColor.rgb, saturate(rim) * _EdgeColor.a);
+
+                // Foam: a crisp wavy line lapping at the waterline plus a broken wash behind it. Two noise
+                // octaves — one wobbles the shoreline, a finer one clumps the wash — so it never reads as a
+                // flat white fade. The wash is squared to leave gaps of open water between the clumps.
+                float crest = 1.0 - smoothstep(0.0, _CrestWidth, abs(shore - _CrestDist));  // the lapping line
+                float wash  = 1.0 - smoothstep(0.0, _FoamWidth, shore);                     // broad wash
+                wash *= clump * clump;                                                       // break it into clumps
+                float foam = saturate(max(crest, wash));
                 col = lerp(col, _FoamColor.rgb, foam * _FoamColor.a);
 
                 return half4(col, 1);
