@@ -60,6 +60,8 @@ public class TerrainRenderer : MonoBehaviour
 
         for (int layer = 0; layer < set.Count; layer++)
         {
+            if (set.layers[layer].kind == TerrainKind.Water) continue;   // TEMP: water will be a shader, not tiles
+
             var mesh = BuildLayerMesh(layer, set);
             if (mesh == null) continue;
 
