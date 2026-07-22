@@ -140,17 +140,18 @@ public class GrassField : MonoBehaviour
 
 #if UNITY_EDITOR
     // Paints the density mask - called by GrassFieldEditor. value 255 = full grass, 0 = none.
-    public bool Paint(Vector3 worldPos, float radius, byte value)
+    public bool Paint(Vector3 worldPos, int sizeCells, byte value)
     {
         EnsureMask();
         Vector3 local = worldPos - (transform.position - new Vector3(size.x, 0, size.y) * 0.5f);
-        int r = Mathf.Max(0, Mathf.CeilToInt(radius / maskCellSize) - 1);
-        int cx = (int)(local.x / maskCellSize);
-        int cy = (int)(local.z / maskCellSize);
+        int cx = Mathf.FloorToInt(local.x / maskCellSize);
+        int cy = Mathf.FloorToInt(local.z / maskCellSize);
+        int n = Mathf.Max(1, sizeCells);
+        int lo = (n - 1) / 2;          // brush size N paints exactly N x N cells, centred on the cursor
 
         bool changed = false;
-        for (int y = cy - r; y <= cy + r; y++)
-            for (int x = cx - r; x <= cx + r; x++)
+        for (int y = cy - lo; y < cy - lo + n; y++)
+            for (int x = cx - lo; x < cx - lo + n; x++)
             {
                 if ((uint)x >= (uint)maskCols || (uint)y >= (uint)maskRows) continue;
                 if (mask[y * maskCols + x] == value) continue;

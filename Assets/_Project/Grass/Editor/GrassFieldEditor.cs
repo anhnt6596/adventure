@@ -53,16 +53,16 @@ public class GrassFieldEditor : Editor
         if (!plane.Raycast(ray, out float dist)) return;
         Vector3 hit = ray.GetPoint(dist);
 
-        float radius = _brush * _field.MaskCellSize;
+        float side = _brush * _field.MaskCellSize;
         bool erasing = _erase ^ e.shift;
         Handles.color = erasing ? new Color(1f, 0.4f, 0.3f, 1f) : new Color(0.4f, 1f, 0.4f, 1f);
-        Handles.DrawWireDisc(hit, _field.transform.up, radius);
+        Handles.DrawWireCube(hit, new Vector3(side, 0f, side));
         SceneView.RepaintAll();
 
         if ((e.type == EventType.MouseDown || e.type == EventType.MouseDrag) && e.button == 0 && !e.alt)
         {
             Undo.RecordObject(_field, "Paint Grass");
-            if (_field.Paint(hit, radius, erasing ? (byte)0 : (byte)255))
+            if (_field.Paint(hit, _brush, erasing ? (byte)0 : (byte)255))
             {
                 _field.RebuildFromEditor();
                 EditorUtility.SetDirty(_field);
