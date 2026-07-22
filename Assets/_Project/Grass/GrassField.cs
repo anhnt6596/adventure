@@ -107,7 +107,9 @@ public class GrassField : MonoBehaviour
     void Update()
     {
         if (material == null) return;
-        if (_chunks == null || transform.position != _builtOrigin) Rebuild();
+        // _quad is a runtime mesh with no serialized reference; a play-mode exit or asset unload can
+        // destroy it while _chunks survives, so re-check it here (Unity's == null catches a destroyed one).
+        if (_quad == null || _chunks == null || transform.position != _builtOrigin) Rebuild();
         if (!material.enableInstancing) material.enableInstancing = true;
 
         _rp = new RenderParams(material)
