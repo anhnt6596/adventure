@@ -10,6 +10,7 @@ public class TerrainGrid : MonoBehaviour
     [SerializeField, Min(0.01f)] float cellSize = 1f;
 
     [SerializeField, HideInInspector] byte[] cells;
+    [SerializeField, HideInInspector] WallSeg[] walls;   // baked walkable boundary
 
     TerrainMap _map;
     bool[] _walkable;
@@ -63,6 +64,13 @@ public class TerrainGrid : MonoBehaviour
         _walkable = set != null ? set.BuildWalkableTable() : null;
     }
 
+    public WallSeg[] Walls => walls;
+
+    // Regenerates the walkable boundary from the current map. Baked (not computed per query) since it
+    // depends on the whole map's layout; rebuild it when the paint changes.
+    public void BakeWalkable()
+        => walls = WalkBake.Bake(Map, set != null ? set.BuildWalkableTable() : null, cellSize);
+
     public bool IsWalkable(int x, int y)
     {
         var map = Map;
@@ -92,47 +100,31 @@ public class TerrainGrid : MonoBehaviour
         => transform.TransformPoint(new Vector3((x + 0.5f) * cellSize, 0f, (y + 0.5f) * cellSize));
 
 #if UNITY_EDITOR
-    public enum GizmoMode { Off, Terrain, Unwalkable }
+    [SerializeField] bool drawWalkable = true;
 
-    // Draws above the mesh, so it hides the art it sits on.
-    [SerializeField] GizmoMode gizmos = GizmoMode.Off;
-    [SerializeField, Range(0f, 1f)] float gizmoAlpha = 0.5f;
-
+    // The tile art has a mesh now, so no per-cell gizmo; just the field border and the baked walkable
+    // boundary.
     void OnDrawGizmosSelected()
     {
-        if (gizmos == GizmoMode.Off || set == null) return;
+        var tf = transform;
 
-        var size = new Vector3(cellSize, 0.001f, cellSize);
-        var map = Map;
-
-        for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++)
-            {
-                Color color;
-                if (gizmos == GizmoMode.Unwalkable)
-                {
-                    if (IsWalkable(x, y)) continue;
-                    color = Color.red;
-                }
-                else
-                {
-                    byte id = map.Get(x, y);
-                    if (id >= set.Count) continue;
-                    color = set.layers[id].previewColor;
-                }
-
-                color.a = gizmoAlpha;  // previewColor's own alpha is ignored; it names a terrain
-                Gizmos.color = color;
-                Gizmos.DrawCube(CellToWorld(x, y) + Vector3.up * 0.02f, size);
-            }
-
-        Gizmos.color = new Color(0f, 1f, 1f, 0.4f);
-        Vector3 p0 = transform.TransformPoint(Vector3.zero);
-        Vector3 p1 = transform.TransformPoint(new Vector3(width * cellSize, 0f, 0f));
-        Vector3 p2 = transform.TransformPoint(new Vector3(width * cellSize, 0f, height * cellSize));
-        Vector3 p3 = transform.TransformPoint(new Vector3(0f, 0f, height * cellSize));
+        Gizmos.color = new Color(0f, 1f, 1f, 0.35f);
+        Vector3 p0 = tf.TransformPoint(Vector3.zero);
+        Vector3 p1 = tf.TransformPoint(new Vector3(width * cellSize, 0f, 0f));
+        Vector3 p2 = tf.TransformPoint(new Vector3(width * cellSize, 0f, height * cellSize));
+        Vector3 p3 = tf.TransformPoint(new Vector3(0f, 0f, height * cellSize));
         Gizmos.DrawLine(p0, p1); Gizmos.DrawLine(p1, p2);
         Gizmos.DrawLine(p2, p3); Gizmos.DrawLine(p3, p0);
+
+        if (!drawWalkable || walls == null) return;
+
+        Gizmos.color = new Color(1f, 0.85f, 0.1f, 1f);
+        foreach (var w in walls)
+        {
+            Vector3 a = tf.TransformPoint(new Vector3(w.a.x, 0.03f, w.a.y));
+            Vector3 b = tf.TransformPoint(new Vector3(w.b.x, 0.03f, w.b.y));
+            Gizmos.DrawLine(a, b);
+        }
     }
 #endif
 }

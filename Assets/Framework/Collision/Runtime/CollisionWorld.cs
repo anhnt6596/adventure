@@ -164,83 +164,54 @@ public class CollisionWorld
         return true;
     }
 
+    // Pushes each body out of the baked walkable boundary (one-sided wall segments), skipping walls whose
+    // terrain the body may pass. Walls and bodies share the terrain's local XZ plane.
     void ResolveTerrain()
     {
-        if (_terrain == null) return;
+        var walls = _terrain != null ? _terrain.Walls : null;
+        if (walls == null || walls.Length == 0) return;
+
+        var tf = _terrain.transform;
 
         foreach (var body in _hash.Items)
         {
             if (body.InvMass <= 0f) continue;
-            body.Position = ResolveTerrain(body.Position, body.Radius, body.PassMask);
-        }
-    }
 
-    Vector3 ResolveTerrain(Vector3 world, float radius, int passMask)
-    {
-        var tf = _terrain.transform;
-        Vector3 local = tf.InverseTransformPoint(world);
-        float cs = _terrain.CellSize;
+            int pass = body.PassMask;
+            float r = body.Radius;
 
-        int x0 = Mathf.FloorToInt((local.x - radius) / cs);
-        int x1 = Mathf.FloorToInt((local.x + radius) / cs);
-        int z0 = Mathf.FloorToInt((local.z - radius) / cs);
-        int z1 = Mathf.FloorToInt((local.z + radius) / cs);
+            Vector3 local = tf.InverseTransformPoint(body.Position);
+            Vector2 c = new Vector2(local.x, local.z);
 
-        for (int z = z0; z <= z1; z++)
-            for (int x = x0; x <= x1; x++)
+            for (int i = 0; i < walls.Length; i++)
             {
-                if (_terrain.CanPass(passMask, x, z)) continue;
+                var w = walls[i];
+                if ((pass & TerrainSet.BitOf(w.terrain)) != 0) continue;   // this body passes that terrain
 
-                float minX = x * cs, maxX = minX + cs;
-                float minZ = z * cs, maxZ = minZ + cs;
+                // Broad reject before the closest-point test.
+                if (c.x < Mathf.Min(w.a.x, w.b.x) - r || c.x > Mathf.Max(w.a.x, w.b.x) + r ||
+                    c.y < Mathf.Min(w.a.y, w.b.y) - r || c.y > Mathf.Max(w.a.y, w.b.y) + r) continue;
 
-                float nearX = Mathf.Clamp(local.x, minX, maxX);
-                float nearZ = Mathf.Clamp(local.z, minZ, maxZ);
+                Vector2 ab = w.b - w.a;
+                float len2 = Vector2.Dot(ab, ab);
+                float t = len2 > 1e-8f ? Mathf.Clamp01(Vector2.Dot(c - w.a, ab) / len2) : 0f;
+                Vector2 d = c - (w.a + t * ab);
+                float d2 = Vector2.Dot(d, d);
+                if (d2 >= r * r) continue;
 
-                float dx = local.x - nearX;
-                float dz = local.z - nearZ;
-                float d2 = dx * dx + dz * dz;
-
-                if (d2 >= radius * radius) continue;
-
+                // Push along the contact normal so the body slides instead of sticking; if it sits
+                // exactly on the segment, push out to the walkable side.
                 if (d2 > 1e-8f)
                 {
-                    // Pushing along the contact normal keeps the tangential motion, so a body slides
-                    // along a wall instead of sticking to it.
-                    float d = Mathf.Sqrt(d2);
-                    float push = radius - d;
-                    local.x += dx / d * push;
-                    local.z += dz / d * push;
+                    float dist = Mathf.Sqrt(d2);
+                    c += d * ((r - dist) / dist);
                 }
-                else
-                {
-                    local = EjectFromCell(local, minX, maxX, minZ, maxZ, radius);
-                }
+                else c += w.normal * r;
             }
 
-        return tf.TransformPoint(local);
-    }
-
-    // Centre is inside the cell: no contact normal exists, so leave by the nearest face.
-    static Vector3 EjectFromCell(Vector3 local, float minX, float maxX, float minZ, float maxZ, float radius)
-    {
-        float left = local.x - minX, right = maxX - local.x;
-        float down = local.z - minZ, up = maxZ - local.z;
-
-        float best = left;
-        int face = 0;
-        if (right < best) { best = right; face = 1; }
-        if (down < best) { best = down; face = 2; }
-        if (up < best) { best = up; face = 3; }
-
-        switch (face)
-        {
-            case 0: local.x = minX - radius; break;
-            case 1: local.x = maxX + radius; break;
-            case 2: local.z = minZ - radius; break;
-            default: local.z = maxZ + radius; break;
+            local.x = c.x;
+            local.z = c.y;
+            body.Position = tf.TransformPoint(local);
         }
-        return local;
     }
-
 }

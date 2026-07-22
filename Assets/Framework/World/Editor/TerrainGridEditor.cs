@@ -33,14 +33,18 @@ public class TerrainGridEditor : Editor
         DrawDefaultInspector();
 
         EditorGUILayout.Space();
-        using (new EditorGUI.DisabledScope(_renderer == null))
+        using (new EditorGUILayout.HorizontalScope())
         {
-            if (GUILayout.Button("Rebuild Mesh", GUILayout.Height(24)))
-            {
-                _grid.MarkDirty();
-                _renderer.Build();
-                SceneView.RepaintAll();
-            }
+            using (new EditorGUI.DisabledScope(_renderer == null))
+                if (GUILayout.Button("Rebuild Mesh", GUILayout.Height(24)))
+                {
+                    _grid.MarkDirty();
+                    _renderer.Build();
+                    SceneView.RepaintAll();
+                }
+
+            if (GUILayout.Button("Bake Walkable", GUILayout.Height(24)))
+                BakeWalkable();
         }
         if (_renderer == null)
             EditorGUILayout.HelpBox("No TerrainRenderer on this object — nothing to rebuild.", MessageType.None);
@@ -55,7 +59,9 @@ public class TerrainGridEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Paint", EditorStyles.boldLabel);
 
+        bool wasPainting = _painting;
         _painting = GUILayout.Toggle(_painting, _painting ? "Painting (Esc to stop)" : "Start Painting", "Button", GUILayout.Height(28));
+        if (wasPainting && !_painting) BakeWalkable();   // auto-bake when painting is turned off
 
         using (new EditorGUI.DisabledScope(!_painting))
         {
@@ -83,6 +89,14 @@ public class TerrainGridEditor : Editor
             EditorGUILayout.HelpBox("Left click / drag to paint. Shift-click paints terrain 0.", MessageType.None);
     }
 
+    void BakeWalkable()
+    {
+        Undo.RecordObject(_grid, "Bake Walkable");
+        _grid.BakeWalkable();
+        EditorUtility.SetDirty(_grid);
+        SceneView.RepaintAll();
+    }
+
     void OnSceneGUI()
     {
         if (!_painting) return;
@@ -95,6 +109,7 @@ public class TerrainGridEditor : Editor
         if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
         {
             _painting = false;
+            BakeWalkable();
             Repaint();
             e.Use();
             return;
@@ -129,11 +144,12 @@ public class TerrainGridEditor : Editor
         Undo.RecordObject(_grid, "Paint Terrain");
 
         var map = _grid.Map;
-        int r = _brushSize - 1;
+        int n = Mathf.Max(1, _brushSize);
+        int lo = (n - 1) / 2;          // brush size N paints exactly N x N cells, centred on the cursor
         bool changed = false;
 
-        for (int y = cy - r; y <= cy + r; y++)
-            for (int x = cx - r; x <= cx + r; x++)
+        for (int y = cy - lo; y < cy - lo + n; y++)
+            for (int x = cx - lo; x < cx - lo + n; x++)
             {
                 if (!map.InBounds(x, y) || map.Get(x, y) == id) continue;
                 map.Set(x, y, id);
@@ -157,11 +173,12 @@ public class TerrainGridEditor : Editor
         var color = _brush < set.Count ? Opaque(set.layers[_brush].previewColor) : Color.magenta;
 
         float cs = _grid.CellSize;
-        int r = _brushSize - 1;
+        int n = Mathf.Max(1, _brushSize);
+        int lo = (n - 1) / 2;
         var tf = _grid.transform;
 
-        Vector3 min = tf.TransformPoint(new Vector3((cx - r) * cs, 0f, (cy - r) * cs));
-        Vector3 max = tf.TransformPoint(new Vector3((cx + r + 1) * cs, 0f, (cy + r + 1) * cs));
+        Vector3 min = tf.TransformPoint(new Vector3((cx - lo) * cs, 0f, (cy - lo) * cs));
+        Vector3 max = tf.TransformPoint(new Vector3((cx - lo + n) * cs, 0f, (cy - lo + n) * cs));
         Vector3 a = new Vector3(min.x, min.y, max.z);
         Vector3 b = new Vector3(max.x, max.y, min.z);
 
