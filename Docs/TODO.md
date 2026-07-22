@@ -130,6 +130,15 @@ migration này được code thật.
 - [ ] **Bake theo chunk trong Editor.** Depth grid là source of truth; mesh chỉ là cache hiển thị. Painter
   chỉ preview/đánh dấu dirty, còn `Bake Dirty Chunks` hoặc `Bake All` sinh ground, cliff, bevel, corner,
   water mask và bounds theo chunk rồi lưu cùng map. Không rebuild toàn map lúc load runtime.
+- [ ] **Bake mesh terrain lúc BUILD game (product), không phải tầng asset.** Hiện `TerrainRenderer.Build()`
+  procedural ở `OnEnable`, các `Layer_*` để `HideFlags.DontSave` nên **không lưu vào prefab** (chỉ `cells`
+  + `walls` lưu). Dev cứ để procedural: asset nhỏ, sửa map khỏi re-bake, mesh dựng lại từ `cells` khi load.
+  - Chỉ bake khi **profiling load-time thật sự đáng kể** (map to / swap map liên tục qua jump-point). Đo
+    `Build()` trước; mesh phẳng vài ms/lần thường là bỏ qua được.
+  - Nếu cần: **`IPreprocessBuildWithReport`** bake mọi map thành Mesh asset + serialize `Layer_*` vào prefab
+    **chỉ trong bản ship**; `TerrainRenderer` skip `Build()` khi đã có baked children. **Editor workflow
+    không đổi** → tránh ma sát re-bake mỗi lần vẽ (khác với nút bake tay ở tầng asset).
+  - `walls` (collision) đã bake & lưu sẵn — chỉ mesh *hình ảnh* mới cần lo.
 - [ ] **Runtime mutation — hiếm, tối ưu vừa đủ.** Game sau này có thể phá/hạ một vài tile hoặc lấp hố,
   nhưng thay đổi map xảy ra rất hiếm; chưa xây hệ terraforming liên tục.
   - Khi cell đổi: cập nhật depth grid ngay, lấy bounds các cell vừa sửa rồi `Expand(1)` theo bốn hướng;
@@ -147,6 +156,12 @@ migration này được code thật.
   một water render plane/proxy lớn đi theo camera (nên snap theo cell/chunk), nhưng mask, UV/noise và
   đường bờ phải bám **world-space** để nước không trượt khi camera di chuyển hoặc xoay. Giữ material
   trong suốt, stylized (tint/noise/foam); chưa làm refraction, reflection, bơi hay lội.
+- [ ] **Water theo thời tiết.** Thông số shader `World/StylizedWater` (deep/shallow/edge color, foam,
+  caustic, scroll/wobble) cho weather lái được: bão → tối + nhiều foam + gợn mạnh; lặng → trong, phẳng.
+  - **Phần thị giác thì rẻ, làm lúc nào cũng được**: chỉ set per-material float hoặc `Shader.SetGlobal`,
+    **KHÔNG rebuild mesh**. Cắm vào cùng seam weather (`EnvironmentState`) như day/night.
+  - **Chỉ đổi MỰC/PHẠM VI nước** (lụt/cạn → cell nào là nước đổi) mới cần **regen water mesh runtime** —
+    cái này đi kèm việc build-mesh-runtime + chunk (xem phần elevation), để sau.
 - [ ] `GrassField` không scatter trên cell `height != 0`/cell có water overlay.
 - [ ] Kiểm tra billboard, shadow và camera xoay trên map có hố trũng. Không đổi terrain sang
   ZWrite/depth pipeline trừ khi spike thật sự chứng minh là cần.
