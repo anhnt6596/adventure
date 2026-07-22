@@ -32,6 +32,19 @@ public class TerrainGridEditor : Editor
     {
         DrawDefaultInspector();
 
+        EditorGUILayout.Space();
+        using (new EditorGUI.DisabledScope(_renderer == null))
+        {
+            if (GUILayout.Button("Rebuild Mesh", GUILayout.Height(24)))
+            {
+                _grid.MarkDirty();
+                _renderer.Build();
+                SceneView.RepaintAll();
+            }
+        }
+        if (_renderer == null)
+            EditorGUILayout.HelpBox("No TerrainRenderer on this object — nothing to rebuild.", MessageType.None);
+
         var set = _grid.Set;
         if (set == null || set.Count == 0)
         {

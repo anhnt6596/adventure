@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 50bbfa71e1b79604ca46b7a3a8220a7a
+guid: 4f99bb54133257246b01da1e0812c877
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,13 +97,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: mud_edge_N
+      name: brick_edge_N
       rect:
         serializedVersion: 2
         x: 0
-        y: 128
-        width: 128
-        height: 128
+        y: 64
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -112,20 +112,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4dac2e08ed8569c45b5a89f372da2c41
-      internalID: 62282780
+      spriteID: 6315fa5f6550b0246a7733d5749a6c11
+      internalID: 1037706449
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mud_outter_NE
+      name: brick_outter_NE
       rect:
         serializedVersion: 2
-        x: 128
-        y: 128
-        width: 128
-        height: 128
+        x: 64
+        y: 64
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -134,20 +134,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 92672b3f24ddd1a4b92f20ec3d58828c
-      internalID: 2008957667
+      spriteID: d843c91422c0daf41a3983747149e379
+      internalID: -729004735
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mud_full
+      name: brick_full
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 128
-        height: 128
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -156,20 +156,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3aeb9d0558f82b54c9846d9851d05d1e
-      internalID: 1445454619
+      spriteID: 88a65609c228aa647872cf1659974470
+      internalID: -660206142
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mud_inner_NE
+      name: brick_inner_NE
       rect:
         serializedVersion: 2
-        x: 128
+        x: 64
         y: 0
-        width: 128
-        height: 128
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -178,8 +178,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 396d2bc1a643bb4469662d80efd1ad78
-      internalID: -2014572195
+      spriteID: fe96a7ffc77c558419e1d9170d23407f
+      internalID: -360172662
       vertices: []
       indices: 
       edges: []
@@ -188,7 +188,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: c47f65648c1f9374f82e48833116c146
+    spriteID: 21424c40b7b20814290c89e109f1c810
     internalID: 0
     vertices: []
     indices: 
@@ -198,12 +198,12 @@ TextureImporter:
     spriteCustomMetadata:
       entries:
       - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":2.0,"y":2.0},"gridSpriteSize":{"x":128.0,"y":128.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":2.0,"y":2.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      mud_edge_N: 62282780
-      mud_full: 1445454619
-      mud_inner_NE: -2014572195
-      mud_outter_NE: 2008957667
+      brick_edge_N: 1037706449
+      brick_full: -660206142
+      brick_inner_NE: -360172662
+      brick_outter_NE: -729004735
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

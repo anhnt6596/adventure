@@ -12,9 +12,10 @@ public class TerrainLayer
     [Tooltip("Editor-only: paints the map readable before any art exists.")]
     public Color previewColor = Color.magenta;
 
-    [Tooltip("Indexed by which sides transition: bit0 N, bit1 E, bit2 S, bit3 W. 0 = plain.\n" +
-             "DualGrid instead indexes corners: bit0 SW, bit1 SE, bit2 NW, bit3 NE.")]
-    public Sprite[] tiles = new Sprite[SameGrid.MaskCount];
+    [Tooltip("SameGrid/Quadrant: indexed by which sides transition (bit0 N, bit1 E, bit2 S, bit3 W; 0 = plain).\n" +
+             "DualGrid: indexed by corners (bit0 SW, bit1 SE, bit2 NW, bit3 NE).\n" +
+             "UpscaledBlob: a small rotatable piece set instead. Length is the mode's business — not fixed at 16.")]
+    public Sprite[] tiles = new Sprite[0];
 
     [Tooltip("Quadrant mode: the notch where only the diagonal differs, which no side mask can see. " +
              "Order NW, NE, SE, SW. Empty falls back to the plain tile and leaves a square corner.")]
@@ -56,14 +57,14 @@ public class TerrainSet : ScriptableObject
 
     public static int BitOf(int terrainId) => terrainId < 32 ? 1 << terrainId : 0;
 
-    // Unity serializes a new list element without running field initialisers, so the arrays arrive
-    // empty and their slots never appear in the Inspector.
+    // Unity serializes a new list element without running field initialisers, so the arrays arrive null.
+    // tiles is left at whatever length the mode's art needs (sized by hand); only guarantee non-null.
     void OnValidate()
     {
         foreach (var layer in layers)
         {
             if (layer == null) continue;
-            layer.tiles = Resize(layer.tiles, SameGrid.MaskCount);
+            layer.tiles ??= new Sprite[0];
             layer.innerCorners = Resize(layer.innerCorners, 4);
         }
     }
