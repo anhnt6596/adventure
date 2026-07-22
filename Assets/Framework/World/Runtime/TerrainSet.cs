@@ -12,14 +12,9 @@ public class TerrainLayer
     [Tooltip("Editor-only: paints the map readable before any art exists.")]
     public Color previewColor = Color.magenta;
 
-    [Tooltip("SameGrid/Quadrant: indexed by which sides transition (bit0 N, bit1 E, bit2 S, bit3 W; 0 = plain).\n" +
-             "DualGrid: indexed by corners (bit0 SW, bit1 SE, bit2 NW, bit3 NE).\n" +
-             "UpscaledBlob: a small rotatable piece set instead. Length is the mode's business — not fixed at 16.")]
-    public Sprite[] tiles = new Sprite[0];
-
-    [Tooltip("Quadrant mode: the notch where only the diagonal differs, which no side mask can see. " +
-             "Order NW, NE, SE, SW. Empty falls back to the plain tile and leaves a square corner.")]
-    public Sprite[] innerCorners = new Sprite[4];
+    [Tooltip("The four autotile pieces: 0 = full, 1 = edge, 2 = outer corner, 3 = inner corner. " +
+             "Authored for one reference orientation; the renderer rotates them to fit.")]
+    public Sprite[] tiles = new Sprite[4];
 }
 
 [CreateAssetMenu(menuName = "World/Terrain Set")]
@@ -57,25 +52,12 @@ public class TerrainSet : ScriptableObject
 
     public static int BitOf(int terrainId) => terrainId < 32 ? 1 << terrainId : 0;
 
-    // Unity serializes a new list element without running field initialisers, so the arrays arrive null.
-    // tiles is left at whatever length the mode's art needs (sized by hand); only guarantee non-null.
+    // Unity serializes a new list element without running field initialisers, so a new layer's array
+    // arrives null; give it the four piece slots.
     void OnValidate()
     {
         foreach (var layer in layers)
-        {
-            if (layer == null) continue;
-            layer.tiles ??= new Sprite[0];
-            layer.innerCorners = Resize(layer.innerCorners, 4);
-        }
-    }
-
-    static Sprite[] Resize(Sprite[] source, int length)
-    {
-        if (source != null && source.Length == length) return source;
-
-        var resized = new Sprite[length];
-        if (source != null)
-            for (int i = 0; i < source.Length && i < length; i++) resized[i] = source[i];
-        return resized;
+            if (layer != null && (layer.tiles == null || layer.tiles.Length == 0))
+                layer.tiles = new Sprite[4];
     }
 }

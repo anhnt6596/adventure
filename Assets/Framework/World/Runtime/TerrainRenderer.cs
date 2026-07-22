@@ -7,17 +7,8 @@ using UnityEngine.Rendering;
 [RequireComponent(typeof(TerrainGrid))]
 public class TerrainRenderer : MonoBehaviour
 {
-    // SameGrid: one tile per cell, chosen by a 4-side neighbour mask.
-    // Quadrant: SameGrid over a 2x2-subdivided map — finer edges, same rule.
-    // DualGrid: tiles straddle cell corners, chosen by a 4-corner mask.
-    // UpscaledBlob: like Quadrant (2x subdivision) but each sub-tile is one of a few pieces rotated to
-    //   fit, so a layer draws from a small rotatable set instead of a full per-case tile array.
-    public enum TileMode { SameGrid, Quadrant, DualGrid, UpscaledBlob }
-
     const string LayerPrefix = "Layer_";
-    const int InnerNW = 0, InnerNE = 1, InnerSE = 2, InnerSW = 3;
 
-    [SerializeField] TileMode mode = TileMode.Quadrant;
     [SerializeField] Material material;
     [Tooltip("Order of the topmost terrain layer; the ones below it count down. Keep it under " +
              "anything that stands on the ground.")]
@@ -94,52 +85,47 @@ public class TerrainRenderer : MonoBehaviour
         }
     }
 
+    // Four base pieces (tiles[0..3]) authored for one reference orientation, rotated to cover every case.
+    const int PieceFull = 0, PieceEdge = 1, PieceOuter = 2, PieceInner = 3;
+
     Mesh BuildLayerMesh(int layer, TerrainSet set)
     {
         var data = set.layers[layer];
-        var map = _grid.Map;
         var inLayer = set.BuildLayerTable(layer);
-        float cs = _grid.CellSize;
+
+        // Upscale the map x2 so a terrain overflows a half-cell onto its neighbours; one fine cell = one
+        // tile. Terrain cells are full; each empty cell the terrain touches gets one overflow piece.
+        var grid = _grid.Map.Subdivide(2);
+        float size = _grid.CellSize * 0.5f;
 
         _verts.Clear();
         _uvs.Clear();
         _textures.Clear();
         _trisPerTexture.Clear();
 
-        if (mode == TileMode.UpscaledBlob)
-        {
-            BuildUpscaledBlobLayer(data, map, inLayer, cs);
-        }
-        else if (mode == TileMode.DualGrid)
-        {
-            for (int j = 0; j <= map.Height; j++)
-                for (int i = 0; i <= map.Width; i++)
+        for (int y = 0; y < grid.Height; y++)
+            for (int x = 0; x < grid.Width; x++)
+            {
+                float x0 = x * size, y0 = y * size;
+
+                if (inLayer[grid.Get(x, y)])
                 {
-                    int mask = layer == 0 ? 15 : DualGrid.CornerMask(map, i, j, inLayer);
-                    if (mask == 0) continue;
-                    AddQuad((i - 0.5f) * cs, (j - 0.5f) * cs, cs, Tile(data, mask));
+                    AddRotatedQuad(x0, y0, size, Tile(data, PieceFull), 0);
+                    continue;
                 }
-        }
-        else
-        {
-            // Quadrant is SameGrid over a map split 2x2: same rule, finer input.
-            int step = mode == TileMode.Quadrant ? 2 : 1;
-            var grid = step == 1 ? map : map.Subdivide(step);
-            float size = cs / step;
 
-            for (int y = 0; y < grid.Height; y++)
-                for (int x = 0; x < grid.Width; x++)
-                {
-                    if (layer > 0 && !inLayer[grid.Get(x, y)]) continue;
-                    int mask = layer == 0 ? 0 : SameGrid.NeighbourMask(grid, x, y, inLayer);
+                bool n = inLayer[grid.Get(x, y + 1)];
+                bool s = inLayer[grid.Get(x, y - 1)];
+                bool e = inLayer[grid.Get(x + 1, y)];
+                bool w = inLayer[grid.Get(x - 1, y)];
+                bool ne = inLayer[grid.Get(x + 1, y + 1)];
+                bool nw = inLayer[grid.Get(x - 1, y + 1)];
+                bool se = inLayer[grid.Get(x + 1, y - 1)];
+                bool sw = inLayer[grid.Get(x - 1, y - 1)];
 
-                    var sprite = mask == 0 && step == 2
-                        ? PlainOrNotch(data, grid, inLayer, x, y)
-                        : Tile(data, mask);
-
-                    AddQuad(x * size, y * size, size, sprite);
-                }
-        }
+                if (Overflow(n, e, s, w, ne, nw, se, sw, out int piece, out int rot))
+                    AddRotatedQuad(x0, y0, size, Tile(data, piece), rot);
+            }
 
         if (_verts.Count == 0) return null;
 
@@ -153,68 +139,8 @@ public class TerrainRenderer : MonoBehaviour
         return mesh;
     }
 
-    // A sub-cell with no open side can still have its outer diagonal differ - the concave notch,
-    // which the side mask cannot see. Its three other diagonals are either its own cell or a cell
-    // an open side already covers, so only the outer one matters.
-    static Sprite PlainOrNotch(TerrainLayer data, TerrainMap grid, bool[] inLayer, int x, int y)
-    {
-        bool east = (x & 1) == 1;
-        bool north = (y & 1) == 1;
-
-        int dx = east ? 1 : -1;
-        int dy = north ? 1 : -1;
-
-        if (inLayer[grid.Get(x + dx, y + dy)]) return Tile(data, 0);
-
-        int index = north ? (east ? InnerNE : InnerNW) : (east ? InnerSE : InnerSW);
-        var inner = data.innerCorners != null && index < data.innerCorners.Length
-            ? data.innerCorners[index]
-            : null;
-
-        return inner != null ? inner : Tile(data, 0);
-    }
-
     static Sprite Tile(TerrainLayer data, int slot)
         => data.tiles != null && slot < data.tiles.Length ? data.tiles[slot] : null;
-
-    // UpscaledBlob: four base pieces (tiles[0..3]) authored for the NE quadrant, rotated to cover every
-    // case. Each cell draws its four quadrants; a quadrant reads the two cells across its sides plus the
-    // diagonal, so no per-case tile array is needed.
-    const int PieceFull = 0, PieceEdge = 1, PieceOuter = 2, PieceInner = 3;
-
-    void BuildUpscaledBlobLayer(TerrainLayer data, TerrainMap map, bool[] inLayer, float cs)
-    {
-        // Upscale the map x2 (Quadrant-style) and run on the fine grid, so the terrain overflows a
-        // half-cell out and fewer piece cases arise. One fine cell = one tile.
-        var grid = map.Subdivide(2);
-        float size = cs * 0.5f;
-
-        for (int y = 0; y < grid.Height; y++)
-            for (int x = 0; x < grid.Width; x++)
-            {
-                float x0 = x * size, y0 = y * size;
-
-                // Every terrain cell is a solid full tile.
-                if (inLayer[grid.Get(x, y)])
-                {
-                    AddRotatedQuad(x0, y0, size, Tile(data, PieceFull), 0);
-                    continue;
-                }
-
-                // Empty cell: if the terrain touches it, wrap one full overflow tile out onto it.
-                bool n = inLayer[grid.Get(x, y + 1)];
-                bool s = inLayer[grid.Get(x, y - 1)];
-                bool e = inLayer[grid.Get(x + 1, y)];
-                bool w = inLayer[grid.Get(x - 1, y)];
-                bool ne = inLayer[grid.Get(x + 1, y + 1)];
-                bool nw = inLayer[grid.Get(x - 1, y + 1)];
-                bool se = inLayer[grid.Get(x + 1, y - 1)];
-                bool sw = inLayer[grid.Get(x - 1, y - 1)];
-
-                if (Overflow(n, e, s, w, ne, nw, se, sw, out int piece, out int rot))
-                    AddRotatedQuad(x0, y0, size, Tile(data, piece), rot);
-            }
-    }
 
     // For an empty cell, pick the overflow piece + CCW quarter-turn from where the terrain touches it:
     // one side -> straight edge, two adjacent sides -> concave inner corner, a lone diagonal -> convex
@@ -254,8 +180,8 @@ public class TerrainRenderer : MonoBehaviour
         return false;   // terrain not adjacent → nothing
     }
 
-    // Same as AddQuad but turns the sprite by rot quarter-turns CCW (0..3), mapping the sprite's corners
-    // onto the fixed quad vertices.
+    // Adds one quad, turning the sprite by rot quarter-turns CCW (0..3) by mapping the sprite's corners
+    // onto the fixed quad vertices. UV comes from the full authored slice so it matches the art 1:1.
     void AddRotatedQuad(float x0, float z0, float size, Sprite sprite, int rot)
     {
         if (sprite == null) return;
@@ -288,36 +214,6 @@ public class TerrainRenderer : MonoBehaviour
         _uvs.Add(uvBR);
         _uvs.Add(uvTL);
         _uvs.Add(uvTR);
-
-        var tris = TrianglesFor(tex);
-        tris.Add(v); tris.Add(v + 2); tris.Add(v + 1);
-        tris.Add(v + 1); tris.Add(v + 2); tris.Add(v + 3);
-    }
-
-    void AddQuad(float x0, float z0, float size, Sprite sprite)
-    {
-        if (sprite == null) return;
-        AddQuadUV(x0, z0, size, sprite.texture, sprite.textureRect);
-    }
-
-    void AddQuadUV(float x0, float z0, float size, Texture2D tex, Rect pixelRect)
-    {
-        float x1 = x0 + size;
-        float z1 = z0 + size;
-
-        int v = _verts.Count;
-        _verts.Add(new Vector3(x0, 0f, z0));
-        _verts.Add(new Vector3(x1, 0f, z0));
-        _verts.Add(new Vector3(x0, 0f, z1));
-        _verts.Add(new Vector3(x1, 0f, z1));
-
-        float u0 = pixelRect.xMin / tex.width, u1 = pixelRect.xMax / tex.width;
-        float w0 = pixelRect.yMin / tex.height, w1 = pixelRect.yMax / tex.height;
-
-        _uvs.Add(new Vector2(u0, w0));
-        _uvs.Add(new Vector2(u1, w0));
-        _uvs.Add(new Vector2(u0, w1));
-        _uvs.Add(new Vector2(u1, w1));
 
         var tris = TrianglesFor(tex);
         tris.Add(v); tris.Add(v + 2); tris.Add(v + 1);
