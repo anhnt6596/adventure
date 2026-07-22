@@ -19,10 +19,6 @@ public class TerrainLayer
     [Tooltip("The four autotile pieces: 0 = full, 1 = edge, 2 = outer corner, 3 = inner corner. " +
              "Authored for one reference orientation; the renderer rotates them to fit.")]
     public Sprite[] tiles = new Sprite[4];
-
-    [Tooltip("Water layers only: draw this water with its own material (same water shader, different " +
-             "params — e.g. sea vs pond). Empty = the renderer's default water material.")]
-    public Material waterMaterial;
 }
 
 [CreateAssetMenu(menuName = "World/Terrain Set")]
