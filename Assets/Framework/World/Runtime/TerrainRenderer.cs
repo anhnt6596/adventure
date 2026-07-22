@@ -10,6 +10,7 @@ public class TerrainRenderer : MonoBehaviour
     const string LayerPrefix = "Layer_";
 
     [SerializeField] Material material;
+    [SerializeField] Material waterMaterial;   // a Water-kind layer is a flat mesh with this shader
     [Tooltip("Order of the topmost terrain layer; the ones below it count down. Keep it under " +
              "anything that stands on the ground.")]
     [SerializeField] int sortingOrder = -2;
@@ -60,7 +61,11 @@ public class TerrainRenderer : MonoBehaviour
 
         for (int layer = 0; layer < set.Count; layer++)
         {
-            if (set.layers[layer].kind == TerrainKind.Water) continue;   // TEMP: water will be a shader, not tiles
+            if (set.layers[layer].kind == TerrainKind.Water)
+            {
+                SpawnWaterLayer(layer, set);
+                continue;
+            }
 
             var mesh = BuildLayerMesh(layer, set);
             if (mesh == null) continue;
@@ -85,6 +90,117 @@ public class TerrainRenderer : MonoBehaviour
 
             _layerObjects.Add(go);
         }
+    }
+
+    // A Water layer is a flat quad mesh over its exposed cells, drawn by the water shader (no tiles).
+    void SpawnWaterLayer(int layer, TerrainSet set)
+    {
+        if (waterMaterial == null) return;
+
+        var mesh = BuildWaterMesh(layer);
+        if (mesh == null) return;
+
+        var go = new GameObject($"{LayerPrefix}{layer}_{set.layers[layer].name}");
+        go.transform.SetParent(transform, false);
+        go.transform.localPosition = new Vector3(0f, layer * layerHeight, 0f);
+        go.hideFlags = HideFlags.DontSave;
+        go.layer = gameObject.layer;
+
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var mr = go.AddComponent<MeshRenderer>();
+        mr.sharedMaterial = waterMaterial;
+        mr.shadowCastingMode = ShadowCastingMode.Off;
+        mr.sortingOrder = sortingOrder - (set.Count - 1 - layer);
+
+        _layerObjects.Add(go);
+    }
+
+    Mesh BuildWaterMesh(int layer)
+    {
+        var map = _grid.Map;
+        float cs = _grid.CellSize;
+        int w = map.Width, h = map.Height;
+
+        var shore = ShoreDistance(map, layer);   // cells to the nearest land, for foam
+
+        _verts.Clear();
+        _uvs.Clear();
+        var uv1 = new List<Vector2>();            // x = world distance to shore
+        var tris = new List<int>();
+
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                if (map.Get(x, y) != layer) continue;   // water shows only where it's the top terrain
+
+                float x0 = x * cs, x1 = x0 + cs, z0 = y * cs, z1 = z0 + cs;
+                int v = _verts.Count;
+                _verts.Add(new Vector3(x0, 0f, z0));
+                _verts.Add(new Vector3(x1, 0f, z0));
+                _verts.Add(new Vector3(x0, 0f, z1));
+                _verts.Add(new Vector3(x1, 0f, z1));
+                _uvs.Add(new Vector2(0, 0)); _uvs.Add(new Vector2(1, 0));
+                _uvs.Add(new Vector2(0, 1)); _uvs.Add(new Vector2(1, 1));
+                uv1.Add(new Vector2(CornerShore(shore, w, h, x, y) * cs, 0));
+                uv1.Add(new Vector2(CornerShore(shore, w, h, x + 1, y) * cs, 0));
+                uv1.Add(new Vector2(CornerShore(shore, w, h, x, y + 1) * cs, 0));
+                uv1.Add(new Vector2(CornerShore(shore, w, h, x + 1, y + 1) * cs, 0));
+                tris.Add(v); tris.Add(v + 2); tris.Add(v + 1);
+                tris.Add(v + 1); tris.Add(v + 2); tris.Add(v + 3);
+            }
+
+        if (_verts.Count == 0) return null;
+
+        var mesh = new Mesh { name = $"Water_Layer_{layer}", indexFormat = IndexFormat.UInt32 };
+        mesh.SetVertices(_verts);
+        mesh.SetUVs(0, _uvs);
+        mesh.SetUVs(1, uv1);
+        mesh.SetTriangles(tris, 0);
+        mesh.RecalculateBounds();
+        return mesh;
+    }
+
+    // Cells from each cell to the nearest non-water (land) cell; land itself is 0. Multi-source BFS.
+    static float[] ShoreDistance(TerrainMap map, int waterLayer)
+    {
+        int w = map.Width, h = map.Height;
+        var dist = new float[w * h];
+        for (int i = 0; i < dist.Length; i++) dist[i] = 1e6f;
+
+        var q = new Queue<int>();
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                if (map.Get(x, y) != waterLayer) { dist[y * w + x] = 0f; q.Enqueue(y * w + x); }
+
+        int[] dx = { 1, -1, 0, 0, 1, 1, -1, -1 };
+        int[] dy = { 0, 0, 1, -1, 1, -1, 1, -1 };
+        while (q.Count > 0)
+        {
+            int c = q.Dequeue();
+            int cx = c % w, cy = c / w;
+            float nd = dist[c] + 1f;
+            for (int k = 0; k < 8; k++)
+            {
+                int nx = cx + dx[k], ny = cy + dy[k];
+                if ((uint)nx >= (uint)w || (uint)ny >= (uint)h) continue;
+                int ni = ny * w + nx;
+                if (dist[ni] > nd) { dist[ni] = nd; q.Enqueue(ni); }
+            }
+        }
+        return dist;
+    }
+
+    // Shore distance at a grid corner: the nearest of the up-to-four cells that touch it.
+    static float CornerShore(float[] dist, int w, int h, int cx, int cy)
+    {
+        float m = 1e6f;
+        for (int oy = -1; oy <= 0; oy++)
+            for (int ox = -1; ox <= 0; ox++)
+            {
+                int x = cx + ox, y = cy + oy;
+                if ((uint)x < (uint)w && (uint)y < (uint)h) m = Mathf.Min(m, dist[y * w + x]);
+            }
+        return m;
     }
 
     // Four base pieces (tiles[0..3]) authored for one reference orientation, rotated to cover every case.
