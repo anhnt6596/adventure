@@ -101,9 +101,11 @@ public class TerrainGrid : MonoBehaviour
 
 #if UNITY_EDITOR
     [SerializeField] bool drawWalkable = true;
+    [SerializeField] bool drawWater = true;                      // water barely reads on the art map; overlay it
+    [SerializeField, Range(0f, 1f)] float waterGizmoAlpha = 0.5f;
 
-    // The tile art has a mesh now, so no per-cell gizmo; just the field border and the baked walkable
-    // boundary.
+    // The tile art has a mesh now, so no per-cell gizmo; just the field border, the water overlay, and the
+    // baked walkable boundary.
     void OnDrawGizmosSelected()
     {
         var tf = transform;
@@ -115,6 +117,23 @@ public class TerrainGrid : MonoBehaviour
         Vector3 p3 = tf.TransformPoint(new Vector3(0f, 0f, height * cellSize));
         Gizmos.DrawLine(p0, p1); Gizmos.DrawLine(p1, p2);
         Gizmos.DrawLine(p2, p3); Gizmos.DrawLine(p3, p0);
+
+        // Only water cells — everything else keeps its art unobscured; uses the layer's previewColor.
+        if (drawWater && set != null)
+        {
+            var map = Map;
+            var cell = new Vector3(cellSize, 0.001f, cellSize);
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                {
+                    int id = map.Get(x, y);
+                    if (id >= set.Count || set.layers[id].kind != TerrainKind.Water) continue;
+                    Color c = set.layers[id].previewColor;
+                    c.a = waterGizmoAlpha;
+                    Gizmos.color = c;
+                    Gizmos.DrawCube(CellToWorld(x, y) + Vector3.up * 0.02f, cell);
+                }
+        }
 
         if (!drawWalkable || walls == null) return;
 

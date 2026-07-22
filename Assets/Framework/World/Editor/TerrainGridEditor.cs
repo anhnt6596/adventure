@@ -8,6 +8,10 @@ public class TerrainGridEditor : Editor
     static int _brush = 1;
     static int _brushSize = 1;
 
+    static bool _showReplace;
+    static int _replaceFrom;
+    static int _replaceTo = 1;
+
     TerrainGrid _grid;
     TerrainRenderer _renderer;
 
@@ -87,6 +91,48 @@ public class TerrainGridEditor : Editor
 
         if (_painting)
             EditorGUILayout.HelpBox("Left click / drag to paint. Shift-click paints terrain 0.", MessageType.None);
+
+        EditorGUILayout.Space();
+        _showReplace = EditorGUILayout.Foldout(_showReplace, "Replace Type (whole map)", true);
+        if (_showReplace)
+        {
+            var names = new string[set.Count];
+            for (int i = 0; i < set.Count; i++)
+                names[i] = $"{i}: {(string.IsNullOrEmpty(set.layers[i].name) ? "Layer" : set.layers[i].name)}";
+
+            _replaceFrom = EditorGUILayout.Popup("From (A)", Mathf.Clamp(_replaceFrom, 0, set.Count - 1), names);
+            _replaceTo   = EditorGUILayout.Popup("To (B)",   Mathf.Clamp(_replaceTo, 0, set.Count - 1), names);
+
+            using (new EditorGUI.DisabledScope(_replaceFrom == _replaceTo))
+                if (GUILayout.Button($"Replace all  {_replaceFrom} → {_replaceTo}", GUILayout.Height(24)))
+                    ReplaceAll((byte)_replaceFrom, (byte)_replaceTo);
+
+            EditorGUILayout.HelpBox("Swaps every cell of type A to B across the whole map — for when the " +
+                                    "TerrainSet order changes and ids shift.", MessageType.None);
+        }
+    }
+
+    // Bulk remap: every cell painted A becomes B. One undo step; rebuilds mesh and re-bakes walkable since
+    // the swap can cross the land/water boundary.
+    void ReplaceAll(byte from, byte to)
+    {
+        if (from == to) return;
+
+        Undo.RecordObject(_grid, "Replace Terrain Type");
+        var map = _grid.Map;
+        bool changed = false;
+
+        for (int y = 0; y < _grid.Height; y++)
+            for (int x = 0; x < _grid.Width; x++)
+                if (map.Get(x, y) == from) { map.Set(x, y, to); changed = true; }
+
+        if (!changed) return;
+
+        _grid.MarkDirty();
+        EditorUtility.SetDirty(_grid);
+        if (_renderer != null) _renderer.Build();
+        BakeWalkable();
+        SceneView.RepaintAll();
     }
 
     void BakeWalkable()

@@ -25,11 +25,11 @@ Shader "World/StylizedWater"
         _DistortAmount ("Distort Amount", Float) = 0.15
 
         [Header(Foam)]
-        _FoamWidth ("Foam Band Width", Float) = 1.6
+        _FoamWidth ("Foam Band Width", Float) = 1.0
         _FoamWobble ("Foam Wobble", Float) = 0.6
-        _FoamNoiseScale ("Foam Noise Scale", Float) = 0.7
-        _CrestDist ("Crest Line Distance", Float) = 1.1
-        _CrestWidth ("Crest Line Width", Float) = 0.25
+        _FoamNoiseScale ("Foam Noise Scale", Float) = 1.4
+        _CrestDist ("Crest Line Distance", Float) = 0.45
+        _CrestWidth ("Crest Line Width", Float) = 0.2
 
         _CameraFollow ("Camera Follow", Range(0, 1)) = 0
     }
@@ -43,6 +43,11 @@ Shader "World/StylizedWater"
         Pass
         {
             ZWrite Off
+
+            // Mark the water surface in stencil bit 1 (ref 2) so the reflection can clip itself to the
+            // water, even along the shoreline. WriteMask 2 leaves bit 0 alone — that bit belongs to the
+            // ground-shadow merge (GroundShadowStencil), so the two systems never step on each other.
+            Stencil { Ref 2 WriteMask 2 Comp Always Pass Replace }
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -101,13 +106,19 @@ Shader "World/StylizedWater"
                 // Brighter in the shallows where a real bed would catch the light; faint in the deep.
                 col += web * _CausticStrength * (1.0 - depth * 0.7);
 
-                // Foam: a soft wavy band hugging the shore, plus a crisp crest line just inside it.
-                float fn = Noise(IN.worldPos.xz * _FoamNoiseScale + t * 0.2);
-                float shore = IN.shore + (fn - 0.5) * _FoamWobble;
-                float band  = 1.0 - smoothstep(0.0, _FoamWidth, shore);
-                float crest = 1.0 - smoothstep(0.0, _CrestWidth, abs(shore - _CrestDist));
-                float foam  = saturate(max(band * 0.6, crest));
-                col = lerp(col, _FoamColor.rgb, foam);
+                // Foam: a crisp wavy line lapping at the waterline plus a broken wash behind it. Two noise
+                // octaves — one wobbles the shoreline, a finer one clumps the wash — so it never reads as a
+                // flat white fade. The wash is squared to leave gaps of open water between the clumps.
+                float ft    = _Time.y * 0.2;
+                float wob   = Noise(IN.worldPos.xz * _FoamNoiseScale + ft);
+                float clump = Noise(IN.worldPos.xz * _FoamNoiseScale * 2.7 - ft);
+                float shore = IN.shore + (wob - 0.5) * _FoamWobble;
+
+                float edge = 1.0 - smoothstep(0.0, _CrestWidth, abs(shore - _CrestDist));  // the lapping line
+                float wash = 1.0 - smoothstep(0.0, _FoamWidth, shore);                     // broad wash
+                wash *= clump * clump;                                                      // break it into clumps
+                float foam = saturate(max(edge, wash));
+                col = lerp(col, _FoamColor.rgb, foam * _FoamColor.a);
 
                 return half4(col, 1);
             }

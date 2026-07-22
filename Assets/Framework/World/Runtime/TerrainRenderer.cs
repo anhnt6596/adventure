@@ -92,10 +92,13 @@ public class TerrainRenderer : MonoBehaviour
         }
     }
 
-    // A Water layer is a flat quad mesh over its exposed cells, drawn by the water shader (no tiles).
+    // A Water layer is a flat quad mesh over its exposed cells, drawn by the water shader (no tiles). Each
+    // water layer may carry its own material (sea, pond, river — same shader, different params); when it
+    // doesn't, it falls back to the renderer's default so a plain map still renders.
     void SpawnWaterLayer(int layer, TerrainSet set)
     {
-        if (waterMaterial == null) return;
+        var mat = set.layers[layer].waterMaterial != null ? set.layers[layer].waterMaterial : waterMaterial;
+        if (mat == null) return;
 
         var mesh = BuildWaterMesh(layer);
         if (mesh == null) return;
@@ -108,7 +111,7 @@ public class TerrainRenderer : MonoBehaviour
 
         go.AddComponent<MeshFilter>().sharedMesh = mesh;
         var mr = go.AddComponent<MeshRenderer>();
-        mr.sharedMaterial = waterMaterial;
+        mr.sharedMaterial = mat;
         mr.shadowCastingMode = ShadowCastingMode.Off;
         mr.sortingOrder = sortingOrder - (set.Count - 1 - layer);
 
