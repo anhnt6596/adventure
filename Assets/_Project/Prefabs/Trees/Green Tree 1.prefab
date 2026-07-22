@@ -50,10 +50,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CollisionBody
   shape: 0
-  radius: 0.3
+  radius: 0.22
   size: {x: 1, y: 1}
   mass: 0
-  system: {fileID: 0}
 --- !u!114 &4757893777622346838
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -171,6 +170,7 @@ MonoBehaviour:
   orderOffset: -1
   groundOffset: {x: 0, y: 0}
   yawOffset: 0
+  scale: 1.05
 --- !u!1 &9173140719518025123
 GameObject:
   m_ObjectHideFlags: 0
