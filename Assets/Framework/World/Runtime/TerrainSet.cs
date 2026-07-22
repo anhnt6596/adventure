@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// What a terrain is for movement. Only Land is walkable; the walkable boundary is baked from it.
+// Water and None both block (a body's pass mask can open water for a swimmer).
+public enum TerrainKind { None, Land, Water }
+
 // Layer index is the terrain id and its draw priority: a higher index draws over every lower one.
 [Serializable]
 public class TerrainLayer
 {
     public string name;
-    public bool walkable = true;
+    public TerrainKind kind = TerrainKind.Land;
 
     [Tooltip("Editor-only: paints the map readable before any art exists.")]
     public Color previewColor = Color.magenta;
@@ -24,7 +28,7 @@ public class TerrainSet : ScriptableObject
 
     public int Count => layers.Count;
 
-    public bool IsWalkable(byte id) => id < layers.Count && layers[id].walkable;
+    public bool IsWalkable(byte id) => id < layers.Count && layers[id].kind == TerrainKind.Land;
 
     public bool[] BuildWalkableTable()
     {
@@ -46,7 +50,7 @@ public class TerrainSet : ScriptableObject
     {
         int mask = 0;
         for (int i = 0; i < layers.Count && i < 32; i++)
-            if (layers[i].walkable) mask |= 1 << i;
+            if (layers[i].kind == TerrainKind.Land) mask |= 1 << i;
         return mask;
     }
 

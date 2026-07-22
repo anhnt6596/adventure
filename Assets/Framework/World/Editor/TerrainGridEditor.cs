@@ -78,7 +78,7 @@ public class TerrainGridEditor : Editor
 
                 var button = new Rect(rect.x + 26, rect.y, rect.width - 26, rect.height);
                 string label = string.IsNullOrEmpty(layer.name) ? $"Layer {i}" : layer.name;
-                if (!layer.walkable) label += "  (blocks)";
+                if (layer.kind != TerrainKind.Land) label += $"  ({layer.kind})";
 
                 bool selected = _brush == i;
                 if (GUI.Toggle(button, selected, label, "Button") && !selected) _brush = i;
