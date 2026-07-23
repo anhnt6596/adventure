@@ -91,6 +91,14 @@ public class TerrainRenderer : MonoBehaviour
         var set = _grid.Set;
         if (set == null || set.Count == 0 || material == null) return;
 
+#if UNITY_EDITOR
+        // Baking writes the generated meshes/materials to a real asset folder so they ride with the prefab
+        // (HideFlags alone never embeds them - that was the "baked mesh is null on load" bug). If it can't
+        // (not editing the prefab), PrepareBakeFolder clears `baked` and we fall back to a live build.
+        if (baked) PrepareBakeFolder();
+        _genFlags = baked ? HideFlags.None : HideFlags.DontSave;
+#endif
+
         for (int layer = 0; layer < set.Count; layer++)
         {
             if (set.layers[layer].kind == TerrainKind.Water)
@@ -101,7 +109,6 @@ public class TerrainRenderer : MonoBehaviour
 
             var mesh = BuildLayerMesh(layer, set);
             if (mesh == null) continue;
-            mesh.hideFlags = _genFlags;
 
             var go = new GameObject($"{LayerPrefix}{layer}_{set.layers[layer].name}");
             go.transform.SetParent(transform, false);
@@ -109,9 +116,8 @@ public class TerrainRenderer : MonoBehaviour
             go.hideFlags = _genFlags;
             go.layer = gameObject.layer;
 
-            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mf = go.AddComponent<MeshFilter>();
             var mr = go.AddComponent<MeshRenderer>();
-            mr.sharedMaterials = MaterialsForSubmeshes(layer);
             mr.shadowCastingMode = ShadowCastingMode.Off;
 
             // The material writes no depth and the layers overlap (a terrain overhangs onto the ones
@@ -119,8 +125,17 @@ public class TerrainRenderer : MonoBehaviour
             // always paints after, and over, everything under it. sortingOrder is a fallback.
             mr.sortingOrder = sortingOrder - (set.Count - 1 - layer);
 
+            var mats = MaterialsForSubmeshes(layer);
+            PersistGenerated(mesh, mats, go.name);   // asset when baking, throwaway when live
+            mf.sharedMesh = mesh;
+            mr.sharedMaterials = mats;
+
             _layerObjects.Add(go);
         }
+
+#if UNITY_EDITOR
+        if (baked) UnityEditor.AssetDatabase.SaveAssets();
+#endif
     }
 
     // A Water layer is a flat quad mesh over its exposed cells, drawn by the water shader (no tiles).
@@ -130,7 +145,6 @@ public class TerrainRenderer : MonoBehaviour
 
         var mesh = BuildWaterMesh(layer);
         if (mesh == null) return;
-        mesh.hideFlags = _genFlags;
 
         var go = new GameObject($"{WaterPrefix}{layer}_{set.layers[layer].name}");
         go.transform.SetParent(transform, false);
@@ -138,11 +152,14 @@ public class TerrainRenderer : MonoBehaviour
         go.hideFlags = _genFlags;
         go.layer = gameObject.layer;
 
-        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var mf = go.AddComponent<MeshFilter>();
         var mr = go.AddComponent<MeshRenderer>();
-        mr.sharedMaterial = waterMaterial;
+        mr.sharedMaterial = waterMaterial;   // shared asset already; only the mesh needs persisting
         mr.shadowCastingMode = ShadowCastingMode.Off;
         mr.sortingOrder = sortingOrder - (set.Count - 1 - layer);
+
+        PersistGenerated(mesh, null, go.name);
+        mf.sharedMesh = mesh;
 
         _layerObjects.Add(go);
     }
@@ -401,21 +418,23 @@ public class TerrainRenderer : MonoBehaviour
             if (!child.name.StartsWith(LayerPrefix) && !water) continue;
             if (water && !includeWater) continue;   // keep the water surface across a paint stroke
 
+            // Only free throwaway (live) meshes/materials - baked ones are real assets, cleared instead by
+            // rewriting the bake folder; DestroyImmediate on an asset would error.
             var filter = child.GetComponent<MeshFilter>();
-            if (filter != null && filter.sharedMesh != null) DestroySafe(filter.sharedMesh);
+            if (filter != null && filter.sharedMesh != null && !IsPersistentAsset(filter.sharedMesh))
+                DestroySafe(filter.sharedMesh);
 
-            // Free the generated material copies too (baked ones aren't tracked after a reload).
             var mr = child.GetComponent<MeshRenderer>();
             if (mr != null)
                 foreach (var m in mr.sharedMaterials)
-                    if (m != null && m != material && m != waterMaterial) DestroySafe(m);
+                    if (m != null && m != material && m != waterMaterial && !IsPersistentAsset(m)) DestroySafe(m);
 
             DestroySafe(child.gameObject);
         }
         _layerObjects.Clear();
 
         foreach (var m in _layerMaterials)
-            if (m != null) DestroySafe(m);
+            if (m != null && !IsPersistentAsset(m)) DestroySafe(m);
         _layerMaterials.Clear();
     }
 
@@ -424,4 +443,61 @@ public class TerrainRenderer : MonoBehaviour
         if (Application.isPlaying) Destroy(obj);
         else DestroyImmediate(obj);
     }
+
+    static bool IsPersistentAsset(UnityEngine.Object o)
+    {
+#if UNITY_EDITOR
+        return UnityEditor.EditorUtility.IsPersistent(o);
+#else
+        return false;
+#endif
+    }
+
+    // Baking: write the mesh and its material copies into the map's own bake folder as real assets and
+    // reference them, so they persist with the prefab (self-contained per map). Live: leave them throwaway.
+    void PersistGenerated(Mesh mesh, Material[] mats, string key)
+    {
+#if UNITY_EDITOR
+        if (baked && _bakeFolder != null)
+        {
+            UnityEditor.AssetDatabase.CreateAsset(mesh, $"{_bakeFolder}/{key}.asset");
+            if (mats != null)
+                for (int i = 0; i < mats.Length; i++)
+                    if (mats[i] != null) UnityEditor.AssetDatabase.CreateAsset(mats[i], $"{_bakeFolder}/{key}_{i}.mat");
+            return;
+        }
+#endif
+        mesh.hideFlags = _genFlags;
+        if (mats != null) foreach (var m in mats) if (m != null) m.hideFlags = _genFlags;
+    }
+
+#if UNITY_EDITOR
+    string _bakeFolder;   // "<prefab dir>/<prefab name>_Bake" during a bake; null when it can't persist
+
+    // A "<prefab>_Bake" folder next to the prefab, wiped fresh each bake so stale meshes never linger. Bake
+    // must run with the map prefab open (its assets can't be authored from a scene instance); if it isn't,
+    // drop back to a live build so we never save phantom, null-mesh children into the prefab again.
+    void PrepareBakeFolder()
+    {
+        _bakeFolder = null;
+
+        var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+        string prefabPath = stage != null ? stage.assetPath : UnityEditor.AssetDatabase.GetAssetPath(this);
+        if (string.IsNullOrEmpty(prefabPath) || !prefabPath.EndsWith(".prefab"))
+        {
+            Debug.LogWarning($"[{nameof(TerrainRenderer)}] Bake needs the map prefab open (open Map_x.prefab, then " +
+                             "Rebuild Terrain Mesh). Building live instead — the game will rebuild on load.", this);
+            baked = false;
+            return;
+        }
+
+        string dir = System.IO.Path.GetDirectoryName(prefabPath).Replace('\\', '/');
+        string folderName = System.IO.Path.GetFileNameWithoutExtension(prefabPath) + "_Bake";
+        _bakeFolder = $"{dir}/{folderName}";
+
+        if (UnityEditor.AssetDatabase.IsValidFolder(_bakeFolder))
+            UnityEditor.AssetDatabase.DeleteAsset(_bakeFolder);
+        UnityEditor.AssetDatabase.CreateFolder(dir, folderName);
+    }
+#endif
 }

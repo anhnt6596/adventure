@@ -377,7 +377,7 @@ PrefabInstance:
     - target: {fileID: 7422796970273104650, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_TargetTexture
       value: 
-      objectReference: {fileID: 1765025689}
+      objectReference: {fileID: 1652404920}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -650,7 +650,7 @@ MonoBehaviour:
   duskDir: {x: 2, y: 0.5}
   maxLength: 1.5
   noonScale: 0.55
-  strength: 0.5
+  strength: 0.3
   twilight: 0.35
   nightDir: {x: 0, y: 1}
   nightLength: 0.85
@@ -698,7 +698,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DayNightLighting
   lightManager: {fileID: 1534016994}
---- !u!84 &1765025689
+--- !u!84 &1652404920
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

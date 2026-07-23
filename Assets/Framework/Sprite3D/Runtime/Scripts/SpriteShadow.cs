@@ -28,7 +28,10 @@ public class SpriteShadow : MonoBehaviour
     SpriteRenderer _shadow;
     Sprite _lastSprite;
 
-    void Awake()
+    // Built lazily on first enable, NOT in Awake: Awake runs even while the component is disabled (as long
+    // as the GameObject is active), so building there would spawn a shadow for a SpriteShadow you turned off
+    // to kill that object's shadow. OnEnable doesn't run while disabled, so nothing is created.
+    void EnsureShadow()
     {
         if (source == null) source = GetComponentInChildren<SpriteRenderer>();
         if (source == null)
@@ -107,9 +110,11 @@ public class SpriteShadow : MonoBehaviour
     }
 
     // Register with the manager and toggle with the caster (pooled objects disabled in the pool don't cast).
+    // The shadow is created here on first enable, so a disabled SpriteShadow never builds one.
     void OnEnable()
     {
-        if (_shadow == null) return;
+        if (_shadow == null) EnsureShadow();
+        if (_shadow == null) return;        // build failed (no source/material) — stay shadowless
         _shadow.enabled = true;
         ShadowManager.Register(this);
     }
@@ -118,6 +123,13 @@ public class SpriteShadow : MonoBehaviour
     {
         if (_shadow != null) _shadow.enabled = false;
         ShadowManager.Unregister(this);
+    }
+
+    // The shadow hangs off the parent, not this object, so destroying the caster would orphan it - take it
+    // down explicitly.
+    void OnDestroy()
+    {
+        if (_shadow != null) Destroy(_shadow.gameObject);
     }
 
     static Material AutoColor()   => Auto("Sprite/GroundShadow",        ref _autoColor);

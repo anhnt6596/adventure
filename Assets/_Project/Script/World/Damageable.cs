@@ -14,6 +14,7 @@ public class Damageable : MonoBehaviour, IDamageable
 
     float _hp;
     CombatWorld _combat;
+    bool _inWorld;         // guards against a double Add across the inject/OnEnable ordering
 
     public Vector3 Position => transform.position;
     public float HitRadius => config != null ? Cfg.HitRadius : 0.5f;
@@ -28,12 +29,14 @@ public class Damageable : MonoBehaviour, IDamageable
         if (config != null) _hp = Cfg.MaxHp;
     }
 
-    // Injected when its map is instantiated through the container (MapService does this).
+    // Injected when its map is instantiated through the container (MapService does this). Inject lands
+    // AFTER the first OnEnable (which had no world yet), so join here too — but only while active, so a
+    // prefab object that ships disabled stays out of the world until it's actually switched on.
     [Inject]
     public void Construct(CombatWorld combat)
     {
         _combat = combat;
-        _combat.Add(this);
+        if (isActiveAndEnabled) JoinWorld();
     }
 
     void Start()
@@ -44,7 +47,13 @@ public class Damageable : MonoBehaviour, IDamageable
             Debug.LogError($"[{nameof(Damageable)}] not injected — its map must be instantiated through the DI container, or add it to GameScope's Auto Inject list.", this);
     }
 
-    void OnDestroy() => _combat?.Remove(this);
+    // Only in the combat world while enabled: a disabled object can't be hit, and a re-enabled one rejoins.
+    void OnEnable() => JoinWorld();          // _combat is still null on the very first call (before inject)
+    void OnDisable() => LeaveWorld();
+    void OnDestroy() => LeaveWorld();
+
+    void JoinWorld()  { if (_combat != null && !_inWorld) { _combat.Add(this); _inWorld = true; } }
+    void LeaveWorld() { if (_combat != null && _inWorld)  { _combat.Remove(this); _inWorld = false; } }
 
     public void TakeDamage(float amount, object source)
     {
@@ -56,9 +65,9 @@ public class Damageable : MonoBehaviour, IDamageable
 
     void Die(object source)
     {
-        _combat?.Remove(this);
+        LeaveWorld();                  // out of the world before it can be re-targeted
         Died?.Invoke(source);          // DeathDropable (and anything else) reacts before we vanish
-        gameObject.SetActive(false);
+        gameObject.SetActive(false);   // OnDisable's LeaveWorld is then a no-op
     }
 
     // The hit circle sits at transform.position — this must line up with where the thing is drawn,

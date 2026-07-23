@@ -118,6 +118,7 @@ GameObject:
   - component: {fileID: 752545886070451489}
   - component: {fileID: 7814986666246732847}
   - component: {fileID: 3981162432466900665}
+  - component: {fileID: 7286358675611483854}
   m_Layer: 0
   m_Name: scaleNote
   m_TagString: Untagged
@@ -160,7 +161,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6425603057950927440}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c58afa7c51e4f6c48bb4e89f2c53dba7, type: 3}
   m_Name: 
@@ -171,6 +172,24 @@ MonoBehaviour:
   groundOffset: {x: 0, y: 0}
   yawOffset: 0
   scale: 1.05
+--- !u!114 &7286358675611483854
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6425603057950927440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1aa6f46bb9001b41a44b7ca5672e777, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Sprite3D::WaterReflection
+  source: {fileID: 2546140312403820391}
+  material: {fileID: 2100000, guid: 4edb47f4eb2ea514a94a501d686e150c, type: 2}
+  orderOffset: -10
+  surfaceOffset: 0
+  scale: 1
+  length: 0.7
 --- !u!1 &9173140719518025123
 GameObject:
   m_ObjectHideFlags: 0

@@ -14,7 +14,7 @@ public class WaterReflection : MonoBehaviour
 {
     [SerializeField] SpriteRenderer source;    // the art sprite to reflect (auto-found in children if null)
     [SerializeField] Material material;         // WaterReflection material (auto-made from the shader if null)
-    [SerializeField] int orderOffset = -3;      // under the ground layers (so the shore overhang hides its
+    [SerializeField] int orderOffset = -10;      // under the ground layers (so the shore overhang hides its
                                                 // edge) but over the water — tune per your terrain sorting
     [SerializeField] float surfaceOffset;       // nudge the reflection up/down along world Y (waterline tweak)
     [SerializeField] float scale = 1f;          // overall size vs the caster (1 = same width as the sprite)
