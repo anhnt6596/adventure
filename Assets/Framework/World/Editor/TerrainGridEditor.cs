@@ -40,10 +40,10 @@ public class TerrainGridEditor : Editor
         using (new EditorGUILayout.HorizontalScope())
         {
             using (new EditorGUI.DisabledScope(_renderer == null))
-                if (GUILayout.Button("Rebuild Mesh", GUILayout.Height(24)))
+                if (GUILayout.Button("Rebuild Mesh (bake)", GUILayout.Height(24)))
                 {
                     _grid.MarkDirty();
-                    _renderer.Build();
+                    _renderer.Bake();
                     SceneView.RepaintAll();
                 }
 
@@ -65,7 +65,7 @@ public class TerrainGridEditor : Editor
 
         bool wasPainting = _painting;
         _painting = GUILayout.Toggle(_painting, _painting ? "Painting (Esc to stop)" : "Start Painting", "Button", GUILayout.Height(28));
-        if (wasPainting && !_painting) BakeWalkable();   // auto-bake when painting is turned off
+        if (wasPainting && !_painting) FinishPaint();   // rebuild water + bake walkable when painting stops
 
         using (new EditorGUI.DisabledScope(!_painting))
         {
@@ -143,6 +143,14 @@ public class TerrainGridEditor : Editor
         SceneView.RepaintAll();
     }
 
+    // Painting stopped: now do the deferred heavy work - rebuild the water mesh and bake the walkable
+    // boundary, both skipped during the drag to keep it smooth.
+    void FinishPaint()
+    {
+        if (_renderer != null) _renderer.Build(true);
+        BakeWalkable();
+    }
+
     void OnSceneGUI()
     {
         if (!_painting) return;
@@ -155,7 +163,7 @@ public class TerrainGridEditor : Editor
         if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
         {
             _painting = false;
-            BakeWalkable();
+            FinishPaint();
             Repaint();
             e.Use();
             return;
@@ -206,7 +214,7 @@ public class TerrainGridEditor : Editor
 
         _grid.MarkDirty();
         EditorUtility.SetDirty(_grid);
-        if (_renderer != null) _renderer.Build();
+        if (_renderer != null) _renderer.Build(false);   // tiles only while dragging; water is the slow part
         SceneView.RepaintAll();
     }
 

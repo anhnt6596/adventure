@@ -8,6 +8,7 @@ using UnityEngine.Rendering;
 public class TerrainRenderer : MonoBehaviour
 {
     const string LayerPrefix = "Layer_";
+    const string WaterPrefix = "Water_";   // named apart so a tile-only rebuild can leave the water alone
 
     [SerializeField] Material material;
     [SerializeField] Material waterMaterial;   // a Water-kind layer is a flat mesh with this shader
@@ -18,7 +19,10 @@ public class TerrainRenderer : MonoBehaviour
     [Tooltip("Vertical gap between layers. Coplanar layers z-fight.")]
     [SerializeField] float layerHeight = 0.002f;
 
+    [SerializeField, HideInInspector] bool baked;   // Rebuild Mesh saved the meshes; the game skips Build
+
     TerrainGrid _grid;
+    HideFlags _genFlags = HideFlags.DontSave;   // generated objects: DontSave when live, None when baking
     readonly List<GameObject> _layerObjects = new List<GameObject>();
     readonly List<Material> _layerMaterials = new List<Material>();
 
@@ -31,7 +35,9 @@ public class TerrainRenderer : MonoBehaviour
     readonly List<List<int>> _trisPerTexture = new List<List<int>>();
 
     void Awake() => _grid = GetComponent<TerrainGrid>();
-    void OnEnable() { _grid = GetComponent<TerrainGrid>(); Build(); }
+
+    // Baked meshes ride with the prefab, so the game (and reloads) skip the build entirely.
+    void OnEnable() { _grid = GetComponent<TerrainGrid>(); if (!baked) Build(true, false); }
 
 #if UNITY_EDITOR
     // Layer and sorting order are copied onto the generated objects, so changing them here has to
@@ -49,12 +55,38 @@ public class TerrainRenderer : MonoBehaviour
     }
 #endif
 
+    // Live rebuild (DontSave) - used while editing and, if nothing is baked, on load.
+    public void Build() => Build(true, false);
+    public void Build(bool includeWater) => Build(includeWater, false);
+
+    // Rebuild and bake the meshes into saved objects so they ride with the prefab and the game skips the
+    // build. Any later edit (paint) drops back to a live rebuild until this runs again.
     [ContextMenu("Rebuild Terrain Mesh")]
-    public void Build()
+    public void Bake()
+    {
+        Build(true, true);
+#if UNITY_EDITOR
+        if (!Application.isPlaying)
+        {
+            UnityEditor.EditorUtility.SetDirty(this);
+            var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+            if (stage != null) UnityEditor.EditorUtility.SetDirty(stage.prefabContentsRoot);
+            else UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
+        }
+#endif
+    }
+
+    // includeWater = false skips the (slow) water mesh so a paint stroke rebuilds only the tiles; the
+    // existing water surface is left in place and rebuilt once, when painting stops. bake = true saves the
+    // generated objects with the prefab instead of leaving them throwaway.
+    public void Build(bool includeWater, bool bake)
     {
         if (_grid == null) _grid = GetComponent<TerrainGrid>();
 
-        ClearLayers();
+        baked = bake;
+        _genFlags = bake ? HideFlags.None : HideFlags.DontSave;
+
+        ClearLayers(includeWater);
 
         var set = _grid.Set;
         if (set == null || set.Count == 0 || material == null) return;
@@ -63,19 +95,18 @@ public class TerrainRenderer : MonoBehaviour
         {
             if (set.layers[layer].kind == TerrainKind.Water)
             {
-                SpawnWaterLayer(layer, set);
+                if (includeWater) SpawnWaterLayer(layer, set);
                 continue;
             }
 
             var mesh = BuildLayerMesh(layer, set);
             if (mesh == null) continue;
+            mesh.hideFlags = _genFlags;
 
-            // Rebuilt from scratch on every paint stroke and reload, so nothing set on them by hand
-            // survives - anything they need is taken from this component or its GameObject.
             var go = new GameObject($"{LayerPrefix}{layer}_{set.layers[layer].name}");
             go.transform.SetParent(transform, false);
             go.transform.localPosition = new Vector3(0f, layer * layerHeight, 0f);
-            go.hideFlags = HideFlags.DontSave;
+            go.hideFlags = _genFlags;
             go.layer = gameObject.layer;
 
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
@@ -99,11 +130,12 @@ public class TerrainRenderer : MonoBehaviour
 
         var mesh = BuildWaterMesh(layer);
         if (mesh == null) return;
+        mesh.hideFlags = _genFlags;
 
-        var go = new GameObject($"{LayerPrefix}{layer}_{set.layers[layer].name}");
+        var go = new GameObject($"{WaterPrefix}{layer}_{set.layers[layer].name}");
         go.transform.SetParent(transform, false);
         go.transform.localPosition = new Vector3(0f, layer * layerHeight, 0f);
-        go.hideFlags = HideFlags.DontSave;
+        go.hideFlags = _genFlags;
         go.layer = gameObject.layer;
 
         go.AddComponent<MeshFilter>().sharedMesh = mesh;
@@ -349,7 +381,7 @@ public class TerrainRenderer : MonoBehaviour
         var materials = new Material[_textures.Count];
         for (int i = 0; i < _textures.Count; i++)
         {
-            var copy = new Material(material) { name = $"{material.name}_{_textures[i].name}", hideFlags = HideFlags.DontSave };
+            var copy = new Material(material) { name = $"{material.name}_{_textures[i].name}", hideFlags = _genFlags };
             copy.mainTexture = _textures[i];
             copy.renderQueue = material.renderQueue + layer;   // higher terrain draws after, and over, lower
             _layerMaterials.Add(copy);
@@ -360,15 +392,24 @@ public class TerrainRenderer : MonoBehaviour
 
     // A domain reload clears the lists but leaves the objects, so children are scanned rather than
     // tracked.
-    void ClearLayers()
+    void ClearLayers(bool includeWater)
     {
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             var child = transform.GetChild(i);
-            if (!child.name.StartsWith(LayerPrefix)) continue;
+            bool water = child.name.StartsWith(WaterPrefix);
+            if (!child.name.StartsWith(LayerPrefix) && !water) continue;
+            if (water && !includeWater) continue;   // keep the water surface across a paint stroke
 
             var filter = child.GetComponent<MeshFilter>();
             if (filter != null && filter.sharedMesh != null) DestroySafe(filter.sharedMesh);
+
+            // Free the generated material copies too (baked ones aren't tracked after a reload).
+            var mr = child.GetComponent<MeshRenderer>();
+            if (mr != null)
+                foreach (var m in mr.sharedMaterials)
+                    if (m != null && m != material && m != waterMaterial) DestroySafe(m);
+
             DestroySafe(child.gameObject);
         }
         _layerObjects.Clear();

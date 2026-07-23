@@ -110,7 +110,7 @@ Material:
     - _DistortScale: 10
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EdgeWidth: 3
+    - _EdgeWidth: 1.55
     - _EnvironmentReflections: 1
     - _FoamNoiseScale: 0.8
     - _FoamWidth: 2
