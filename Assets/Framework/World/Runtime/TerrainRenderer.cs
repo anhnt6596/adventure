@@ -121,7 +121,20 @@ public class TerrainRenderer : MonoBehaviour
         float cs = _grid.CellSize;
         int w = map.Width, h = map.Height;
 
-        var shore = ShoreDistance(map, layer);   // cells to the nearest land, for foam
+        // Shore distance is to the real water/land cell boundary (distance to the nearest land cell). A
+        // 1-quad-per-cell mesh interpolates across the corner creases and the rim cuts them diagonally, so
+        // subdivide; distances are exact per sub-vertex, cached since neighbouring sub-quads share them.
+        const int sub = 4;
+        float ss = cs / sub;
+        var shoreCache = new Dictionary<int, float>();
+        int stride = w * sub + 8;
+        float Shore(int fi, int fj)
+        {
+            int key = fj * stride + fi;
+            if (!shoreCache.TryGetValue(key, out float d))
+                shoreCache[key] = d = LandDist(map, layer, (float)fi / sub, (float)fj / sub, 12) * cs;
+            return d;
+        }
 
         _verts.Clear();
         _uvs.Clear();
@@ -133,20 +146,25 @@ public class TerrainRenderer : MonoBehaviour
             {
                 if (map.Get(x, y) != layer) continue;   // water shows only where it's the top terrain
 
-                float x0 = x * cs, x1 = x0 + cs, z0 = y * cs, z1 = z0 + cs;
-                int v = _verts.Count;
-                _verts.Add(new Vector3(x0, 0f, z0));
-                _verts.Add(new Vector3(x1, 0f, z0));
-                _verts.Add(new Vector3(x0, 0f, z1));
-                _verts.Add(new Vector3(x1, 0f, z1));
-                _uvs.Add(new Vector2(0, 0)); _uvs.Add(new Vector2(1, 0));
-                _uvs.Add(new Vector2(0, 1)); _uvs.Add(new Vector2(1, 1));
-                uv1.Add(new Vector2(CornerShore(shore, w, h, x, y) * cs, 0));
-                uv1.Add(new Vector2(CornerShore(shore, w, h, x + 1, y) * cs, 0));
-                uv1.Add(new Vector2(CornerShore(shore, w, h, x, y + 1) * cs, 0));
-                uv1.Add(new Vector2(CornerShore(shore, w, h, x + 1, y + 1) * cs, 0));
-                tris.Add(v); tris.Add(v + 2); tris.Add(v + 1);
-                tris.Add(v + 1); tris.Add(v + 2); tris.Add(v + 3);
+                for (int sj = 0; sj < sub; sj++)
+                    for (int si = 0; si < sub; si++)
+                    {
+                        int fi = x * sub + si, fj = y * sub + sj;
+                        float x0 = fi * ss, x1 = x0 + ss, z0 = fj * ss, z1 = z0 + ss;
+                        int v = _verts.Count;
+                        _verts.Add(new Vector3(x0, 0f, z0));
+                        _verts.Add(new Vector3(x1, 0f, z0));
+                        _verts.Add(new Vector3(x0, 0f, z1));
+                        _verts.Add(new Vector3(x1, 0f, z1));
+                        _uvs.Add(new Vector2(0, 0)); _uvs.Add(new Vector2(1, 0));
+                        _uvs.Add(new Vector2(0, 1)); _uvs.Add(new Vector2(1, 1));
+                        uv1.Add(new Vector2(Shore(fi, fj), 0));
+                        uv1.Add(new Vector2(Shore(fi + 1, fj), 0));
+                        uv1.Add(new Vector2(Shore(fi, fj + 1), 0));
+                        uv1.Add(new Vector2(Shore(fi + 1, fj + 1), 0));
+                        tris.Add(v); tris.Add(v + 2); tris.Add(v + 1);
+                        tris.Add(v + 1); tris.Add(v + 2); tris.Add(v + 3);
+                    }
             }
 
         if (_verts.Count == 0) return null;
@@ -160,47 +178,23 @@ public class TerrainRenderer : MonoBehaviour
         return mesh;
     }
 
-    // Cells from each cell to the nearest non-water (land) cell; land itself is 0. Multi-source BFS.
-    static float[] ShoreDistance(TerrainMap map, int waterLayer)
+    // Distance (in cells) from a point (cell units) to the nearest land cell - i.e. to the real
+    // water/land boundary, since that boundary is the edge of the nearest land square. Searched within a
+    // radius and capped at it, so deep water past the radius reads uniformly deep.
+    static float LandDist(TerrainMap map, int waterLayer, float px, float pz, int radius)
     {
-        int w = map.Width, h = map.Height;
-        var dist = new float[w * h];
-        for (int i = 0; i < dist.Length; i++) dist[i] = 1e6f;
-
-        var q = new Queue<int>();
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-                if (map.Get(x, y) != waterLayer) { dist[y * w + x] = 0f; q.Enqueue(y * w + x); }
-
-        int[] dx = { 1, -1, 0, 0, 1, 1, -1, -1 };
-        int[] dy = { 0, 0, 1, -1, 1, -1, 1, -1 };
-        while (q.Count > 0)
-        {
-            int c = q.Dequeue();
-            int cx = c % w, cy = c / w;
-            float nd = dist[c] + 1f;
-            for (int k = 0; k < 8; k++)
+        int cx = Mathf.FloorToInt(px), cy = Mathf.FloorToInt(pz);
+        float best = radius;
+        for (int y = cy - radius; y <= cy + radius; y++)
+            for (int x = cx - radius; x <= cx + radius; x++)
             {
-                int nx = cx + dx[k], ny = cy + dy[k];
-                if ((uint)nx >= (uint)w || (uint)ny >= (uint)h) continue;
-                int ni = ny * w + nx;
-                if (dist[ni] > nd) { dist[ni] = nd; q.Enqueue(ni); }
+                if (!map.InBounds(x, y) || map.Get(x, y) == waterLayer) continue;   // land only
+                float ddx = Mathf.Max(0f, Mathf.Max(x - px, px - (x + 1)));
+                float ddz = Mathf.Max(0f, Mathf.Max(y - pz, pz - (y + 1)));
+                float d = Mathf.Sqrt(ddx * ddx + ddz * ddz);
+                if (d < best) best = d;
             }
-        }
-        return dist;
-    }
-
-    // Shore distance at a grid corner: the nearest of the up-to-four cells that touch it.
-    static float CornerShore(float[] dist, int w, int h, int cx, int cy)
-    {
-        float m = 1e6f;
-        for (int oy = -1; oy <= 0; oy++)
-            for (int ox = -1; ox <= 0; ox++)
-            {
-                int x = cx + ox, y = cy + oy;
-                if ((uint)x < (uint)w && (uint)y < (uint)h) m = Mathf.Min(m, dist[y * w + x]);
-            }
-        return m;
+        return best;
     }
 
     // Four base pieces (tiles[0..3]) authored for one reference orientation, rotated to cover every case.

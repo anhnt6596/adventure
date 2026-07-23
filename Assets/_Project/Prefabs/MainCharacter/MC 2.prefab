@@ -125,7 +125,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Sprite3D::WaterReflection
   source: {fileID: 8142573892274122599}
   material: {fileID: 2100000, guid: 4edb47f4eb2ea514a94a501d686e150c, type: 2}
-  orderOffset: -3
+  orderOffset: -10
   surfaceOffset: 0
   scale: 1.05
   length: 1

@@ -118,9 +118,10 @@ Shader "World/StylizedWater"
                 float clump = Noise(IN.worldPos.xz * _FoamNoiseScale * 2.7 - ft);
                 float shore = IN.shore + (wob - 0.5) * _FoamWobble;
 
-                // Shore rim: a warm sandy band hugging the waterline, tinting the blue toward the ground so
-                // the very edge reads like a lowland/river bank. Sits over the depth colour, under the foam.
-                float rim = 1.0 - smoothstep(0.0, _EdgeWidth, shore);
+                // Shore rim: a warm sandy band hugging the waterline. Measured from the raw baked shore
+                // distance (not the foam-wobbled one) so the band stays fixed to the coastline instead of
+                // bleeding in and out with the foam. Sits over the depth colour, under the foam.
+                float rim = 1.0 - smoothstep(0.0, _EdgeWidth, IN.shore);
                 col = lerp(col, _EdgeColor.rgb, saturate(rim) * _EdgeColor.a);
 
                 // Foam: a crisp wavy line lapping at the waterline plus a broken wash behind it. Two noise

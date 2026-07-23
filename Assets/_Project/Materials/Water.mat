@@ -92,10 +92,10 @@ Material:
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
     - _CameraFollow: 0.02
-    - _CausticScale: 0.25
-    - _CausticSharp: 2
+    - _CausticScale: 0.2
+    - _CausticSharp: 5.47
     - _CausticSpeed: 0.05
-    - _CausticStrength: 0.6
+    - _CausticStrength: 0.236
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _ColorNoiseScale: 0.05
@@ -110,11 +110,11 @@ Material:
     - _DistortScale: 10
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EdgeWidth: 2
+    - _EdgeWidth: 3
     - _EnvironmentReflections: 1
     - _FoamNoiseScale: 0.8
-    - _FoamWidth: 2.72
-    - _FoamWobble: 1.32
+    - _FoamWidth: 2
+    - _FoamWobble: 2.86
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
@@ -133,6 +133,7 @@ Material:
     - _ReceiveShadows: 1
     - _ScrollSpeed: 0.08
     - _ShadowReceive: 1
+    - _ShoreInset: 0.04
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -155,9 +156,9 @@ Material:
     - _ColorDark: {r: 0.75, g: 0.8, b: 0.54999995, a: 1}
     - _ColorLight: {r: 1, g: 1, b: 0.85, a: 1}
     - _DeepColor: {r: 0.022677058, g: 0.20478033, b: 0.3433962, a: 1}
-    - _EdgeColor: {r: 0.72, g: 0.65999997, b: 0.5, a: 0.7}
+    - _EdgeColor: {r: 0.6150943, g: 0.54115033, b: 0.35629043, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FoamColor: {r: 0.5686274, g: 0.8784314, b: 0.72720236, a: 0.5294118}
+    - _FoamColor: {r: 0.54106796, g: 0.70108384, b: 0.82641506, a: 0.5294118}
     - _HighlightColor: {r: 0.75, g: 0.92, b: 1, a: 1}
     - _LineColor: {r: 0, g: 0.76862717, b: 1, a: 1}
     - _ShallowColor: {r: 0.024485484, g: 0.43192336, b: 0.6830188, a: 1}

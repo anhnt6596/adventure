@@ -29,13 +29,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Alpha: 0.86
-    - _Cutoff: 0.278
-    - _FadeDepth: 1
+    - _Alpha: 0.25
+    - _Cutoff: 0.307
+    - _FadeDepth: 0.9
     - _StencilMask: 2
     - _StencilRef: 2
     - _WobbleAmount: 0.015
-    - _WobbleScale: 1.5
+    - _WobbleScale: 3
     - _WobbleSpeed: 2
     m_Colors:
     - _Tint: {r: 0.55, g: 0.8, b: 0.95, a: 1}
