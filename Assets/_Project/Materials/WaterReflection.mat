@@ -35,8 +35,8 @@ Material:
     - _StencilMask: 2
     - _StencilRef: 2
     - _WobbleAmount: 0.015
-    - _WobbleScale: 3
-    - _WobbleSpeed: 2
+    - _WobbleScale: 0.3
+    - _WobbleSpeed: 1
     m_Colors:
     - _Tint: {r: 0.55, g: 0.8, b: 0.95, a: 1}
   m_BuildTextureStacks: []
