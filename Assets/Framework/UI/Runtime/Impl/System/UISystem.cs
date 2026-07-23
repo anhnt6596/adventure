@@ -33,9 +33,6 @@ namespace Core.UI
 
             if (_document == null) _document = GetComponent<UIDocument>();
             _root = _document.rootVisualElement;
-#if UNITY_EDITOR
-            UIRegistryGenerator.Regenerate(_registry);
-#endif
             BuildAssetMap();
             InitLayers();
             _initialized = true;

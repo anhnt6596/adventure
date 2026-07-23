@@ -250,6 +250,23 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
   `CloseOnEscape=false`). Gộp về một chỗ sở hữu.
 - [ ] **Picker → interface config.** `Picker` đọc thẳng `ICharacterStats.PickupRadius` (giờ chỉ MC nhặt).
   Khi có picker khác MC → tách interface cung cấp config. Giờ overkill.
+- [ ] **Đổi nhân vật chưa rebind inventory/UI (config backpack đang per-char).** `PlayerSystem.SwitchTo(id)`
+  respawn body mới → **stats cập nhật** (child-scope per-spawn) **nhưng inventory/capacity thì chưa**.
+  `backpackCapacity` nằm trong `MainCharStatsConfig` nên capacity thuộc *từng character*.
+  - **Phần đúng đã dựng:** inventory `"main_char"` do **Picker của player tạo** (child-scope → đúng config char
+    hiện tại); `GameUI` **inject `IPlayer`**, lấy inventory từ `player.Current` (Picker) lúc StartGame. Đã bỏ
+    `IInventoryConfig` ở GameScope → hết vụ phải canh thứ tự register, và GameUI sẵn sàng bám player.
+  - **Còn chặn khi switch:**
+    - `"main_char"` là id cố định → `GetOrCreate` trả inventory cũ, **capacity char mới bị bỏ**. Cần: id
+      inventory theo char, hoặc recreate với capacity mới.
+    - `GameUI` lấy inventory **một lần** ở StartGame → switch không rebind. Cần: nghe `IPlayer.Spawned` rồi
+      `SetInventory` lại (giống `CameraFollowsPlayer`).
+  - **Design chưa chốt — quyết trước khi làm:**
+    - **Backpack của PLAYER** (đổi char = đổi skin/chỉ số, túi giữ nguyên): tách `backpackCapacity` khỏi
+      `MainCharStatsConfig` sang config player-level → switch không đụng inventory. Đơn giản nhất, hợp 1 MC.
+    - **Backpack của CHARACTER** (mỗi con 1 túi/capacity riêng — hướng hiện tại vì config ở MC): reactive như
+      trên + inventory per-char.
+  - Chỗ đụng: `GameUI` (nghe `Spawned` để rebind), `PlayerSystem.SwitchTo`, `InventorySystem` (id per-char / recreate).
 - [ ] **Pickable registry.** Đang là `static List<Pickable> Active`. Nâng thành DI service (như
   `CombatWorld`) nếu cần query không gian ở quy mô lớn.
 - [ ] **Config gắn bằng code, phụ thuộc interface.** `Damageable`/`Dropable` đang `[SerializeField]` SO cụ

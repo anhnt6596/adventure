@@ -1,5 +1,3 @@
-using VContainer;
-
 public class MainCharStats : ICharacterStats
 {
     public Stat MoveSpeed { get; }
@@ -9,7 +7,6 @@ public class MainCharStats : ICharacterStats
     public float Mass { get; }
     public float PickupRadius { get; }
 
-    [Inject]
     public MainCharStats(MainCharStatsConfig config)
     {
         MoveSpeed = new Stat(config.moveSpeed);

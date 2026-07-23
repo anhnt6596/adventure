@@ -51,6 +51,7 @@ MonoBehaviour:
   autoInjectGameObjects: []
   _uiSystem: {fileID: 5195277044178956650}
   _configRegistry: {fileID: 11400000, guid: fac422cf893474c4bbf30e59ffeeee7b, type: 2}
+  _prefabRegistry: {fileID: 11400000, guid: a4c037128e39d404b8ab612533237e2e, type: 2}
 --- !u!1 &2404093238818003593
 GameObject:
   m_ObjectHideFlags: 0

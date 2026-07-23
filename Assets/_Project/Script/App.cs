@@ -11,6 +11,7 @@ public class App : LifetimeScope
 
     [SerializeField] private UISystem _uiSystem;
     [SerializeField] private ConfigRegistry _configRegistry;
+    [SerializeField] private PrefabRegistry _prefabRegistry;
 
     protected override void Awake()
     {
@@ -33,6 +34,7 @@ public class App : LifetimeScope
     protected override void Configure(IContainerBuilder builder)
     {
         builder.RegisterInstance(_configRegistry);
+        builder.RegisterInstance(_prefabRegistry);
         builder.RegisterInstance(new SaveService());   // default JSON serializer; instance dodges the optional-ctor-param resolve
 
         builder.Register<IEventBus, EventBus>(Lifetime.Singleton);

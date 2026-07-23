@@ -181,6 +181,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8c449153d467fc468f5ae9f59465bc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Character
+  id: MC 1
   body: {fileID: 5403837979165827894}
 --- !u!114 &1866700135094278547
 MonoBehaviour:

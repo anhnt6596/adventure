@@ -11,17 +11,17 @@ public class GameUI : MonoBehaviour
 {
     IInputGate _gate;
     IUISystem _ui;
-    Inventory _inventory;
+    IPlayer _player;
     IDisposable _block;
     UIDocument _document;
     VisualElement _screen;
 
     [Inject]
-    public void Construct(IInputGate gate, IUISystem ui, InventorySystem inventories, IInventoryConfig config)
+    public void Construct(IInputGate gate, IUISystem ui, IPlayer player)
     {
         _gate = gate;
         _ui = ui;
-        _inventory = inventories.GetOrCreate("main_char", config);
+        _player = player;   // the HUD will read the player's inventory (and, later, lots more) off this
     }
 
     void Awake() => _document = GetComponent<UIDocument>();
@@ -47,7 +47,9 @@ public class GameUI : MonoBehaviour
         if (_screen != null) _screen.style.display = DisplayStyle.None;
 
         _ui?.Show<GameHUD>();                          // reveal the in-game HUD
-        _ui?.Get<GameHUD>()?.SetInventory(_inventory); // hand it the GameScope inventory
+        // the player's own inventory — its Picker created it with the current character's config
+        var inventory = _player.Current != null ? _player.Current.GetComponentInChildren<Picker>()?.Inventory : null;
+        _ui?.Get<GameHUD>()?.SetInventory(inventory);
     }
 
     void Release()

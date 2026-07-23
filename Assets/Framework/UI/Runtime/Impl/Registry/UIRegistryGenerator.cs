@@ -12,11 +12,19 @@ namespace Core.UI
     public static class UIRegistryGenerator
     {
         [MenuItem("Tools/UI/Regenerate UI Registry")]
-        public static void Regenerate(UIRegistry registry)
+        public static void Regenerate() => Regenerate(true);
+
+        // save=false: SetDirty only (no SaveAssets / log) — for the auto-rebuild postprocessor. Finds the single
+        // UIRegistry asset itself, like the ConfigRegistry / PrefabRegistry builders.
+        public static void Regenerate(bool save)
         {
+            var registry = AssetDatabase.FindAssets("t:UIRegistry")
+                .Select(g => AssetDatabase.LoadAssetAtPath<UIRegistry>(AssetDatabase.GUIDToAssetPath(g)))
+                .FirstOrDefault();
+
             if (registry == null)
             {
-                Debug.LogError("[UIRegistry] No registry assigned — assign the UI Registry asset to UISystem._registry, or no UXML will resolve.");
+                if (save) Debug.LogError("[UIRegistry] No UIRegistry asset — create one via Create > UI > UI Registry, and assign it to UISystem.");
                 return;
             }
 
@@ -45,8 +53,11 @@ namespace Core.UI
             }
 
             EditorUtility.SetDirty(registry);
-            AssetDatabase.SaveAssets();
-            Debug.Log($"[UIRegistry] Regenerated: {registry.entries.Count} entries");
+            if (save)
+            {
+                AssetDatabase.SaveAssets();
+                Debug.Log($"[UIRegistry] Regenerated: {registry.entries.Count} entries");
+            }
         }
 
         private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)

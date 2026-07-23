@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using VContainer;
 
-public class Character : MonoBehaviour
+public class Character : Identifiable
 {
     [SerializeField] CollisionBody body;   // the character's body; its mass comes from stats, not the inspector
 

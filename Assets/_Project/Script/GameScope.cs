@@ -4,24 +4,23 @@ using VContainer.Unity;
 
 public class GameScope : LifetimeScope
 {
-    [SerializeField] private MainCharStatsConfig _mainCharStatsConfig;
-    [SerializeField] private Character _character;         // MapService repositions it on a map change
     [SerializeField] private CameraRig _cameraRig;         // MapService snaps it on a map change
     [SerializeField] private CollisionSystem _collisionSystem;  // MapService rebinds map terrain + bodies to it
     [SerializeField] private DayNightConfig _dayNightConfig;    // the day/night palette; DayNightLighting reads it
 
     protected override void Configure(IContainerBuilder builder)
     {
-        builder.RegisterInstance(_mainCharStatsConfig).AsSelf().As<IInventoryConfig>();
-        builder.Register<MainCharStats>(Lifetime.Singleton).As<ICharacterStats>().AsSelf();
+        builder.Register<IGetMCConfig, MCConfigProvider>(Lifetime.Singleton);   // wall over ConfigRegistry — PlayerSystem asks this, not the registry
 
-        builder.RegisterComponent(_character);
         builder.RegisterComponent(_cameraRig);
         builder.RegisterComponent(_collisionSystem);
         builder.Register<InteractField>(Lifetime.Singleton);
         builder.RegisterInstance(new CombatWorld());
         builder.Register<InventorySystem>(Lifetime.Singleton);
         builder.Register<IMapService, MapService>(Lifetime.Singleton);
+
+        builder.RegisterEntryPoint<PlayerSystem>().As<IPlayer>();   // owns + spawns the MC; runs before GameController warps
+        builder.RegisterEntryPoint<CameraFollowsPlayer>();          // aims CameraRig at the spawned body
 
         builder.RegisterInstance(_dayNightConfig);
         builder.RegisterEntryPoint<DayNightClock>().AsSelf();   // ticks time of day; DayNightLighting (on camera) reads it

@@ -7,7 +7,7 @@ public class MapService : IMapService
 {
     readonly IObjectResolver _container;
     readonly IInputGate _gate;
-    readonly Character _player;
+    readonly IPlayer _player;
     readonly CameraRig _camera;
     readonly CollisionSystem _collision;
 
@@ -15,7 +15,7 @@ public class MapService : IMapService
     public string CurrentMapId { get; private set; } = "";
 
     [Inject]
-    public MapService(IObjectResolver container, IInputGate gate, Character player, CameraRig camera, CollisionSystem collision)
+    public MapService(IObjectResolver container, IInputGate gate, IPlayer player, CameraRig camera, CollisionSystem collision)
     {
         _container = container;
         _gate = gate;
@@ -106,9 +106,10 @@ public class MapService : IMapService
         }
 
         var gate = map.GetGate(gateIndex);
-        if (gate != null && _player != null)
+        var player = _player.Current;
+        if (gate != null && player != null)
         {
-            _player.transform.SetPositionAndRotation(gate.SpawnPosition, gate.SpawnRotation);
+            player.transform.SetPositionAndRotation(gate.SpawnPosition, gate.SpawnRotation);
             _camera?.SnapToTarget();   // cut the camera to the new spot instead of sliding across
         }
     }
