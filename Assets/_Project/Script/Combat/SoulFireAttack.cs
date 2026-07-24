@@ -37,7 +37,8 @@ public class SoulFireAttack : MonoBehaviour
         if (flamePrefab == null) return;
 
         float damage = _owner != null ? _owner.AttackPower : 0f;
+        Vector3 dir = _owner != null ? _owner.FacingDir : transform.forward;   // straight shots (MC) fly this way; homing (enemy) ignores it
         var flame = LeanPool.Spawn(flamePrefab, Muzzle, Quaternion.identity);
-        flame.Launch(transform, range, Team, damage, knockback);
+        flame.Launch(transform, range, Team, damage, knockback, dir);
     }
 }

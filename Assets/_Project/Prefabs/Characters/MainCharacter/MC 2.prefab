@@ -145,6 +145,7 @@ GameObject:
   - component: {fileID: 6555081437869580352}
   - component: {fileID: 6480636053901883455}
   - component: {fileID: 4453034947621352304}
+  - component: {fileID: 2709114894839361433}
   m_Layer: 0
   m_Name: MC 2
   m_TagString: Untagged
@@ -209,7 +210,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterView
   character: {fileID: 7646421354414249631}
   characterAnimator: {fileID: 6437733932157326751}
-  startFacing: 1
 --- !u!114 &5403837979165827894
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -226,6 +226,7 @@ MonoBehaviour:
   radius: 0.25
   size: {x: 1, y: 1}
   mass: 1
+  knockbackDrag: 8
 --- !u!114 &6555081437869580352
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -264,11 +265,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 950196cda30f97c47b4098541c4e8753, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoulFireAttack
-  range: 3
-  speed: 4
+  range: 5
+  knockback: 3
   animatorSource: {fileID: 6437733932157326751}
   muzzle: {fileID: 194829221086538142}
   flamePrefab: {fileID: 2475285664741214988, guid: d229363f7430b724b820ffda4755e083, type: 3}
+--- !u!114 &2709114894839361433
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Damageable
 --- !u!1 &8299895054748087226
 GameObject:
   m_ObjectHideFlags: 0

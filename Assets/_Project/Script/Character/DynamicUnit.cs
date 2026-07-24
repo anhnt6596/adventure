@@ -20,6 +20,7 @@ public abstract class DynamicUnit : Unit
     // its last move direction, held while idle. A view turns this into a screen-relative direction against
     // the camera, so the sprite re-aims when the camera orbits even while the unit stands still.
     public int Facing { get; private set; }
+    public Vector3 FacingDir { get; private set; } = Vector3.forward;   // last move direction (world XZ) — where the unit is aimed
 
     // The numbers the control loop needs; each unit kind sources them differently.
     protected abstract float MoveSpeed { get; }
@@ -69,7 +70,10 @@ public abstract class DynamicUnit : Unit
         if (body != null && body.IsKnocked) { Velocity = Vector3.zero; return; }
 
         if (move.sqrMagnitude > 0.0001f)
+        {
             Facing = ViewAngleUtil.GetViewType8(Mathf.Atan2(move.x, move.y) * Mathf.Rad2Deg);
+            FacingDir = new Vector3(move.x, 0f, move.y).normalized;
+        }
 
         Velocity = new Vector3(move.x, 0f, move.y) * MoveSpeed;
         transform.position += Velocity * Time.deltaTime;

@@ -5049,11 +5049,14 @@ MonoBehaviour:
   flame: {fileID: 2668228725341082327}
   burst: {fileID: 2404101980525971392}
   spawnTime: 0.1
+  speed: 6
   slowRadius: 1.5
-  riseHeight: 1.2
+  fadeTime: 0.4
   burstTime: 0.35
   burstScale: 1.6
-  hitPadding: 0.15
+  hitPadding: 0.05
+  seekRadius: 1.5
+  steerRate: 90
 --- !u!1001 &4235611895995287631
 PrefabInstance:
   m_ObjectHideFlags: 0

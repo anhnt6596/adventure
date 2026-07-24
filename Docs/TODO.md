@@ -6,6 +6,12 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 
 ## 🎮 Core loop / gameplay
 
+- [ ] **Hệ thống modify stats của MC.** Buff / đồ / nâng cấp sửa stats **runtime** (MoveSpeed, AttackSpeed,
+  AttackPower, MaxHp, Mass...). `MainCharStats` giờ chỉ copy phẳng từ config; `Stat` (MoveSpeed/AttackSpeed/
+  AttackPower đã là `Stat`) là **seam sẵn** — thêm modifier (cộng/nhân, mỗi nguồn 1 id để gỡ) lên đó. **MaxHp
+  phải modify được** (đúng vibe "HP trên Unit modify được"); `Damageable` đọc MaxHp từ `Unit.DamageableConfig`
+  nên cân nhắc cho nó đọc giá-trị-đã-modify chứ không phải config gốc. Nhớ recompute chỗ đang one-shot: `Mass`
+  set 1 lần ở `DynamicUnit.Start` (xem `// TEMP`) → gọi lại `body.SetMass` khi mass đổi.
 - [ ] **Máu Player (bespoke IDamageable).** Player *là* IDamageable nhưng đặc biệt: HP vào
   `MainCharStatsConfig`, tự implement (KHÔNG dùng `Damageable`), team **1**, đăng ký vào `CombatWorld`
   (`combat.Add`). Chết = game-over/hồi sinh, *không* rơi loot. Không i-frame, không khoá hành động.
@@ -232,6 +238,9 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
 
 ## ✨ Polish / feedback
 
+- [ ] **Mũi tên hướng di chuyển.** Hiện mũi tên chỉ hướng MC đang hướng/di chuyển — dùng `DynamicUnit.FacingDir`
+  (world XZ, đã có). Cũng là **chỉ báo hướng bắn SoulFire** (tia MC bay theo `FacingDir`). World-space dưới chân
+  MC hoặc UI; cân nhắc snap 8 hướng cho khớp sprite.
 - [ ] **Hit flash mạnh hơn (tùy chọn).** `HitFlash` đang dùng `SpriteRenderer.color` (nhân → chỉ tối
   lại thành đỏ, không sáng rực). Muốn "pop" đỏ/trắng chói thì thêm `_Flash` vào shader sprite (lerp về
   màu flash). Giờ để tạm màu-nhân.

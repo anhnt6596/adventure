@@ -15,8 +15,10 @@ MonoBehaviour:
   id: MC 2
   moveSpeed: 3
   attackSpeed: 1
-  attackPower: 5
-  attackDuration: 0.4
+  attackPower: 2
+  attackDuration: 0.6
   mass: 1
   pickupRadius: 0.3
   backpackCapacity: 20
+  maxHp: 100
+  hitRadius: 0.5
