@@ -1,9 +1,9 @@
 using VContainer;
 
 // The player unit. Its stats come from the injected ICharacterStats (the active main char's config); the
-// movement/attack control lives in UnitController. Everything player-specific (input, interaction, camera,
-// PlayerSystem) references this concrete type — an enemy is a different UnitController subclass.
-public class MCController : UnitController
+// movement/attack control lives in DynamicUnit. Everything player-specific (input, interaction, camera,
+// PlayerSystem) references this concrete type — an enemy is a different DynamicUnit subclass.
+public class MCController : DynamicUnit
 {
     ICharacterStats _stats;
 

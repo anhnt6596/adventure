@@ -1,10 +1,10 @@
 using UnityEngine;
 
-// Shared stats + death drops for one kind of thing (OakConfig, RockConfig, SlimeConfig...). One SO
-// satisfies both concerns: IDamageableConfig (HP/team) for Damageable, IDeathDropableConfig (loot) for
-// DeathDropable. Dragged straight onto each — no DI, because its identity is which SO it points at.
-[CreateAssetMenu(menuName = "Combat/Damageable")]
-public class DamageableConfig : ScriptableObject, IDamageableConfig, IDeathDropableConfig
+// Stats + death drops for one kind of prop (Oak, Rock, Chest...). Keyed by id in ConfigRegistry like
+// EnemyConfig; a Prop resolves it by its own Id. One SO covers both concerns: IDamageableConfig
+// (HP/hit-radius/team) for the Damageable, IDeathDropableConfig (loot) for the Dropable.
+[CreateAssetMenu(menuName = "Config/Prop")]
+public class PropConfig : Config, IDamageableConfig, IDeathDropableConfig
 {
     [Header("Stats")]
     public float maxHp = 20f;

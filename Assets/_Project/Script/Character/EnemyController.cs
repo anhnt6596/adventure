@@ -3,8 +3,8 @@ using VContainer;
 
 // The body + stats of an enemy: stats come from its EnemyConfig (injected by EnemySpawner, the same way MC
 // gets its stats — no serialized ref on the prefab), team is 2. It exposes Move()/Attack() from
-// UnitController but decides nothing itself — a separate tactic component reads the config and drives it.
-public class EnemyController : UnitController
+// DynamicUnit but decides nothing itself — a separate tactic component reads the config and drives it.
+public class EnemyController : DynamicUnit
 {
     EnemyConfig config;   // injected at spawn via EnemySpawner's per-kind scope
 
@@ -14,6 +14,7 @@ public class EnemyController : UnitController
     public void Construct(EnemyConfig config) => this.config = config;
 
     public override int Team => 2;   // enemy
+    public override IDamageableConfig DamageableConfig => config;   // Damageable reads HP/hit-radius off this
 
     // Null-safe so a missing config leaves the enemy inert (Start logs it) instead of crashing the base loop.
     protected override float MoveSpeed => config != null ? config.moveSpeed : 0f;

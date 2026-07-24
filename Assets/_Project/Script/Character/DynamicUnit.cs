@@ -1,11 +1,11 @@
 using System;
 using UnityEngine;
 
-// Base for a controllable unit's movement + attack. The control surface a view/animator reads — Velocity,
-// IsBusy, Attacked — lives here, so ONE view drives the player and an enemy alike. Whatever FEEDS Move stays
-// external (player input, enemy AI). Subclasses supply the stat numbers from wherever they keep them —
-// ICharacterStats for the player, EnemyConfig for an enemy — by overriding the accessors below.
-public abstract class UnitController : Identifiable
+// Base for a DYNAMIC unit — one that moves and attacks. The control surface a view/animator reads (Velocity,
+// IsBusy, Attacked, Facing) lives here, so ONE view drives the player and an enemy alike. Whatever FEEDS Move
+// stays external (player input, enemy AI). Subclasses supply the stat numbers by overriding the accessors. A
+// static thing (Prop) is a plain Unit — it never runs this loop.
+public abstract class DynamicUnit : Unit
 {
     protected CollisionBody body;   // the unit's body, auto-found under it — not wired by hand
 
@@ -20,10 +20,6 @@ public abstract class UnitController : Identifiable
     // its last move direction, held while idle. A view turns this into a screen-relative direction against
     // the camera, so the sprite re-aims when the camera orbits even while the unit stands still.
     public int Facing { get; private set; }
-
-    // 0 neutral / 1 player / 2 enemy. A kind sets its side here (MC = 1, Enemy = 2) and its attacks read it,
-    // so the same attack component fights for whoever owns it.
-    public virtual int Team => 0;
 
     // The numbers the control loop needs; each unit kind sources them differently.
     protected abstract float MoveSpeed { get; }

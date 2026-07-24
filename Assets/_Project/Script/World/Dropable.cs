@@ -1,34 +1,34 @@
 using Lean.Pool;
 using UnityEngine;
 
-// Spawns what this provides and flings it out. Call Drop(source) whenever the moment comes — a death, a
-// chest opening, a node depleting, a timer. It knows HOW to drop, not WHY, so any trigger can drive it,
-// and it needs no Damageable (things that drop without ever taking damage still work).
+// Spawns what a unit provides on death and flings it out. Call Drop(source) whenever the moment comes — a
+// death, a chest opening, a node depleting. It knows HOW to drop, not WHY. The drop list comes off the unit's
+// config (a Prop's PropConfig is also an IDeathDropableConfig), so nothing is dragged onto the prefab.
 [DisallowMultipleComponent]
 public class Dropable : MonoBehaviour
 {
-    // TEMP: serialized concrete SO so it can be dragged in the editor (Unity can't serialize an
-    // interface). Later assign by code and depend only on IDeathDropableConfig.
-    [SerializeField] DamageableConfig config;
+    Unit _unit;
+    IDeathDropableConfig Cfg => _unit != null ? _unit.DamageableConfig as IDeathDropableConfig : null;
 
-    IDeathDropableConfig Cfg => config;
+    void Awake() => _unit = GetComponentInParent<Unit>();
 
     void Start()
     {
-        if (config == null)
-            Debug.LogError($"[{nameof(Dropable)}] no config assigned — drag a config that has a drop list.", this);
+        if (Cfg == null)
+            Debug.LogError($"[{nameof(Dropable)}] no drop config on its Unit — needs a config with a drop list.", this);
     }
 
     // source = what the loot flies away from (e.g. the attacker). Null → no bias, pieces fan out randomly.
     public void Drop(object source)
     {
-        if (config == null || Cfg.Drops == null) return;
+        var cfg = Cfg;
+        if (cfg == null || cfg.Drops == null) return;
 
         Vector3 origin = source is Component c ? c.transform.position : transform.position;
         Vector3 flingDir = transform.position - origin;   // source -> this
         flingDir.y = 0f;
 
-        foreach (var drop in Cfg.Drops)
+        foreach (var drop in cfg.Drops)
         {
             if (drop.prefab == null) continue;
             int count = Random.Range(drop.min, drop.max + 1);

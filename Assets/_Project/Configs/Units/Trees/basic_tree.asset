@@ -10,8 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a51a15ee68ed3b8448faacf91aa7bb30, type: 3}
-  m_Name: Basic Tree
+  m_Name: basic_tree
   m_EditorClassIdentifier: Assembly-CSharp::DamageableConfig
+  id: basic_tree
   maxHp: 20
   hitRadius: 0.25
   team: 2

@@ -15,14 +15,14 @@ public class SwingAttack : MonoBehaviour
     Vector3 Origin => origin != null ? origin.position : transform.position;
 
     ICharacterStats _stats;
-    UnitController _owner;                               // the swing fights for whoever owns it (MC 1 / enemy 2)
+    Unit _owner;                                        // the swing fights for whoever owns it (MC 1 / enemy 2)
     int Team => _owner != null ? _owner.Team : 0;
     readonly List<IDamageable> _hits = new List<IDamageable>();
 
     [Inject]
     public void Construct(ICharacterStats stats) => _stats = stats;
 
-    void Awake() => _owner = GetComponentInParent<UnitController>();
+    void Awake() => _owner = GetComponentInParent<Unit>();
 
     void OnEnable()
     {

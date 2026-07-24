@@ -43,10 +43,7 @@ public class EnemySpawner
 
         var go = Object.Instantiate(ident.gameObject, position, rotation);
         ScopeFor(cfg).InjectGameObject(go);   // EnemyController gets its EnemyConfig; tactics get IPlayer; ...
-
-        // The config doubles as the enemy's IDamageableConfig; bind it now (before any Start) so the body has
-        // its HP. A placed thing would drag a DamageableConfig instead — same interface, different source.
-        go.GetComponentInChildren<Damageable>(true)?.Bind(cfg);
+        // No bind step: the enemy's Damageable reads HP/team off the EnemyController, which exposes the config.
 
         return go.GetComponent<EnemyController>();
     }

@@ -11,6 +11,7 @@ public class GameScope : LifetimeScope
     protected override void Configure(IContainerBuilder builder)
     {
         builder.Register<IGetMCConfig, MCConfigProvider>(Lifetime.Singleton);   // wall over ConfigRegistry — PlayerSystem asks this, not the registry
+        builder.Register<IGetPropConfig, PropConfigProvider>(Lifetime.Singleton);   // same wall for prop configs — trees/rocks/chests resolve by id
 
         builder.RegisterComponent(_cameraRig);
         builder.Register<InteractField>(Lifetime.Singleton);

@@ -9,13 +9,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9150155743605586476}
+  - component: {fileID: 5205859144704402113}
   - component: {fileID: 6348585559697578911}
   - component: {fileID: 4757893777622346838}
   - component: {fileID: 2073095464694278207}
   - component: {fileID: 8486517818659713739}
   - component: {fileID: 3085066272831242940}
   m_Layer: 0
-  m_Name: Green Tree 1
+  m_Name: basic_tree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -37,6 +38,19 @@ Transform:
   - {fileID: 752545886070451489}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5205859144704402113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1470501848412717628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9373b75de59453c4da510f8266ec505a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Prop
+  id: basic_tree
 --- !u!114 &6348585559697578911
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -53,6 +67,7 @@ MonoBehaviour:
   radius: 0.22
   size: {x: 1, y: 1}
   mass: 0
+  knockbackDrag: 8
 --- !u!114 &4757893777622346838
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65,7 +80,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Harvestable
-  config: {fileID: 11400000, guid: fc6103d152288d94b9295a88008e5852, type: 2}
 --- !u!114 &2073095464694278207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -106,7 +120,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0da7e644266248148bb0be17d91eb860, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Dropable
-  config: {fileID: 11400000, guid: fc6103d152288d94b9295a88008e5852, type: 2}
 --- !u!1 &6425603057950927440
 GameObject:
   m_ObjectHideFlags: 0

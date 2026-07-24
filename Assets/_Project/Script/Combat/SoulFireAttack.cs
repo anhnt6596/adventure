@@ -17,13 +17,13 @@ public class SoulFireAttack : MonoBehaviour
     Vector3 Muzzle => muzzle != null ? muzzle.position : transform.position;
 
     ICharacterStats _stats;
-    UnitController _owner;                               // the flame hunts targets not on this unit's team
+    Unit _owner;                                        // the flame hunts targets not on this unit's team
     int Team => _owner != null ? _owner.Team : 0;
 
     [Inject]
     public void Construct(ICharacterStats stats) => _stats = stats;
 
-    void Awake() => _owner = GetComponentInParent<UnitController>();
+    void Awake() => _owner = GetComponentInParent<Unit>();
 
     void OnEnable()  { if (animatorSource != null) animatorSource.Hit += Spit; }
     void OnDisable() { if (animatorSource != null) animatorSource.Hit -= Spit; }

@@ -1,16 +1,16 @@
 using UnityEngine;
 
-// Drives a unit's sprite/animator off its control state (Velocity, IsBusy, Attacked). Typed to UnitController,
+// Drives a unit's sprite/animator off its control state (Velocity, IsBusy, Attacked). Typed to DynamicUnit,
 // so the same view logic serves the player and any enemy — each unit kind gets a thin subclass (MCView,
 // EnemyView) for its own view extras, while this holds the shared movement/attack animation.
 public class UnitView : MonoBehaviour
 {
-    [SerializeField] protected UnitController character;
+    [SerializeField] protected DynamicUnit character;
     [SerializeField] protected UnitAnimator characterAnimator;
 
     protected virtual void Awake()
     {
-        if (character == null) character = GetComponent<UnitController>();
+        if (character == null) character = GetComponent<DynamicUnit>();
         if (characterAnimator == null) characterAnimator = GetComponentInChildren<UnitAnimator>();
     }
 
