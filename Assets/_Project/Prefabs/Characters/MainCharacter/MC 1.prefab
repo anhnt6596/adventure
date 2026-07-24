@@ -182,7 +182,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MCController
   id: MC 1
-  body: {fileID: 5403837979165827894}
 --- !u!114 &1866700135094278547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -209,8 +208,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterView
   character: {fileID: 8294235988516146416}
-  characterAnimator: {fileID: 1662830386516377226}
-  startFacing: 1
+  characterAnimator: {fileID: 1003609662157716418}
 --- !u!114 &5403837979165827894
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -227,6 +225,7 @@ MonoBehaviour:
   radius: 0.15
   size: {x: 1, y: 1}
   mass: 1
+  knockbackDrag: 8
 --- !u!114 &6555081437869580352
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -266,7 +265,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SwingAttack
   radius: 0.3
-  animatorSource: {fileID: 1662830386516377226}
+  knockback: 3
+  animatorSource: {fileID: 1003609662157716418}
   origin: {fileID: 194829221086538142}
 --- !u!1 &8299895054748087226
 GameObject:
@@ -370,7 +370,7 @@ GameObject:
   - component: {fileID: 3272892749715934541}
   - component: {fileID: 8142573892274122599}
   - component: {fileID: 2806152131788188297}
-  - component: {fileID: 1662830386516377226}
+  - component: {fileID: 1003609662157716418}
   m_Layer: 6
   m_Name: art
   m_TagString: Untagged
@@ -475,7 +475,7 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1662830386516377226
+--- !u!114 &1003609662157716418
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -484,9 +484,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 8345341981280732084}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c14445daa91446da8f49c2a0eb6db05, type: 3}
+  m_Script: {fileID: 11500000, guid: 0867209de9e9f8a49b40aa661d80b91c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Sprite3D::UnitAnimator
   animator: {fileID: 2806152131788188297}
   scaleNode: {fileID: 5349522427429684554}
   dirType: 0

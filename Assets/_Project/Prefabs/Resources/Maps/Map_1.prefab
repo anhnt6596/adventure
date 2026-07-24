@@ -44,6 +44,106 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d294f65d16fbb84a8a315e186b0dd0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Gate
+--- !u!1 &573734966356501355
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 570788638504119743}
+  - component: {fileID: 4651716556147180955}
+  m_Layer: 0
+  m_Name: Mewfrog-1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &570788638504119743
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 573734966356501355}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 30.28, y: 0, z: 27.73}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5414954968100783881}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4651716556147180955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 573734966356501355}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac1845a757b855f4ab0f60545161e2be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnZone
+  area:
+    rid: 4741822560643842118
+  grid: {fileID: 1543617716253896139}
+  clearance: 0
+  enemies:
+  - id: mewfrog
+    weight: 1
+  capacity: 5
+  warm: 1
+  cells:
+  - {x: 13, y: 10}
+  - {x: 14, y: 10}
+  - {x: 15, y: 10}
+  - {x: 16, y: 10}
+  - {x: 12, y: 11}
+  - {x: 13, y: 11}
+  - {x: 14, y: 11}
+  - {x: 15, y: 11}
+  - {x: 16, y: 11}
+  - {x: 17, y: 11}
+  - {x: 12, y: 12}
+  - {x: 13, y: 12}
+  - {x: 14, y: 12}
+  - {x: 15, y: 12}
+  - {x: 16, y: 12}
+  - {x: 17, y: 12}
+  - {x: 18, y: 12}
+  - {x: 11, y: 13}
+  - {x: 12, y: 13}
+  - {x: 13, y: 13}
+  - {x: 14, y: 13}
+  - {x: 15, y: 13}
+  - {x: 16, y: 13}
+  - {x: 17, y: 13}
+  - {x: 11, y: 14}
+  - {x: 12, y: 14}
+  - {x: 13, y: 14}
+  - {x: 14, y: 14}
+  - {x: 15, y: 14}
+  - {x: 16, y: 14}
+  - {x: 17, y: 14}
+  - {x: 12, y: 15}
+  - {x: 13, y: 15}
+  - {x: 14, y: 15}
+  - {x: 15, y: 15}
+  - {x: 16, y: 15}
+  - {x: 17, y: 15}
+  - {x: 12, y: 16}
+  - {x: 13, y: 16}
+  references:
+    version: 2
+    RefIds:
+    - rid: 4741822560643842118
+      type: {class: CircleArea, ns: , asm: Assembly-CSharp}
+      data:
+        radius: 7.63
 --- !u!1 &1056488249336885002
 GameObject:
   m_ObjectHideFlags: 0
@@ -3043,6 +3143,38 @@ MonoBehaviour:
   sortingOrder: -2
   layerHeight: 0.002
   baked: 1
+--- !u!1 &2396037221183594639
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5414954968100783881}
+  m_Layer: 0
+  m_Name: SpawnZones
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5414954968100783881
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2396037221183594639}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 570788638504119743}
+  m_Father: {fileID: 3008127845935596630}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2595038459439399900
 GameObject:
   m_ObjectHideFlags: 0
@@ -3128,6 +3260,7 @@ Transform:
   - {fileID: 3729553940923224197}
   - {fileID: 2179480720488651259}
   - {fileID: 5477817314357012010}
+  - {fileID: 5414954968100783881}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1408542931166688022

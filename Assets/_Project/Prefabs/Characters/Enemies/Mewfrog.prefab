@@ -139,9 +139,10 @@ GameObject:
   m_Component:
   - component: {fileID: 1067017619327003808}
   - component: {fileID: -6664779539382841799}
-  - component: {fileID: -4092768623535915460}
   - component: {fileID: 5403837979165827894}
-  - component: {fileID: 4453034947621352304}
+  - component: {fileID: 233032119361070334}
+  - component: {fileID: 8436843599349794193}
+  - component: {fileID: 6143232455295501188}
   m_Layer: 0
   m_Name: Mewfrog
   m_TagString: Untagged
@@ -178,24 +179,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c30400dff78fee74ea0bbb255d559e4e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyController
-  id: 
-  body: {fileID: 5403837979165827894}
-  config: {fileID: 0}
---- !u!114 &-4092768623535915460
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5431757174141155505}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c30400dff78fee74ea0bbb255d559e4e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyController
-  id: 
-  body: {fileID: 0}
-  config: {fileID: 0}
+  id: mewfrog
 --- !u!114 &5403837979165827894
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -211,8 +195,8 @@ MonoBehaviour:
   shape: 0
   radius: 0.25
   size: {x: 1, y: 1}
-  mass: 1
---- !u!114 &4453034947621352304
+  mass: 0.5
+--- !u!114 &233032119361070334
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -221,14 +205,40 @@ MonoBehaviour:
   m_GameObject: {fileID: 5431757174141155505}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 950196cda30f97c47b4098541c4e8753, type: 3}
+  m_Script: {fileID: 11500000, guid: 87502c170ebce8f4d827bc37e30cd268, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SoulFireAttack
-  range: 3
-  speed: 4
-  animatorSource: {fileID: 1662830386516377226}
-  muzzle: {fileID: 194829221086538142}
-  flamePrefab: {fileID: 2475285664741214988, guid: d229363f7430b724b820ffda4755e083, type: 3}
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyView
+  character: {fileID: -6664779539382841799}
+  characterAnimator: {fileID: 639855831500468208}
+--- !u!114 &8436843599349794193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Damageable
+  config: {fileID: 0}
+--- !u!114 &6143232455295501188
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b919e438d4050494b87156800319b7f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitFlash
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+  strength: 0.5
+  duration: 0.15
+  renderers: []
 --- !u!1 &8299895054748087226
 GameObject:
   m_ObjectHideFlags: 0
@@ -331,7 +341,7 @@ GameObject:
   - component: {fileID: 3272892749715934541}
   - component: {fileID: 8142573892274122599}
   - component: {fileID: 2806152131788188297}
-  - component: {fileID: 1662830386516377226}
+  - component: {fileID: 639855831500468208}
   m_Layer: 6
   m_Name: art
   m_TagString: Untagged
@@ -381,7 +391,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 9a2920f0e96024640b8363297f25de6c, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -436,7 +446,7 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1662830386516377226
+--- !u!114 &639855831500468208
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -445,9 +455,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 8345341981280732084}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c14445daa91446da8f49c2a0eb6db05, type: 3}
+  m_Script: {fileID: 11500000, guid: 0867209de9e9f8a49b40aa661d80b91c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Sprite3D::UnitAnimator
   animator: {fileID: 2806152131788188297}
   scaleNode: {fileID: 5349522427429684554}
   dirType: 0

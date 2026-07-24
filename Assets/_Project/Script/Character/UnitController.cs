@@ -16,6 +16,11 @@ public abstract class UnitController : Identifiable
     public Vector3 Velocity { get; private set; }
     public event Action Attacked;
 
+    // Which way the unit is turned in the WORLD, as an 8-sector index (ViewAngleUtil, clockwise from +Z):
+    // its last move direction, held while idle. A view turns this into a screen-relative direction against
+    // the camera, so the sprite re-aims when the camera orbits even while the unit stands still.
+    public int Facing { get; private set; }
+
     // 0 neutral / 1 player / 2 enemy. A kind sets its side here (MC = 1, Enemy = 2) and its attacks read it,
     // so the same attack component fights for whoever owns it.
     public virtual int Team => 0;
@@ -59,6 +64,12 @@ public abstract class UnitController : Identifiable
 
         var move = Vector2.ClampMagnitude(_input, 1f);
         _input = Vector2.zero;
+
+        // While a knockback shove is carrying the body, it drives movement — don't fight it with input.
+        if (body != null && body.IsKnocked) { Velocity = Vector3.zero; return; }
+
+        if (move.sqrMagnitude > 0.0001f)
+            Facing = ViewAngleUtil.GetViewType8(Mathf.Atan2(move.x, move.y) * Mathf.Rad2Deg);
 
         Velocity = new Vector3(move.x, 0f, move.y) * MoveSpeed;
         transform.position += Velocity * Time.deltaTime;

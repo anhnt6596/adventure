@@ -1,16 +1,17 @@
 using UnityEngine;
+using VContainer;
 
-// The body + stats of an enemy: stats come from its EnemyConfig, team is 2. It exposes Move()/Attack() from
-// UnitController but decides nothing itself — a separate tactic component (per enemy kind) reads the config
-// and drives it, the way MCInput drives MC.
+// The body + stats of an enemy: stats come from its EnemyConfig (injected by EnemySpawner, the same way MC
+// gets its stats — no serialized ref on the prefab), team is 2. It exposes Move()/Attack() from
+// UnitController but decides nothing itself — a separate tactic component reads the config and drives it.
 public class EnemyController : UnitController
 {
-    [SerializeField] EnemyConfig config;   // drag the kind's config (e.g. Mewfrog); a factory will set it later
+    EnemyConfig config;   // injected at spawn via EnemySpawner's per-kind scope
 
-    public EnemyConfig Config => config;   // tactics read stats they need (attackRange, damage, ...) off this
+    public EnemyConfig Config => config;   // tactics read stats they need (damage, ...) off this
 
-    // A spawner binds the kind's config in at spawn (overrides the serialized drag default).
-    public void Configure(EnemyConfig cfg) => config = cfg;
+    [Inject]
+    public void Construct(EnemyConfig config) => this.config = config;
 
     public override int Team => 2;   // enemy
 
@@ -24,6 +25,6 @@ public class EnemyController : UnitController
     {
         base.Start();
         if (config == null)
-            Debug.LogError($"[{nameof(EnemyController)}] no EnemyConfig — drag the kind's config (e.g. Mewfrog).", this);
+            Debug.LogError($"[{nameof(EnemyController)}] no EnemyConfig injected — spawn it through EnemySpawner, which binds the config.", this);
     }
 }

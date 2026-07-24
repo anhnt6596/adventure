@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-public class CharacterAnimator : MonoBehaviour
+public class UnitAnimator : MonoBehaviour
 {
     [SerializeField] private Animator animator;
     [SerializeField] private Transform scaleNode;
@@ -42,14 +42,22 @@ public class CharacterAnimator : MonoBehaviour
     public event Action Hit;
     public void OnHit() => Hit?.Invoke();
 
+    // `dir` is a screen-relative 8-sector index, clockwise from Up:
+    //   0 Up, 1 UpRight, 2 Right, 3 DownRight, 4 Down, 5 DownLeft, 6 Left, 7 UpLeft.
+    // Left-facing sectors (5..7) reuse the right-facing frames, mirrored via the scaleNode flip. Each mode
+    // folds the eight sectors down to the frames its sheet actually has; the returned int is the "Dir" param.
     private (int curDir, bool isFlip) CalculateDir(int dir)
     {
         switch (dirType)
         {
-            case DirMode.Two:
-                return (1, dir != 1);
-            case DirMode.Four:
-                return (dir == 3 ? 1 : dir, dir == 3);
+            case DirMode.Two:                       // one side profile: face right, mirror to face left
+                return (1, dir >= 5);
+            case DirMode.Four:                      // Up / Right / Down; Left = Right mirrored, diagonals fold to their side
+                if (dir == 0) return (0, false);
+                if (dir == 4) return (2, false);
+                return (1, dir >= 5);
+            case DirMode.Eight:                     // Up, UpRight, Right, DownRight, Down; left half mirrored
+                return dir <= 4 ? (dir, false) : (8 - dir, true);
         }
         return default;
     }

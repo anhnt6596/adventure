@@ -8,7 +8,8 @@ using VContainer;
 public class SwingAttack : MonoBehaviour
 {
     [SerializeField] float radius = 1.5f;               // reach — a property of this weapon, not a character stat
-    [SerializeField] CharacterAnimator animatorSource;  // drag the one on the art child; fires Hit at the connect frame
+    [SerializeField] float knockback = 5f;              // shove dealt outward from the swing centre; 0 = none
+    [SerializeField] UnitAnimator animatorSource;  // drag the one on the art child; fires Hit at the connect frame
     [SerializeField] Transform origin;                  // centre of the swing; empty = this object
 
     Vector3 Origin => origin != null ? origin.position : transform.position;
@@ -49,7 +50,16 @@ public class SwingAttack : MonoBehaviour
 
         float damage = _stats != null ? _stats.AttackPower.Value : 0f;
         for (int i = 0; i < _hits.Count; i++)
-            _hits[i].TakeDamage(damage, this);
+        {
+            var hit = _hits[i];
+            hit.TakeDamage(damage, this);
+            if (knockback > 0f)
+            {
+                Vector3 push = hit.Position - Origin;   // outward from the swing centre
+                push.y = 0f;
+                if (push.sqrMagnitude > 1e-6f) hit.ApplyKnockback(push.normalized * knockback);
+            }
+        }
     }
 
     void OnDrawGizmosSelected()

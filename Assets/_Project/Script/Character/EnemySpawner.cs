@@ -1,16 +1,21 @@
+using System.Collections.Generic;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 
 // Turns an id into a live, configured enemy: prefab by id (PrefabRegistry) + config by id (ConfigRegistry),
-// instantiate, inject its scene deps (IPlayer for tactics, ...), then bind the config. The one place enemies
-// are made — a spawn zone calls this. Factories are the sanctioned registry consumers (see CONFIG.md), so
-// touching the registries here is fine — the surface doesn't leak into the enemies themselves.
+// instantiate, then inject through a scope that carries the config — so EnemyController gets it via [Inject],
+// the same way PlayerSystem's scope feeds the MC its stats. Nothing about the config sits on the prefab.
+//
+// MC uses one scope per spawn (there's a single player). Enemies are many, so a scope-per-instance would leak
+// one per spawn; the config is shared per kind, so instead one scope is cached per kind and every enemy of it
+// injects through that. Scopes are few (one per kind) and dispose with the game scope.
 public class EnemySpawner
 {
     readonly PrefabRegistry _prefabs;
     readonly ConfigRegistry _configs;
     readonly IObjectResolver _container;
+    readonly Dictionary<EnemyConfig, IScopedObjectResolver> _scopes = new Dictionary<EnemyConfig, IScopedObjectResolver>();
 
     [Inject]
     public EnemySpawner(PrefabRegistry prefabs, ConfigRegistry configs, IObjectResolver container)
@@ -37,9 +42,24 @@ public class EnemySpawner
         }
 
         var go = Object.Instantiate(ident.gameObject, position, rotation);
-        _container.InjectGameObject(go);          // IPlayer for tactics, etc. (CombatWorld is a static singleton)
-        var enemy = go.GetComponent<EnemyController>();
-        enemy.Configure(cfg);
-        return enemy;
+        ScopeFor(cfg).InjectGameObject(go);   // EnemyController gets its EnemyConfig; tactics get IPlayer; ...
+
+        // The config doubles as the enemy's IDamageableConfig; bind it now (before any Start) so the body has
+        // its HP. A placed thing would drag a DamageableConfig instead — same interface, different source.
+        go.GetComponentInChildren<Damageable>(true)?.Bind(cfg);
+
+        return go.GetComponent<EnemyController>();
+    }
+
+    // The child scope for a kind, created on first spawn and reused. It registers the kind's config and
+    // inherits the game scope (IPlayer, etc.), so injecting through it wires both.
+    IScopedObjectResolver ScopeFor(EnemyConfig cfg)
+    {
+        if (!_scopes.TryGetValue(cfg, out var scope))
+        {
+            scope = _container.CreateScope(b => b.RegisterInstance(cfg));
+            _scopes[cfg] = scope;
+        }
+        return scope;
     }
 }

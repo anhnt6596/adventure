@@ -26,9 +26,9 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 - [ ] **Enemy** = `Damageable` (máu + loot) **+** não (AI) **+** chân (di chuyển) **+** đòn. Nền đã dựng
   sẵn — tối nay chỉ ráp 3 cái sau, đừng dựng lại nền.
   - **Nền tái dùng (đã có):**
-    - `Damageable` lo máu + `Died`→loot. **HP đang ở `DamageableConfig.MaxHp`**, mà `EnemyConfig` cũng có
-      `hp` → chọn **1 chủ máu**, tránh 2 nguồn (đề xuất: bỏ `hp` khỏi `EnemyConfig`, để `Damageable` giữ
-      máu+loot; `EnemyConfig` chỉ còn move/attack).
+    - `Damageable` lo máu + `Died`→loot. Enemy: `EnemyConfig.hp` **bind vào `Damageable` lúc spawn**
+      (`EnemySpawner`), team lấy từ `UnitController`. Đích cuối: `Damageable` **trỏ `UnitController`** đọc máu —
+      xem mục "Đồng bộ: mọi thứ nhận dmg là `UnitController`" ở phần Tech debt.
     - `CombatWorld.Overlap(centre, radius, attackerTeam, results)` — dò mục tiêu quanh quái (query **team 1**
       = player trong bán kính aggro).
     - `SwingAttack` là **khuôn đòn**: ở frame `Hit` của `CharacterAnimator` → `Overlap` quanh origin →
@@ -294,9 +294,17 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
     framework đang dùng thật (`LocalizationWrapper`, `DynamicLabel`). Cứ để nằm im, **không dùng trong game code**.
 - [ ] **Pickable registry.** Đang là `static List<Pickable> Active`. Nâng thành DI service (như
   `CombatWorld`) nếu cần query không gian ở quy mô lớn.
+- [ ] **Đồng bộ: mọi thứ nhận dmg là `UnitController`, config từ Registry.** Đích: enemy, **cây, đá, rương**
+  đều là `UnitController`; `Damageable` **trỏ `UnitController`** để đọc máu + team, không giữ config riêng.
+  Max HP đọc từ đó nên **modify được** (đồ / nâng cấp / buff). Config lấy **từ `ConfigRegistry` theo id** (như
+  `EnemyConfig`), **bỏ kéo `DamageableConfig` SO tay** vào từng prefab — **một đường config duy nhất** cho mọi
+  loại. Hiện `Damageable` drag (cây) **hoặc** bind lúc spawn (enemy) chỉ là **bridge tạm** — xem `// TEMP` ở
+  `Damageable.Team`/`Bind` + `EnemyConfig`. Kéo theo: cây cũng cần controller + config-kind (gộp với "Config
+  cho từng loại cây/đá" ở trên), và đặt/spawn qua đường inject config như `EnemySpawner`.
 - [ ] **Config gắn bằng code, phụ thuộc interface.** `Damageable`/`Dropable` đang `[SerializeField]` SO cụ
   thể (`DamageableConfig`) vì Unity không serialize interface — nên phụ thuộc nguyên SO. Sau gắn config bằng
   code (provider theo id) để chỉ phụ thuộc `IDamageableConfig`/`IDeathDropableConfig`. (Xem `// TEMP` ở 2 field.)
+  Việc này gộp vào mục "Đồng bộ mọi thứ nhận dmg là `UnitController`" ngay trên.
 - [x] **Pool đồ spawn/destroy nhiều (LeanPool).** ✅ Plugin copy vào `Assets/Plugins/CW` (LeanPool +
   LeanCommon + CW.Common, chỉ `Required`, bỏ Examples/Extras; trim ref HDRP khỏi `CW.Common.asmdef` vì
   project URP). Gọi **thẳng** `LeanPool.Spawn/Despawn` (đã là API static mỏng, không bọc `ISpawner` — rule

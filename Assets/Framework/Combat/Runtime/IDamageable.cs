@@ -12,4 +12,8 @@ public interface IDamageable
     int Team { get; }
 
     void TakeDamage(float amount, object source);
+
+    // A hit can shove the target. `impulse` is the attack's force (direction × strength); the receiver
+    // scales it by its own mass, so an immovable thing just absorbs it. No force → no shove.
+    void ApplyKnockback(Vector3 impulse);
 }

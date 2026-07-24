@@ -1,36 +1,60 @@
 using UnityEngine;
 
-// Anything with HP that can be hit and dies. HP/team/hit-radius come from an IDamageableConfig. What it
-// PROVIDES on death is a separate concern: Damageable just fires Died, and a DeathDropable (or anything
-// else — sound, XP, break FX) listens. Lives in the combat world so attacks find it.
+// Anything with HP that can be hit and dies. Its stats come from an IDamageableConfig — dragged as a
+// DamageableConfig SO for placed things (trees, rocks), or bound at spawn for enemies (EnemySpawner passes
+// the EnemyConfig). Team prefers the UnitController's when the object is a unit. What it PROVIDES on death
+// is a separate concern: Damageable just fires Died, and a DeathDropable (or anything else — sound, XP,
+// break FX) listens. Lives in the combat world so attacks find it.
 public class Damageable : MonoBehaviour, IDamageable
 {
-    // TEMP: serialized concrete SO so it can be dragged in the editor (Unity can't serialize an
-    // interface). Later assign by code (config provider keyed by id) and depend only on IDamageableConfig.
+    // Dragged for placed things (Unity can't serialize an interface, so it's the concrete SO). Enemies leave
+    // this empty and get their config bound at spawn instead — see Bind.
     [SerializeField] DamageableConfig config;
 
-    IDamageableConfig Cfg => config;
+    IDamageableConfig _bound;                         // bound at spawn; wins over the dragged one
+    IDamageableConfig Cfg => _bound ?? config;
+    UnitController _unit;                             // present on a unit (enemy/MC); its team beats the config's
+    CollisionBody _body;                             // the physics body a knockback shoves (null = can't be shoved)
 
     float _hp;
     bool _inWorld;         // guards against a double Add/Remove
 
     public Vector3 Position => transform.position;
-    public float HitRadius => config != null ? Cfg.HitRadius : 0.5f;
+    public float HitRadius => Cfg != null ? Cfg.HitRadius : 0.5f;
     public bool IsAlive => _hp > 0f;
-    public int Team => config != null ? Cfg.Team : 2;
+    // TEMP: team from the UnitController if this is a unit, else the config, else enemy. Later everything that
+    // takes damage IS a UnitController (trees too) and HP/team both come off it — max HP can be modified.
+    public int Team => _unit != null ? _unit.Team : (Cfg != null ? Cfg.Team : 2);
 
     public event System.Action Damaged;        // non-fatal hit — views like HitFlash listen
     public event System.Action<object> Died;   // killed — the arg is the damage source (force origin for drops)
 
     void Awake()
     {
-        if (config != null) _hp = Cfg.MaxHp;
+        _unit = GetComponentInParent<UnitController>();
+        _body = GetComponentInParent<CollisionBody>();
+        if (_body == null) _body = GetComponentInChildren<CollisionBody>(true);
+        if (Cfg != null) _hp = Cfg.MaxHp;
+    }
+
+    // Forward the attack's shove to the body; mass-scaling (and mass 0 = immovable) lives in AddImpulse.
+    public void ApplyKnockback(Vector3 impulse)
+    {
+        if (_body != null) _body.AddImpulse(impulse);
+    }
+
+    // Assign the config at spawn (EnemySpawner) for units that carry their stats in a runtime config, rather
+    // than dragging a DamageableConfig. Called before the first frame, so HP is set in time for Start.
+    public void Bind(IDamageableConfig cfg)
+    {
+        _bound = cfg;
+        _hp = cfg.MaxHp;
     }
 
     void Start()
     {
-        if (config == null)
-            Debug.LogError($"[{nameof(Damageable)}] no DamageableConfig assigned — drag the kind's SO; it has no HP.", this);
+        if (Cfg == null)
+            Debug.LogError($"[{nameof(Damageable)}] no config — drag a DamageableConfig, or spawn it bound. It has no HP.", this);
     }
 
     // In the combat world only while enabled: a disabled object can't be hit, a re-enabled one rejoins. The

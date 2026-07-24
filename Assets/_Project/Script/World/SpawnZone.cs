@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using VContainer;
 
-// A spawn zone placed on a map: a shape over the terrain, baked down to the walkable cells inside it. This is
-// the authoring + bake side (Docs/SPAWN.md, step 1); the runtime spawn loop (warm/cold, capacity, respawn
-// debt, gating) is a separate concern and isn't here yet. All setup lives on the zone — move to an SO later
-// if it needs reuse across maps.
+// A spawn zone placed on a map: a shape over the terrain, baked down to the walkable cells inside it, then on
+// load it fills to capacity by spawning enemies (via EnemySpawner) at those cells. First cut — respawn debt,
+// wipe-lock and spawn gating (Docs/SPAWN.md) come later. All setup lives on the zone.
 [DisallowMultipleComponent]
 public class SpawnZone : MonoBehaviour
 {
@@ -15,15 +15,10 @@ public class SpawnZone : MonoBehaviour
     [SerializeField] TerrainGrid grid;                 // auto-found from the map if left empty
     [SerializeField, Min(0)] int clearance = 1;        // walkable margin (cells) kept from any wall/water edge
 
-    [Header("Spawning — consumed by the runtime loop (not built yet)")]
+    [Header("Spawning")]
     [SerializeField] EnemyWeight[] enemies;            // roll one per spawn by weight; a single entry = one kind
     [SerializeField, Min(0)] int capacity = 5;
-    [SerializeField] bool warm = true;                 // fill to capacity on map load, vs trickle in cold
-    [SerializeField, Min(0f)] float respawnDelay = 8f;      // per-death debt delay
-    [SerializeField, Min(0f)] float wipeLockDuration = 30f; // extra lock after the whole zone is cleared
-    [SerializeField, Min(0f)] float minPlayerDist = 8f;     // never spawn a cell closer than this to the player
-    [SerializeField] bool spawnOffCameraOnly = true;
-    [SerializeField, Min(0f)] float activeRadius = 40f;     // stop ticking past this from the player (CPU cap)
+    [SerializeField] bool warm = true;                 // fill to capacity on map load (cold trickle: Docs/SPAWN.md, later)
 
     [SerializeField, HideInInspector] Vector2Int[] cells;   // baked: walkable cells inside the area
 
@@ -38,6 +33,60 @@ public class SpawnZone : MonoBehaviour
         var found = GetComponentInParent<TerrainGrid>();
         if (found == null && transform.root != null) found = transform.root.GetComponentInChildren<TerrainGrid>(true);
         return found;
+    }
+
+    EnemySpawner _spawner;
+
+    [Inject]
+    public void Construct(EnemySpawner spawner) => _spawner = spawner;
+
+    void Start()
+    {
+        if (warm) FillToCapacity();
+    }
+
+    // First cut (Docs/SPAWN.md): fill the zone to capacity at random baked cells on load. Respawn debt,
+    // wipe-lock and gating come later — this just gets enemies into the world.
+    void FillToCapacity()
+    {
+        if (_spawner == null)
+        {
+            Debug.LogError($"[{nameof(SpawnZone)}] '{name}' has no EnemySpawner — the zone must be in a map instantiated through the container.", this);
+            return;
+        }
+        if (cells == null || cells.Length == 0)
+        {
+            Debug.LogWarning($"[{nameof(SpawnZone)}] '{name}' has no baked cells — press Bake in the inspector.", this);
+            return;
+        }
+        if (enemies == null || enemies.Length == 0) return;
+
+        var g = ResolveGrid();
+        if (g == null) return;
+
+        for (int i = 0; i < capacity; i++)
+        {
+            var id = RollEnemyId();
+            if (string.IsNullOrEmpty(id)) continue;
+            var cell = cells[UnityEngine.Random.Range(0, cells.Length)];
+            _spawner.Spawn(id, g.CellToWorld(cell.x, cell.y), Quaternion.identity);
+        }
+    }
+
+    // Pick a kind by weight (a single entry, or all-zero weights, just picks the first).
+    string RollEnemyId()
+    {
+        int total = 0;
+        for (int i = 0; i < enemies.Length; i++) total += Mathf.Max(0, enemies[i].weight);
+        if (total <= 0) return enemies[0].id;
+
+        int r = UnityEngine.Random.Range(0, total);
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            r -= Mathf.Max(0, enemies[i].weight);
+            if (r < 0) return enemies[i].id;
+        }
+        return enemies[enemies.Length - 1].id;
     }
 
 #if UNITY_EDITOR

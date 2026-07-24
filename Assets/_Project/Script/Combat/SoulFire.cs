@@ -34,7 +34,7 @@ public class SoulFire : MonoBehaviour
     Color _glowColor;
 
     Transform _caster;
-    float _range, _damage, _speed;
+    float _range, _damage, _speed, _knockback;
     int _team;
     IDamageable _target;
     readonly List<IDamageable> _found = new List<IDamageable>();
@@ -50,13 +50,14 @@ public class SoulFire : MonoBehaviour
         }
     }
 
-    public void Launch(Transform caster, float range, int team, float damage, float speed)
+    public void Launch(Transform caster, float range, int team, float damage, float speed, float knockback)
     {
         _caster = caster;
         _range = range;
         _team = team;
         _damage = damage;
         _speed = speed;
+        _knockback = knockback;
         _target = null;
         _phase = Phase.Spawning;
         _t = 0f;
@@ -108,6 +109,8 @@ public class SoulFire : MonoBehaviour
         if (dist <= _target.HitRadius + hitPadding)
         {
             _target.TakeDamage(_damage, this);           // damage lands only on arrival
+            if (_knockback > 0f && dist > 1e-4f)
+                _target.ApplyKnockback((d / dist) * _knockback);   // shove along the flame's travel
             StartBurst(burstScale);
             return;
         }

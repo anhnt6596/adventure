@@ -6,18 +6,13 @@ using UnityEngine;
 public class UnitView : MonoBehaviour
 {
     [SerializeField] protected UnitController character;
-    [SerializeField] protected CharacterAnimator characterAnimator;
-    [SerializeField] Dir2 startFacing = Dir2.Right;   // direction (and flip) before the first move
+    [SerializeField] protected UnitAnimator characterAnimator;
 
     protected virtual void Awake()
     {
         if (character == null) character = GetComponent<UnitController>();
-        if (characterAnimator == null) characterAnimator = GetComponentInChildren<CharacterAnimator>();
+        if (characterAnimator == null) characterAnimator = GetComponentInChildren<UnitAnimator>();
     }
-
-    // The dir/flip is only updated while moving, so give it a sensible facing up front — otherwise the
-    // sprite (and its shadow) sit at the animator's default until the first step.
-    protected virtual void Start() => characterAnimator.UpdateDir((int)startFacing);
 
     protected virtual void OnEnable() => character.Attacked += PlayAttack;
     protected virtual void OnDisable() => character.Attacked -= PlayAttack;
@@ -28,15 +23,12 @@ public class UnitView : MonoBehaviour
     {
         if (character.IsBusy) return;
 
-        var v = character.Velocity;
-        bool moving = v.sqrMagnitude > 0.0001f;
-
+        bool moving = character.Velocity.sqrMagnitude > 0.0001f;
         characterAnimator.UpdateState(moving ? 1 : 0);
 
-        var cam = CameraViewDir.Transform;
-        if (!moving || cam == null) return;
-
-        var dir = MovingUtils.GetDirection2Index(v, cam);
-        if (dir != Dir2.Unknown) characterAnimator.UpdateDir((int)dir);
+        // World facing minus the camera's own view sector = which way the unit reads on screen. Recomputed
+        // every frame (not just while moving), so orbiting the camera re-aims a standing unit's sprite.
+        int screenDir = (character.Facing - CameraViewDir.CurrentViewDir8 + 8) % 8;
+        characterAnimator.UpdateDir(screenDir);
     }
 }

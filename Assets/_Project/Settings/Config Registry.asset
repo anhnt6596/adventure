@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Config Registry
   m_EditorClassIdentifier: Assembly-CSharp::ConfigRegistry
   configs:
+  - {fileID: 11400000, guid: c333a2f2c6b137d458e78be7680ad4f7, type: 2}
   - {fileID: 11400000, guid: 7570bedee54ec164c86879a7fa0fe445, type: 2}
   - {fileID: 11400000, guid: 6c7c62bd5abac8442a8966e193f7bf7b, type: 2}
   - {fileID: 11400000, guid: f725a877a0fff1147ae7a3b6afe772cd, type: 2}
