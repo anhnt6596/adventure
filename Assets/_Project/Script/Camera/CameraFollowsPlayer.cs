@@ -22,5 +22,5 @@ public class CameraFollowsPlayer : IStartable
         if (_player.Current != null) Aim(_player.Current);   // player may already be spawned before this runs
     }
 
-    void Aim(MC c) => _camera.Target = c.transform;
+    void Aim(MCController c) => _camera.Target = c.transform;
 }

@@ -20,10 +20,10 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
     string _currentId = DefaultId;
     IScopedObjectResolver _scope;   // per-spawn scope holding this body's stats/config; disposed on the next spawn
 
-    public MC Current { get; private set; }
+    public MCController Current { get; private set; }
     public bool Exists => Current != null;
     public Vector3 Position => Current != null ? Current.transform.position : Vector3.zero;
-    public event Action<MC> Spawned;
+    public event Action<MCController> Spawned;
 
     public string SaveKey => "player";
 
@@ -72,9 +72,9 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
 
         // The registry holds every Identifiable prefab, not just characters — a prop or enemy id must not
         // get this far, or we'd tear down the player for a body that can never be one.
-        if (ident.GetComponent<MC>() == null)
+        if (ident.GetComponent<MCController>() == null)
         {
-            Debug.LogError($"[{nameof(PlayerSystem)}] can't spawn '{id}' — its prefab has no {nameof(MC)}.");
+            Debug.LogError($"[{nameof(PlayerSystem)}] can't spawn '{id}' — its prefab has no {nameof(MCController)}.");
             return false;
         }
 
@@ -107,7 +107,7 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         // ICharacterStats) — instantiate plainly, then inject with THIS scope so the per-spawn stats bind.
         var go = UnityEngine.Object.Instantiate(ident.gameObject, position, rotation);
         _scope.InjectGameObject(go);
-        Current = go.GetComponent<MC>();   // guaranteed by the prefab check above
+        Current = go.GetComponent<MCController>();   // guaranteed by the prefab check above
         Spawned?.Invoke(Current);
         return true;
     }

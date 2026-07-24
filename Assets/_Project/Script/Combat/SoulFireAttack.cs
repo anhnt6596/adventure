@@ -9,7 +9,6 @@ public class SoulFireAttack : MonoBehaviour
 {
     [SerializeField] float range = 6f;                  // how far the flame will hunt for a target
     [SerializeField] float speed = 4f;                  // drift speed
-    [SerializeField] int team = 1;                      // player's normal attack; hits anything not on team 1
     [SerializeField] CharacterAnimator animatorSource;  // drag the one on the art child; fires Hit at the spit frame
     [SerializeField] Transform muzzle;                  // the mouth; empty = this object
     [SerializeField] SoulFire flamePrefab;              // the soul-fire visual + homing (assign the fx)
@@ -17,9 +16,13 @@ public class SoulFireAttack : MonoBehaviour
     Vector3 Muzzle => muzzle != null ? muzzle.position : transform.position;
 
     ICharacterStats _stats;
+    UnitController _owner;                               // the flame hunts targets not on this unit's team
+    int Team => _owner != null ? _owner.Team : 0;
 
     [Inject]
     public void Construct(ICharacterStats stats) => _stats = stats;
+
+    void Awake() => _owner = GetComponentInParent<UnitController>();
 
     void OnEnable()  { if (animatorSource != null) animatorSource.Hit += Spit; }
     void OnDisable() { if (animatorSource != null) animatorSource.Hit -= Spit; }
@@ -40,6 +43,6 @@ public class SoulFireAttack : MonoBehaviour
 
         float damage = _stats != null ? _stats.AttackPower.Value : 0f;
         var flame = LeanPool.Spawn(flamePrefab, Muzzle, Quaternion.identity);
-        flame.Launch(transform, range, team, damage, speed);
+        flame.Launch(transform, range, Team, damage, speed);
     }
 }

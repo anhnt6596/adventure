@@ -15,6 +15,10 @@
                     <ui:DropdownField name="mc-dropdown" class="cheat-dropdown" />
                     <ui:Button name="change-mc-button" text="Change MC" class="cheat-btn" />
                 </ui:VisualElement>
+                <ui:VisualElement class="cheat-tool">
+                    <ui:Label text="Bag" class="cheat-tool-title" />
+                    <ui:VisualElement name="bag-list" class="cheat-bag-list" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:Button name="cheat-toggle" text="»" class="cheat-toggle" />

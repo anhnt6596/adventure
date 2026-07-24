@@ -14,7 +14,7 @@ public class Portal : InteractZone
     [Inject]
     public void ConstructPortal(IMapService maps) => _maps = maps;
 
-    public override void OnActorEnter(MC actor)
+    public override void OnActorEnter(MCController actor)
     {
         _maps.WarpAsync(targetMapId, targetGateIndex).Forget();
     }

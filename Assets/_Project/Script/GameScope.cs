@@ -22,6 +22,7 @@ public class GameScope : LifetimeScope
         // AsSelf too: IPlayer is deliberately read-only, so switching character (cheat panel now, character
         // select later) needs the concrete system.
         builder.RegisterEntryPoint<PlayerSystem>().As<IPlayer>().AsSelf();   // owns + spawns the MC; runs before GameController warps
+        builder.Register<EnemySpawner>(Lifetime.Singleton);                 // makes enemies by id (spawn zones call it)
         builder.RegisterEntryPoint<CameraFollowsPlayer>();          // aims CameraRig at the spawned body
 
         builder.RegisterInstance(_dayNightConfig);

@@ -5,7 +5,7 @@ using VContainer;
 
 public class MCInput : MonoBehaviour
 {
-    [SerializeField] MC character;
+    [SerializeField] MCController character;
 
     IInputGate _gate;
 
@@ -24,7 +24,7 @@ public class MCInput : MonoBehaviour
 
     void Awake()
     {
-        if (character == null) character = GetComponent<MC>();
+        if (character == null) character = GetComponent<MCController>();
 
         var up = new MoveCommand(this, Vector2.up);
         var down = new MoveCommand(this, Vector2.down);

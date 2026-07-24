@@ -247,6 +247,13 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
 
 ## 🧹 Tech debt / cleanup
 
+- [ ] **Mass động theo đồ/nâng cấp.** `UnitController.Start` đang `body.SetMass(Mass)` **một lần** từ stats gốc.
+  Sau này mass đổi theo trang bị / nâng cấp / buff → cần **tính lại mass khi thay đổi** (event stats-changed →
+  `SetMass`), không phải set cứng ở Start. Xem `// TEMP` trong `UnitController.Start`.
+- [ ] **Input lên system, đừng ở trên body.** `MCInput` đang là component trên prefab MC → mỗi respawn/đổi
+  nhân vật lại đẻ lại + re-wire vào body mới. Nên tách thành **system đọc ý định player** (WASD/attack) rồi
+  lái vào `IPlayer.Current` — input sống độc lập với thân, đổi MC không đụng gì. Command/gate giữ nguyên,
+  chỉ đổi chủ sở hữu.
 - [ ] **Esc bị 2 chủ.** `UISystem.Update` và `GameController.Tick` cùng xử Esc (đang né bằng
   `CloseOnEscape=false`). Gộp về một chỗ sở hữu.
 - [ ] **Picker → interface config.** `Picker` đọc thẳng `ICharacterStats.PickupRadius` (giờ chỉ MC nhặt).

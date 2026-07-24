@@ -5,9 +5,9 @@ using UnityEngine;
 // and reads Current, so a respawn or character-switch is a single reference change inside PlayerSystem.
 public interface IPlayer
 {
-    MC Current { get; }        // null until PlayerSystem has spawned — watch Spawned
+    MCController Current { get; }        // null until PlayerSystem has spawned — watch Spawned
     bool Exists { get; }
     Vector3 Position { get; }
-    event Action<MC> Spawned;  // fires each time a body comes into being (spawn / respawn / switch);
+    event Action<MCController> Spawned;  // fires each time a body comes into being (spawn / respawn / switch);
                                       // always carries a live MC — a failed spawn fires nothing
 }

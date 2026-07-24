@@ -8,17 +8,20 @@ using VContainer;
 public class SwingAttack : MonoBehaviour
 {
     [SerializeField] float radius = 1.5f;               // reach — a property of this weapon, not a character stat
-    [SerializeField] int team = 1;                      // player's normal attack; team 0 would be a self-hurting skill (bomb)
     [SerializeField] CharacterAnimator animatorSource;  // drag the one on the art child; fires Hit at the connect frame
     [SerializeField] Transform origin;                  // centre of the swing; empty = this object
 
     Vector3 Origin => origin != null ? origin.position : transform.position;
 
     ICharacterStats _stats;
+    UnitController _owner;                               // the swing fights for whoever owns it (MC 1 / enemy 2)
+    int Team => _owner != null ? _owner.Team : 0;
     readonly List<IDamageable> _hits = new List<IDamageable>();
 
     [Inject]
     public void Construct(ICharacterStats stats) => _stats = stats;
+
+    void Awake() => _owner = GetComponentInParent<UnitController>();
 
     void OnEnable()
     {
@@ -42,7 +45,7 @@ public class SwingAttack : MonoBehaviour
     void OnSwingHit()
     {
         CombatWorld.Instance.Rebuild();
-        CombatWorld.Instance.Overlap(Origin, radius, team, _hits);
+        CombatWorld.Instance.Overlap(Origin, radius, Team, _hits);
 
         float damage = _stats != null ? _stats.AttackPower.Value : 0f;
         for (int i = 0; i < _hits.Count; i++)

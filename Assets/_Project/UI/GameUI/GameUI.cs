@@ -26,6 +26,9 @@ public class GameUI : MonoBehaviour
     DropdownField _mcDropdown;
     Button _changeMcButton;
 
+    VisualElement _bagList;
+    Inventory _bagInventory;        // the live one; re-pointed when the player switches
+
     // Separate [Inject] method so the cheat panel's dependencies exist only in the editor — the build's
     // Construct signature stays untouched.
     [Inject]
@@ -72,6 +75,7 @@ public class GameUI : MonoBehaviour
         _cheatToggle = cheat.Q<Button>("cheat-toggle");
         _cheatToggle?.RegisterCallback<ClickEvent>(_ => ToggleCheats());
         SetupCharacterCheat(cheat);
+        SetupBagCheat(cheat);
 #else
         cheat.RemoveFromHierarchy();
 #endif
@@ -108,7 +112,72 @@ public class GameUI : MonoBehaviour
 
     string CurrentMcId => _player?.Current != null ? _player.Current.Id : null;
 
-    void OnPlayerSpawned(MC _) => RefreshCharacterCheat();
+    void OnPlayerSpawned(MCController _)
+    {
+        RefreshCharacterCheat();
+        RebindBag();   // a switched character has its own inventory
+    }
+
+    // Bag cheat: list each resource kind held, with a button to wipe that kind. The remove path is a real
+    // Inventory.Remove (crafting/spending will use it too), not a cheat-only shortcut.
+    void SetupBagCheat(VisualElement cheat)
+    {
+        _bagList = cheat.Q<VisualElement>("bag-list");
+        if (_bagList != null) RebindBag();   // the player may already be spawned
+    }
+
+    Inventory CurrentBag => _player?.Current != null ? _player.Current.GetComponentInChildren<Picker>()?.Inventory : null;
+
+    void RebindBag()
+    {
+        if (_bagList == null) return;
+
+        var inv = CurrentBag;
+        if (inv != _bagInventory)
+        {
+            if (_bagInventory != null) _bagInventory.Changed -= RefreshBag;
+            _bagInventory = inv;
+            if (_bagInventory != null) _bagInventory.Changed += RefreshBag;
+        }
+        RefreshBag();
+    }
+
+    void RefreshBag()
+    {
+        if (_bagList == null) return;
+        _bagList.Clear();
+
+        bool any = false;
+        if (_bagInventory != null)
+            foreach (var kv in _bagInventory.Counts)
+            {
+                if (kv.Value <= 0) continue;
+                any = true;
+
+                var def = kv.Key;
+                int n = kv.Value;
+
+                var row = new VisualElement();
+                row.AddToClassList("cheat-bag-row");
+
+                var name = new Label($"{def.Id}  ×{n}");
+                name.AddToClassList("cheat-bag-name");
+
+                var remove = new Button(() => _bagInventory.Remove(def, n)) { text = "×" };   // wipe this kind
+                remove.AddToClassList("cheat-bag-remove");
+
+                row.Add(name);
+                row.Add(remove);
+                _bagList.Add(row);
+            }
+
+        if (!any)
+        {
+            var empty = new Label("empty");
+            empty.AddToClassList("cheat-bag-empty");
+            _bagList.Add(empty);
+        }
+    }
 
     void RefreshCharacterCheat()
     {
@@ -132,6 +201,7 @@ public class GameUI : MonoBehaviour
         Release();
 #if UNITY_EDITOR
         if (_player != null) _player.Spawned -= OnPlayerSpawned;
+        if (_bagInventory != null) _bagInventory.Changed -= RefreshBag;
 #endif
     }
 

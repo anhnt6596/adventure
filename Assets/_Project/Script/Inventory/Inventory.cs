@@ -43,6 +43,22 @@ public class Inventory
         return added;
     }
 
+    // Removes up to `amount` of a resource; returns how many were actually removed (0 if none held).
+    public int Remove(ResourceDef def, int amount)
+    {
+        if (def == null || amount <= 0) return 0;
+
+        int removed = Mathf.Min(amount, Get(def));
+        if (removed <= 0) return 0;
+
+        int left = Get(def) - removed;
+        if (left > 0) _counts[def] = left;
+        else _counts.Remove(def);
+        _total -= removed;
+        Changed?.Invoke();
+        return removed;
+    }
+
     // Restore saved counts as-is (no capacity clamp — the saved state was already valid).
     public void Restore(Dictionary<ResourceDef, int> counts)
     {

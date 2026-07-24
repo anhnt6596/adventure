@@ -7,7 +7,7 @@ using UnityEngine;
 // ICharacterStats for the player, EnemyConfig for an enemy — by overriding the accessors below.
 public abstract class UnitController : Identifiable
 {
-    [SerializeField] protected CollisionBody body;   // mass comes from stats, not the inspector
+    protected CollisionBody body;   // the unit's body, auto-found under it — not wired by hand
 
     Vector2 _input;
     float _busyTimer;
@@ -15,6 +15,10 @@ public abstract class UnitController : Identifiable
     public bool IsBusy => _busyTimer > 0f;
     public Vector3 Velocity { get; private set; }
     public event Action Attacked;
+
+    // 0 neutral / 1 player / 2 enemy. A kind sets its side here (MC = 1, Enemy = 2) and its attacks read it,
+    // so the same attack component fights for whoever owns it.
+    public virtual int Team => 0;
 
     // The numbers the control loop needs; each unit kind sources them differently.
     protected abstract float MoveSpeed { get; }
@@ -25,12 +29,15 @@ public abstract class UnitController : Identifiable
     // Virtual so a unit whose stats aren't ready at Start (e.g. an enemy configured after spawn) can defer it.
     protected virtual void Start()
     {
+        body = GetComponentInChildren<CollisionBody>();
         if (body == null)
         {
-            Debug.LogError($"[{GetType().Name}] CollisionBody not assigned — no collision, no mass.", this);
+            Debug.LogError($"[{GetType().Name}] no CollisionBody found — no collision, no mass.", this);
             return;
         }
-        body.SetMass(Mass);   // the body registers itself with CollisionSystem via OnEnable
+        // TEMP: mass is set once from base stats. Later it becomes dynamic (gear, upgrades, buffs) and should
+        // be recomputed on change, not this one-shot at Start. (The body registers itself via its OnEnable.)
+        body.SetMass(Mass);
     }
 
     public void Move(Vector2 worldDir)

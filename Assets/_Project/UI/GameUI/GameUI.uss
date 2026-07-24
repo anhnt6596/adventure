@@ -102,6 +102,43 @@
     opacity: 0.35;
 }
 
+/* one row per resource kind in the bag */
+.cheat-bag-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.cheat-bag-name {
+    flex-grow: 1;
+    font-size: 12px;
+    color: rgb(210, 214, 224);
+}
+
+.cheat-bag-remove {
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(20, 22, 28);
+    background-color: rgb(220, 120, 110);
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.cheat-bag-remove:hover {
+    background-color: rgb(235, 140, 130);
+}
+
+.cheat-bag-empty {
+    font-size: 12px;
+    -unity-font-style: italic;
+    color: rgb(140, 146, 158);
+}
+
 /* Deliberately chunky: PanelSettings scales with screen size, so a thin tab ends up near-unclickable. */
 .cheat-toggle {
     width: 44px;

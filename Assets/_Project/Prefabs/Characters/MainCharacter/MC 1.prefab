@@ -138,7 +138,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1067017619327003808}
-  - component: {fileID: 4637130129812403535}
+  - component: {fileID: 8294235988516146416}
   - component: {fileID: 1866700135094278547}
   - component: {fileID: 7319636030926439168}
   - component: {fileID: 5403837979165827894}
@@ -169,7 +169,7 @@ Transform:
   - {fileID: 2353679818562381336}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4637130129812403535
+--- !u!114 &8294235988516146416
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -178,9 +178,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 5431757174141155505}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8c449153d467fc468f5ae9f59465bc7, type: 3}
+  m_Script: {fileID: 11500000, guid: b86eb6650b4cfbc4cb8b90fec0ec6fbd, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Character
+  m_EditorClassIdentifier: Assembly-CSharp::MCController
   id: MC 1
   body: {fileID: 5403837979165827894}
 --- !u!114 &1866700135094278547
@@ -195,8 +195,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0052a05558e01b545b0403d9b625bbcc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterInput
-  character: {fileID: 4637130129812403535}
-  cameraTransform: {fileID: 0}
+  character: {fileID: 8294235988516146416}
 --- !u!114 &7319636030926439168
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -209,9 +208,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25c9a90df68284a4aac467f6c5ac7b75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterView
-  character: {fileID: 4637130129812403535}
+  character: {fileID: 8294235988516146416}
   characterAnimator: {fileID: 1662830386516377226}
-  cameraTransform: {fileID: 0}
   startFacing: 1
 --- !u!114 &5403837979165827894
 MonoBehaviour:
@@ -268,7 +266,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SwingAttack
   radius: 0.3
-  team: 0
   animatorSource: {fileID: 1662830386516377226}
   origin: {fileID: 194829221086538142}
 --- !u!1 &8299895054748087226
