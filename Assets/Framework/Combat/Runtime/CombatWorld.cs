@@ -12,7 +12,7 @@ public class CombatWorld
     public static CombatWorld Instance { get; private set; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    static void Init() => Instance = new CombatWorld();
+    static void Init() => Instance = new CombatWorld(8f);   // cell = largest combat query (soul-fire hunt, AI aggro); keep queries ≤ this
 
     readonly SpatialHash<IDamageable> _hash;
     readonly List<IDamageable> _query = new List<IDamageable>();

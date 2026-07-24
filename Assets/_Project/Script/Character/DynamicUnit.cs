@@ -27,6 +27,10 @@ public abstract class DynamicUnit : Unit
     protected abstract float AttackDuration { get; }
     protected abstract float Mass { get; }
 
+    // Public because attack skills read it off their owner (a SwingAttack on an enemy deals the enemy's damage,
+    // the same one on the MC deals the MC's) — the number's source differs per kind, the skill doesn't care.
+    public abstract float AttackPower { get; }
+
     // Virtual so a unit whose stats aren't ready at Start (e.g. an enemy configured after spawn) can defer it.
     protected virtual void Start()
     {

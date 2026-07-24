@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 194829221086538142}
   m_Layer: 6
-  m_Name: swingNode
+  m_Name: attackNode
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -143,6 +143,8 @@ GameObject:
   - component: {fileID: 233032119361070334}
   - component: {fileID: 8436843599349794193}
   - component: {fileID: 6143232455295501188}
+  - component: {fileID: 7690705269640586978}
+  - component: {fileID: 5538935722000754509}
   m_Layer: 0
   m_Name: Mewfrog
   m_TagString: Untagged
@@ -196,6 +198,7 @@ MonoBehaviour:
   radius: 0.25
   size: {x: 1, y: 1}
   mass: 0.5
+  knockbackDrag: 8
 --- !u!114 &233032119361070334
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -222,7 +225,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Damageable
-  config: {fileID: 0}
 --- !u!114 &6143232455295501188
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -239,6 +241,36 @@ MonoBehaviour:
   strength: 0.5
   duration: 0.15
   renderers: []
+--- !u!114 &7690705269640586978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad1594e8aca5cd34ab98d11d70a3411c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MewFrogAI
+--- !u!114 &5538935722000754509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 950196cda30f97c47b4098541c4e8753, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoulFireAttack
+  range: 6
+  speed: 4
+  knockback: 3
+  animatorSource: {fileID: 639855831500468208}
+  muzzle: {fileID: 194829221086538142}
+  flamePrefab: {fileID: 2475285664741214988, guid: d229363f7430b724b820ffda4755e083, type: 3}
 --- !u!1 &8299895054748087226
 GameObject:
   m_ObjectHideFlags: 0

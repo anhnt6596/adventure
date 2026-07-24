@@ -19,7 +19,7 @@ public class Damageable : MonoBehaviour, IDamageable
     public bool IsAlive => _hp > 0f;
     public int Team => _unit != null ? _unit.Team : 2;
 
-    public event System.Action Damaged;        // non-fatal hit — views like HitFlash listen
+    public event System.Action<object> Damaged;   // non-fatal hit; arg = damage source (HitFlash ignores it, AI targets it)
     public event System.Action<object> Died;   // killed — the arg is the damage source (force origin for drops)
 
     void Awake()
@@ -61,7 +61,7 @@ public class Damageable : MonoBehaviour, IDamageable
         if (!IsAlive) return;
         _hp -= amount;
         if (_hp <= 0f) { Die(source); return; }
-        Damaged?.Invoke();
+        Damaged?.Invoke(source);
     }
 
     void Die(object source)

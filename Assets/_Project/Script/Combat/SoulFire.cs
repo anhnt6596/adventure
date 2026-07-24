@@ -2,13 +2,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using Lean.Pool;
 
-// A slow homing soul-fire, in three phases:
+// A slow homing soul-fire, in phases:
 //   Spawning - over spawnTime the glow sprite fades + scales up to its authored look and the flame plays.
-//   Flying   - drifts to the nearest hostile (CombatWorld hash) within the caster's range, easing down
-//              near it; re-targets if its mark dies first.
-//   Bursting - on contact (damage lands here) OR when nothing is in range, the flame stops, the burst
-//              particle fires once, and the glow blooms then fades to match it; then it despawns.
-// Pooled - every field is (re)set in Launch, so a recycled flame never carries the last shot's state.
+//   Flying   - drifts to a hostile (CombatWorld hash), easing down near it. The player's flame re-targets the
+//              nearest if its mark dies; an enemy's locks its first mark and chases only that.
+//   Bursting - on contact (damage lands here) the flame stops, the burst particle fires once, the glow blooms
+//              then fades, and it despawns.
+//   Rising / Fading - with NO target to chase: an unlocked flame drifts up and pops (Rising); a locked one
+//              just stops and lets the trail fade out over fadeTime (Fading) — no rise, no burst.
+// ONE prefab for both — the caster's TEAM decides the behaviour (player = team 1). Pooled: every field is
+// (re)set in Launch, so a recycled flame never carries the last shot's state.
 [DisallowMultipleComponent]
 public class SoulFire : MonoBehaviour
 {
@@ -19,13 +22,15 @@ public class SoulFire : MonoBehaviour
 
     [Header("Timing")]
     [SerializeField] float spawnTime = 0.1f;   // glow fades + scales in over this
+    [SerializeField] float speed = 6f;         // flight speed — the flame's own, not the caster's
     [SerializeField] float slowRadius = 1.5f;  // eases the drift down within this of the target
-    [SerializeField] float riseHeight = 2f;    // with no target, drifts up this far before it bursts
+    [SerializeField] float riseHeight = 2f;    // unlocked: with no target, drifts up this far before it bursts
+    [SerializeField] float fadeTime = 0.4f;    // locked: with no target, let the trail drift out this long, then despawn
     [SerializeField] float burstTime = 0.35f;  // glow bloom + fade, ~ the explosion length
     [SerializeField] float burstScale = 1.6f;  // glow scale multiplier at the burst peak
     [SerializeField] float hitPadding = 0.15f; // land a touch past the target's hit circle
 
-    enum Phase { Spawning, Flying, Rising, Bursting }
+    enum Phase { Spawning, Flying, Rising, Fading, Bursting }
     Phase _phase;
     float _t;
     float _riseStartY;
@@ -34,9 +39,11 @@ public class SoulFire : MonoBehaviour
     Color _glowColor;
 
     Transform _caster;
-    float _range, _damage, _speed, _knockback;
+    float _range, _damage, _knockback;
     int _team;
+    bool _locked;          // true = home one mark + fade on loss (enemy); false = re-target + rise (player)
     IDamageable _target;
+    bool _acquired;        // has the flight locked onto a target at least once
     readonly List<IDamageable> _found = new List<IDamageable>();
 
     // Cache the authored glow look once, before any shot mutates it - otherwise a pooled flame would
@@ -50,15 +57,16 @@ public class SoulFire : MonoBehaviour
         }
     }
 
-    public void Launch(Transform caster, float range, int team, float damage, float speed, float knockback)
+    public void Launch(Transform caster, float range, int team, float damage, float knockback)
     {
         _caster = caster;
         _range = range;
         _team = team;
         _damage = damage;
-        _speed = speed;
         _knockback = knockback;
+        _locked = team != 1;   // the player's flame (team 1) re-targets + rises; anyone else's locks onto one mark + fades
         _target = null;
+        _acquired = false;
         _phase = Phase.Spawning;
         _t = 0f;
 
@@ -79,6 +87,7 @@ public class SoulFire : MonoBehaviour
             case Phase.Spawning: Spawning(dt); break;
             case Phase.Flying:   Flying(dt);   break;
             case Phase.Rising:   Rising(dt);   break;
+            case Phase.Fading:   Fading(dt);   break;
             default:             Bursting(dt); break;
         }
     }
@@ -98,9 +107,13 @@ public class SoulFire : MonoBehaviour
     void Flying(float dt)
     {
         if (_target == null || !_target.IsAlive)
-            _target = FindNearest();
+        {
+            // unlocked re-targets the nearest each time its mark is lost; locked picks once and never again.
+            _target = (!_locked || !_acquired) ? FindNearest() : null;
+            _acquired = true;
+        }
 
-        if (_target == null) { StartRise(); return; }   // nothing in range -> drift up, then burst
+        if (_target == null) { if (_locked) StartFade(); else StartRise(); return; }
 
         Vector3 d = _target.Position - transform.position;
         d.y = 0f;
@@ -115,11 +128,11 @@ public class SoulFire : MonoBehaviour
             return;
         }
 
-        float v = _speed * (slowRadius > 0f ? Mathf.Clamp(dist / slowRadius, 0.3f, 1f) : 1f);
+        float v = speed * (slowRadius > 0f ? Mathf.Clamp(dist / slowRadius, 0.3f, 1f) : 1f);
         transform.position += (d / dist) * (v * dt);
     }
 
-    // No target to chase: drift straight up, then burst harmlessly at the top.
+    // No target, unlocked: drift straight up, then burst harmlessly at the top (player).
     void StartRise()
     {
         _phase = Phase.Rising;
@@ -128,8 +141,25 @@ public class SoulFire : MonoBehaviour
 
     void Rising(float dt)
     {
-        transform.position += Vector3.up * (_speed * dt);
+        transform.position += Vector3.up * (speed * dt);
         if (transform.position.y - _riseStartY >= riseHeight) StartBurst(burstScale * 2f);   // wasted shot pops bigger
+    }
+
+    // No target, locked: stop dead — cut emission (no burst, no rise), let the last particles drift out over
+    // fadeTime, then despawn.
+    void StartFade()
+    {
+        _phase = Phase.Fading;
+        _t = 0f;
+        if (flame != null) flame.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+    }
+
+    void Fading(float dt)
+    {
+        _t += dt;
+        float k = fadeTime > 0f ? Mathf.Clamp01(_t / fadeTime) : 1f;
+        if (glow != null) SetGlowAlpha(_glowColor.a * (1f - k));   // glow fades out with the trailing particles
+        if (k >= 1f) LeanPool.Despawn(gameObject);
     }
 
     void StartBurst(float glowScale)

@@ -101,6 +101,7 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         {
             b.RegisterInstance<ICharacterStats>(stats);
             b.RegisterInstance<IInventoryConfig>(cfg);
+            b.RegisterInstance<IDamageableConfig>(cfg);   // MC's HP/hit-radius — MCController exposes it to its Damageable
         });
 
         // NOTE: _scope.Instantiate() would re-route injection through the parent LifetimeScope (which lacks

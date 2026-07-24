@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-using VContainer;
 
-// MC1's attack: after the sword swing, everything in a circle around the character takes damage.
-// The circle is centred on the character (so wood will later fly outward, away from this point).
-// One attack = one class — a different weapon's attack is its own component, not a config of this one.
+// A melee-style attack: after the swing, everything in a circle around the owner takes damage. The circle is
+// centred on the owner (so wood flies outward from here). Range + the hit both live here; the AI (or player
+// input) only pulls the trigger via the owner's Attack(). One attack = one class.
 public class SwingAttack : MonoBehaviour
 {
     [SerializeField] float radius = 1.5f;               // reach — a property of this weapon, not a character stat
@@ -14,15 +13,11 @@ public class SwingAttack : MonoBehaviour
 
     Vector3 Origin => origin != null ? origin.position : transform.position;
 
-    ICharacterStats _stats;
-    Unit _owner;                                        // the swing fights for whoever owns it (MC 1 / enemy 2)
+    DynamicUnit _owner;                                 // fights for whoever owns it — its Team, its AttackPower
     int Team => _owner != null ? _owner.Team : 0;
     readonly List<IDamageable> _hits = new List<IDamageable>();
 
-    [Inject]
-    public void Construct(ICharacterStats stats) => _stats = stats;
-
-    void Awake() => _owner = GetComponentInParent<Unit>();
+    void Awake() => _owner = GetComponentInParent<DynamicUnit>();
 
     void OnEnable()
     {
@@ -38,17 +33,15 @@ public class SwingAttack : MonoBehaviour
     {
         if (animatorSource == null)
             Debug.LogError($"[{nameof(SwingAttack)}] no CharacterAnimator found — the swing will never land. Assign it (it's on the art child).", this);
-        if (_stats == null)
-            Debug.LogError($"[{nameof(SwingAttack)}] ICharacterStats not injected — damage will be 0.", this);
     }
 
-    // Fires when the animation reaches its hit frame (via CharacterAnimator.Hit).
+    // Fires when the animation reaches its hit frame (via UnitAnimator.Hit).
     void OnSwingHit()
     {
         CombatWorld.Instance.Rebuild();
         CombatWorld.Instance.Overlap(Origin, radius, Team, _hits);
 
-        float damage = _stats != null ? _stats.AttackPower.Value : 0f;
+        float damage = _owner != null ? _owner.AttackPower : 0f;
         for (int i = 0; i < _hits.Count; i++)
         {
             var hit = _hits[i];

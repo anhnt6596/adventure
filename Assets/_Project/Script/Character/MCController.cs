@@ -6,14 +6,21 @@ using VContainer;
 public class MCController : DynamicUnit
 {
     ICharacterStats _stats;
+    IDamageableConfig _dmg;
 
-    public override int Team => 1;   // player
+    public override int Team => 1;                              // player
+    public override IDamageableConfig DamageableConfig => _dmg; // HP/hit-radius from MainCharStatsConfig
 
     [Inject]
-    public void Construct(ICharacterStats stats) => _stats = stats;
+    public void Construct(ICharacterStats stats, IDamageableConfig dmg)
+    {
+        _stats = stats;
+        _dmg = dmg;
+    }
 
     protected override float MoveSpeed => _stats.MoveSpeed.Value;
     protected override float AttackSpeed => _stats.AttackSpeed.Value;
     protected override float AttackDuration => _stats.AttackDuration;
     protected override float Mass => _stats.Mass;
+    public override float AttackPower => _stats.AttackPower.Value;
 }

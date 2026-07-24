@@ -33,7 +33,7 @@ public class HitFlash : MonoBehaviour
     void OnEnable()  { if (_damageable != null) _damageable.Damaged += Flash; }
     void OnDisable() { if (_damageable != null) _damageable.Damaged -= Flash; }
 
-    void Flash() => _t = duration;
+    void Flash(object _) => _t = duration;
 
     void Update()
     {
