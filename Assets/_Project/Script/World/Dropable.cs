@@ -1,6 +1,5 @@
 using Lean.Pool;
 using UnityEngine;
-using VContainer;
 
 // Spawns what this provides and flings it out. Call Drop(source) whenever the moment comes — a death, a
 // chest opening, a node depleting, a timer. It knows HOW to drop, not WHY, so any trigger can drive it,
@@ -13,11 +12,6 @@ public class Dropable : MonoBehaviour
     [SerializeField] DamageableConfig config;
 
     IDeathDropableConfig Cfg => config;
-
-    CollisionSystem _collision;   // passed to flung drops so they collide while airborne
-
-    [Inject]
-    public void Construct(CollisionSystem collision) => _collision = collision;
 
     void Start()
     {
@@ -42,7 +36,7 @@ public class Dropable : MonoBehaviour
             {
                 var obj = LeanPool.Spawn(drop.prefab, transform.position, Quaternion.identity);
                 if (obj.TryGetComponent<FlyingPickup>(out var fly))
-                    fly.Launch(flingDir, _collision);
+                    fly.Launch(flingDir);
             }
         }
     }

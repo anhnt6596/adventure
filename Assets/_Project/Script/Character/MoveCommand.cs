@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class MoveCommand : ICharacterCommand
 {
-    readonly CharacterInput _input;
+    readonly MCInput _input;
     readonly Vector2 _direction;
 
-    public MoveCommand(CharacterInput input, Vector2 direction)
+    public MoveCommand(MCInput input, Vector2 direction)
     {
         _input = input;
         _direction = direction;

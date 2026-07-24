@@ -1,8 +1,22 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/_Project/UI/GameUI/GameUI.uss" />
-    <ui:VisualElement name="screen" class="screen">
+    <ui:VisualElement name="screen" class="screen" picking-mode="Ignore">
         <ui:VisualElement name="bottom-bar" class="bottom-bar">
             <ui:Button name="start-button" text="START" class="start-btn" />
         </ui:VisualElement>
+    </ui:VisualElement>
+    <!-- Editor-only cheat drawer. Sibling of "screen" so it outlives START; GameUI strips it in a build. -->
+    <ui:VisualElement name="cheat" class="cheat" picking-mode="Ignore">
+        <ui:VisualElement name="cheat-panel" class="cheat-panel">
+            <ui:Label text="CHEATS" class="cheat-title" />
+            <ui:VisualElement name="cheat-tools" class="cheat-tools">
+                <ui:VisualElement class="cheat-tool">
+                    <ui:Label text="Character" class="cheat-tool-title" />
+                    <ui:DropdownField name="mc-dropdown" class="cheat-dropdown" />
+                    <ui:Button name="change-mc-button" text="Change MC" class="cheat-btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:Button name="cheat-toggle" text="»" class="cheat-toggle" />
     </ui:VisualElement>
 </ui:UXML>

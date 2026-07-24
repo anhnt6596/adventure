@@ -4,11 +4,11 @@ using VContainer;
 
 // Lives on the actor. Each frame, asks the field which zones it's standing in and fires
 // enter/exit. Approaching a zone triggers it — no picking, no priority.
-[RequireComponent(typeof(Character))]
+[RequireComponent(typeof(MC))]
 public class Interactor : MonoBehaviour
 {
     InteractField _field;
-    Character _actor;
+    MC _actor;
 
     readonly HashSet<InteractZone> _inside = new HashSet<InteractZone>();
     readonly List<InteractZone> _now = new List<InteractZone>();
@@ -17,7 +17,7 @@ public class Interactor : MonoBehaviour
     [Inject]
     public void Construct(InteractField field) => _field = field;
 
-    void Awake() => _actor = GetComponent<Character>();
+    void Awake() => _actor = GetComponent<MC>();
 
     void Start()
     {

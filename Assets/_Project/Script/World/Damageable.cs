@@ -1,5 +1,4 @@
 using UnityEngine;
-using VContainer;
 
 // Anything with HP that can be hit and dies. HP/team/hit-radius come from an IDamageableConfig. What it
 // PROVIDES on death is a separate concern: Damageable just fires Died, and a DeathDropable (or anything
@@ -13,8 +12,7 @@ public class Damageable : MonoBehaviour, IDamageable
     IDamageableConfig Cfg => config;
 
     float _hp;
-    CombatWorld _combat;
-    bool _inWorld;         // guards against a double Add across the inject/OnEnable ordering
+    bool _inWorld;         // guards against a double Add/Remove
 
     public Vector3 Position => transform.position;
     public float HitRadius => config != null ? Cfg.HitRadius : 0.5f;
@@ -29,31 +27,20 @@ public class Damageable : MonoBehaviour, IDamageable
         if (config != null) _hp = Cfg.MaxHp;
     }
 
-    // Injected when its map is instantiated through the container (MapService does this). Inject lands
-    // AFTER the first OnEnable (which had no world yet), so join here too — but only while active, so a
-    // prefab object that ships disabled stays out of the world until it's actually switched on.
-    [Inject]
-    public void Construct(CombatWorld combat)
-    {
-        _combat = combat;
-        if (isActiveAndEnabled) JoinWorld();
-    }
-
     void Start()
     {
         if (config == null)
             Debug.LogError($"[{nameof(Damageable)}] no DamageableConfig assigned — drag the kind's SO; it has no HP.", this);
-        if (_combat == null)
-            Debug.LogError($"[{nameof(Damageable)}] not injected — its map must be instantiated through the DI container, or add it to GameScope's Auto Inject list.", this);
     }
 
-    // Only in the combat world while enabled: a disabled object can't be hit, and a re-enabled one rejoins.
-    void OnEnable() => JoinWorld();          // _combat is still null on the very first call (before inject)
+    // In the combat world only while enabled: a disabled object can't be hit, a re-enabled one rejoins. The
+    // world is a static (CombatWorld.Instance), ready before any OnEnable, so it self-registers — no wiring.
+    void OnEnable() => JoinWorld();
     void OnDisable() => LeaveWorld();
     void OnDestroy() => LeaveWorld();
 
-    void JoinWorld()  { if (_combat != null && !_inWorld) { _combat.Add(this); _inWorld = true; } }
-    void LeaveWorld() { if (_combat != null && _inWorld)  { _combat.Remove(this); _inWorld = false; } }
+    void JoinWorld()  { if (_inWorld) return; CombatWorld.Instance.Add(this); _inWorld = true; }
+    void LeaveWorld() { if (!_inWorld) return; CombatWorld.Instance.Remove(this); _inWorld = false; }
 
     public void TakeDamage(float amount, object source)
     {

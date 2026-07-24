@@ -238,6 +238,13 @@ namespace Core.UI
 
             var root = asset.CloneTree();
             root.name = t.Name;
+
+            // CloneTree hands back a TemplateContainer, which picks by default and sits over a full-screen
+            // layer — so this structural wrapper would swallow clicks meant for anything beneath it (every
+            // UIDocument here shares one PanelSettings, so they all live in a single panel and simply sort as
+            // siblings; there is no per-panel fallthrough to save us). The view's own elements still pick,
+            // a modal popup's dimmer included — only the wrapper steps aside.
+            root.pickingMode = PickingMode.Ignore;
             var created = (T)Activator.CreateInstance(t, root);
             created.Bind(this);
             _injector?.Inject(created);

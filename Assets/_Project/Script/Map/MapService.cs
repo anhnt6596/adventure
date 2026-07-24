@@ -9,19 +9,17 @@ public class MapService : IMapService
     readonly IInputGate _gate;
     readonly IPlayer _player;
     readonly CameraRig _camera;
-    readonly CollisionSystem _collision;
 
     GameObject _current;
     public string CurrentMapId { get; private set; } = "";
 
     [Inject]
-    public MapService(IObjectResolver container, IInputGate gate, IPlayer player, CameraRig camera, CollisionSystem collision)
+    public MapService(IObjectResolver container, IInputGate gate, IPlayer player, CameraRig camera)
     {
         _container = container;
         _gate = gate;
         _player = player;
         _camera = camera;
-        _collision = collision;
     }
 
     public async UniTask WarpAsync(string mapId, int gateIndex)
@@ -78,22 +76,13 @@ public class MapService : IMapService
         // TODO transition FX out
     }
 
-    // Rebind the loaded map's terrain and obstacle bodies to the persistent scene CollisionSystem.
-    // A map prefab can't reference a scene object, so this must happen after it's instantiated.
+    // Point the collision world at the loaded map's terrain. The map's obstacle bodies register themselves
+    // (CollisionBody.OnEnable), and SetTerrain re-applies the new pass mask to them — so no per-body wiring.
     void WireMapToScene(GameObject map)
     {
-        if (_collision == null)
-        {
-            Debug.LogError("[MapService] no CollisionSystem — assign it on GameScope; the map won't collide.");
-            return;
-        }
-
         var terrain = map.GetComponentInChildren<TerrainGrid>(true);
-        if (terrain != null) _collision.SetTerrain(terrain);
+        if (terrain != null) CollisionSystem.Instance?.SetTerrain(terrain);
         else Debug.LogWarning($"[MapService] map '{CurrentMapId}' has no TerrainGrid — tile collision disabled.", map);
-
-        var bodies = map.GetComponentsInChildren<CollisionBody>(true);
-        for (int i = 0; i < bodies.Length; i++) bodies[i].BindSystem(_collision);
     }
 
     void PlaceAtGate(GameObject mapInstance, int gateIndex)

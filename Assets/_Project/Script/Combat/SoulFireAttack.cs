@@ -16,23 +16,16 @@ public class SoulFireAttack : MonoBehaviour
 
     Vector3 Muzzle => muzzle != null ? muzzle.position : transform.position;
 
-    CombatWorld _combat;
     ICharacterStats _stats;
 
     [Inject]
-    public void Construct(CombatWorld combat, ICharacterStats stats)
-    {
-        _combat = combat;
-        _stats = stats;
-    }
+    public void Construct(ICharacterStats stats) => _stats = stats;
 
     void OnEnable()  { if (animatorSource != null) animatorSource.Hit += Spit; }
     void OnDisable() { if (animatorSource != null) animatorSource.Hit -= Spit; }
 
     void Start()
     {
-        if (_combat == null)
-            Debug.LogError($"[{nameof(SoulFireAttack)}] CombatWorld not injected — add this GameObject to GameScope's Auto Inject Game Objects.", this);
         if (animatorSource == null)
             Debug.LogError($"[{nameof(SoulFireAttack)}] no CharacterAnimator — the flame never spits. Assign it (on the art child).", this);
         if (flamePrefab == null)
@@ -43,10 +36,10 @@ public class SoulFireAttack : MonoBehaviour
     // targeting through the CombatWorld hash, so an attack with nothing in range just fizzles immediately.
     void Spit()
     {
-        if (_combat == null || flamePrefab == null) return;
+        if (flamePrefab == null) return;
 
         float damage = _stats != null ? _stats.AttackPower.Value : 0f;
         var flame = LeanPool.Spawn(flamePrefab, Muzzle, Quaternion.identity);
-        flame.Launch(_combat, transform, range, team, damage, speed);
+        flame.Launch(transform, range, team, damage, speed);
     }
 }

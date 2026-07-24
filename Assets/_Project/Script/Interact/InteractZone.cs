@@ -30,8 +30,8 @@ public abstract class InteractZone : MonoBehaviour
 
     protected virtual void OnDestroy() => _field?.Unregister(this);
 
-    public virtual void OnActorEnter(Character actor) { }
-    public virtual void OnActorExit(Character actor) { }
+    public virtual void OnActorEnter(MC actor) { }
+    public virtual void OnActorExit(MC actor) { }
 
     void OnDrawGizmos()
     {

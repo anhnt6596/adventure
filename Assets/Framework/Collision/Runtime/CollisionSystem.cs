@@ -1,15 +1,27 @@
 using UnityEngine;
 
 // Runs after every mover has written its position, so it corrects the frame's result rather than
-// racing it.
+// racing it. The one collision world for the game — a body reaches it through Instance and self-registers,
+// so a prefab (which can't serialize a scene reference) needs no one to bind it.
+[DefaultExecutionOrder(-100)]   // Awake before any CollisionBody.OnEnable, so Instance is set to register into
 public class CollisionSystem : MonoBehaviour
 {
+    public static CollisionSystem Instance { get; private set; }
+
     [SerializeField] TerrainGrid terrain;
     [SerializeField, Range(1, 8)] int iterations = 2;
 
     CollisionWorld _world;
 
     public CollisionWorld World => _world ??= new CollisionWorld(terrain);
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(this); return; }
+        Instance = this;
+    }
+
+    void OnDestroy() { if (Instance == this) Instance = null; }
 
     public void Register(ICollisionBody body)
     {

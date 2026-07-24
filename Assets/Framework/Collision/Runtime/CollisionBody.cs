@@ -9,20 +9,11 @@ public class CollisionBody : MonoBehaviour, ICollisionBody
     [Tooltip("0 = immovable (wall, boss). Higher = harder to shove aside.")]
     [SerializeField, Min(0f)] float mass = 1f;
 
-    // Bound at runtime via BindSystem, never serialized: a body always lives in a prefab (character,
-    // map, pooled drop) and a prefab can't reference a scene object. Kept as a field so OnEnable can
-    // re-register a pooled body on respawn and OnDisable can clean up.
-    CollisionSystem system;
-
-    void OnEnable()
-    {
-        if (system != null) system.Register(this);
-    }
-
-    void OnDisable()
-    {
-        if (system != null) system.Unregister(this);
-    }
+    // Self-registers with the one CollisionSystem: a body always lives in a prefab (character, map, pooled
+    // drop) that can't serialize a scene reference, so it reaches the system through its Instance instead of
+    // waiting to be bound. OnEnable/OnDisable also handle a pooled body toggling on respawn.
+    void OnEnable() => CollisionSystem.Instance?.Register(this);
+    void OnDisable() => CollisionSystem.Instance?.Unregister(this);
 
     public Vector3 Position { get => transform.position; set => transform.position = value; }
     public CollisionShape Shape => shape;
@@ -38,16 +29,6 @@ public class CollisionBody : MonoBehaviour, ICollisionBody
 
     // Lets an owner drive mass from its stats/config instead of the serialized default.
     public void SetMass(float m) => mass = Mathf.Max(0f, m);
-
-    // A body inside a loaded map prefab can't serialize a scene CollisionSystem reference, so it's
-    // bound after the map is instantiated. Re-registers so OnDisable/OnDestroy can still clean up.
-    public void BindSystem(CollisionSystem s)
-    {
-        if (system == s) return;
-        if (system != null) system.Unregister(this);
-        system = s;
-        if (isActiveAndEnabled && system != null) system.Register(this);
-    }
 
 #if UNITY_EDITOR
     void OnDrawGizmosSelected()

@@ -33,7 +33,6 @@ public class SoulFire : MonoBehaviour
     Vector3 _glowScale;    // authored glow scale (the "current level" to grow into)
     Color _glowColor;
 
-    CombatWorld _combat;
     Transform _caster;
     float _range, _damage, _speed;
     int _team;
@@ -51,9 +50,8 @@ public class SoulFire : MonoBehaviour
         }
     }
 
-    public void Launch(CombatWorld combat, Transform caster, float range, int team, float damage, float speed)
+    public void Launch(Transform caster, float range, int team, float damage, float speed)
     {
-        _combat = combat;
         _caster = caster;
         _range = range;
         _team = team;
@@ -98,8 +96,6 @@ public class SoulFire : MonoBehaviour
 
     void Flying(float dt)
     {
-        if (_combat == null) { StartBurst(burstScale); return; }
-
         if (_target == null || !_target.IsAlive)
             _target = FindNearest();
 
@@ -158,8 +154,8 @@ public class SoulFire : MonoBehaviour
     // enemies exist (see Docs) - for now any non-allied Damageable in range qualifies.
     IDamageable FindNearest()
     {
-        _combat.Rebuild();
-        _combat.Overlap(_caster != null ? _caster.position : transform.position, _range, _team, _found);
+        CombatWorld.Instance.Rebuild();
+        CombatWorld.Instance.Overlap(_caster != null ? _caster.position : transform.position, _range, _team, _found);
 
         IDamageable best = null;
         float bestSq = float.MaxValue;

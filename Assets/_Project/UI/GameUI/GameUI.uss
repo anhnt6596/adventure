@@ -33,3 +33,90 @@
 .start-btn:active {
     scale: 0.97 0.97;
 }
+
+/* Cheat drawer (editor only). The strip hugs the left edge and is content-width, so it never covers the
+   play area; picking-mode=Ignore on it means only the tab + panel take clicks. */
+.cheat {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    flex-direction: row;
+    align-items: center;
+}
+
+.cheat-panel {
+    display: none;   /* the tab opens it */
+    align-self: stretch;
+    width: 300px;
+    margin: 16px 0;
+    padding: 10px;
+    background-color: rgba(18, 20, 26, 0.92);
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.cheat-title {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(235, 200, 90);
+    margin-bottom: 8px;
+}
+
+/* where cheat tools get appended */
+.cheat-tools {
+    flex-grow: 1;
+}
+
+.cheat-tool {
+    margin-bottom: 14px;
+}
+
+.cheat-tool-title {
+    font-size: 12px;
+    color: rgb(180, 186, 200);
+    margin-bottom: 4px;
+}
+
+.cheat-dropdown {
+    margin: 0 0 6px 0;
+}
+
+.cheat-btn {
+    height: 32px;
+    margin: 0;
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(20, 22, 28);
+    background-color: rgb(235, 200, 90);
+    border-width: 0;
+    border-radius: 6px;
+}
+
+.cheat-btn:hover {
+    background-color: rgb(245, 215, 120);
+}
+
+/* greyed while the picked character is already the live one */
+.cheat-btn:disabled {
+    opacity: 0.35;
+}
+
+/* Deliberately chunky: PanelSettings scales with screen size, so a thin tab ends up near-unclickable. */
+.cheat-toggle {
+    width: 44px;
+    height: 120px;
+    margin: 0;
+    padding: 0;
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(20, 22, 28);
+    background-color: rgb(235, 200, 90);
+    border-width: 0;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.cheat-toggle:hover {
+    background-color: rgb(245, 215, 120);
+}

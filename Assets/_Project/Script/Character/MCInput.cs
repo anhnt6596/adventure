@@ -3,10 +3,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using VContainer;
 
-public class CharacterInput : MonoBehaviour
+public class MCInput : MonoBehaviour
 {
-    [SerializeField] Character character;
-    [SerializeField] Transform cameraTransform;
+    [SerializeField] MC character;
 
     IInputGate _gate;
 
@@ -16,7 +15,7 @@ public class CharacterInput : MonoBehaviour
     void Start()
     {
         if (_gate == null)
-            Debug.LogError($"[{nameof(CharacterInput)}] IInputGate not injected — add this GameObject to GameScope's Auto Inject Game Objects; input gating is disabled.", this);
+            Debug.LogError($"[{nameof(MCInput)}] IInputGate not injected — add this GameObject to GameScope's Auto Inject Game Objects; input gating is disabled.", this);
     }
 
     readonly Dictionary<Key, ICharacterCommand> _held = new Dictionary<Key, ICharacterCommand>();
@@ -25,8 +24,7 @@ public class CharacterInput : MonoBehaviour
 
     void Awake()
     {
-        if (character == null) character = GetComponent<Character>();
-        if (cameraTransform == null && Camera.main != null) cameraTransform = Camera.main.transform;
+        if (character == null) character = GetComponent<MC>();
 
         var up = new MoveCommand(this, Vector2.up);
         var down = new MoveCommand(this, Vector2.down);
@@ -58,9 +56,10 @@ public class CharacterInput : MonoBehaviour
             foreach (var b in _held)
                 if (kb[b.Key].isPressed) b.Value.Execute();
 
-            if (_localMove != Vector2.zero && cameraTransform != null)
+            var cam = CameraViewDir.Transform;
+            if (_localMove != Vector2.zero && cam != null)
             {
-                float camYaw = cameraTransform.eulerAngles.y;
+                float camYaw = cam.eulerAngles.y;
                 var world = Quaternion.Euler(0f, camYaw, 0f) * new Vector3(_localMove.x, 0f, _localMove.y);
                 character.Move(new Vector2(world.x, world.z));
             }

@@ -38,9 +38,8 @@ public class FlyingPickup : MonoBehaviour
         else Debug.LogError($"[{nameof(FlyingPickup)}] no art assigned — drag the art child in so the hop has something to move.", this);
     }
 
-    // dir = rough fling direction on the ground plane; collision = scene system to bind the body to while
-    // airborne (may be null → the piece just doesn't collide).
-    public void Launch(Vector3 dir, CollisionSystem collision)
+    // dir = rough fling direction on the ground plane.
+    public void Launch(Vector3 dir)
     {
         dir.y = 0f;
         if (dir.sqrMagnitude < 0.0001f)
@@ -54,11 +53,7 @@ public class FlyingPickup : MonoBehaviour
         _flying = true;
         _pickable.SetPickable(false);   // no grabbing mid-flight
 
-        if (_body != null)
-        {
-            _body.BindSystem(collision);   // register into scene collision
-            _body.enabled = true;          // mass + collision on while flying
-        }
+        if (_body != null) _body.enabled = true;   // mass + collision on; the body self-registers via OnEnable
     }
 
     void Update()

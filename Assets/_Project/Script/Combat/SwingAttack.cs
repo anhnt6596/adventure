@@ -14,16 +14,11 @@ public class SwingAttack : MonoBehaviour
 
     Vector3 Origin => origin != null ? origin.position : transform.position;
 
-    CombatWorld _combat;
     ICharacterStats _stats;
     readonly List<IDamageable> _hits = new List<IDamageable>();
 
     [Inject]
-    public void Construct(CombatWorld combat, ICharacterStats stats)
-    {
-        _combat = combat;
-        _stats = stats;
-    }
+    public void Construct(ICharacterStats stats) => _stats = stats;
 
     void OnEnable()
     {
@@ -37,8 +32,6 @@ public class SwingAttack : MonoBehaviour
 
     void Start()
     {
-        if (_combat == null)
-            Debug.LogError($"[{nameof(SwingAttack)}] CombatWorld not injected — add this GameObject to GameScope's Auto Inject Game Objects.", this);
         if (animatorSource == null)
             Debug.LogError($"[{nameof(SwingAttack)}] no CharacterAnimator found — the swing will never land. Assign it (it's on the art child).", this);
         if (_stats == null)
@@ -48,10 +41,8 @@ public class SwingAttack : MonoBehaviour
     // Fires when the animation reaches its hit frame (via CharacterAnimator.Hit).
     void OnSwingHit()
     {
-        if (_combat == null) return;
-
-        _combat.Rebuild();
-        _combat.Overlap(Origin, radius, team, _hits);
+        CombatWorld.Instance.Rebuild();
+        CombatWorld.Instance.Overlap(Origin, radius, team, _hits);
 
         float damage = _stats != null ? _stats.AttackPower.Value : 0f;
         for (int i = 0; i < _hits.Count; i++)

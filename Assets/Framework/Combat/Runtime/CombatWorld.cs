@@ -6,6 +6,14 @@ using Core;
 // the rocks that fill the collision world are never a combat query's problem.
 public class CombatWorld
 {
+    // The one combat index for the game, reached through Instance — a hittable self-registers (like a
+    // CollisionBody with CollisionSystem) and attacks query it without being injected. Rebuilt fresh each
+    // play via SubsystemRegistration, so no stale static survives across "enter play without domain reload".
+    public static CombatWorld Instance { get; private set; }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void Init() => Instance = new CombatWorld();
+
     readonly SpatialHash<IDamageable> _hash;
     readonly List<IDamageable> _query = new List<IDamageable>();
 

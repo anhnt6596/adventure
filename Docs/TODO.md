@@ -44,7 +44,8 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
       cooldown → mất dấu/về). KHÔNG behavior-tree SO, KHÔNG data-driven (xem quy ước "runtime là plain code").
     - [ ] **EnemyMelee** — mirror `SwingAttack`, team 2, dmg/tầm/nhịp từ `EnemyConfig`.
     - [ ] **EnemyMotor** — steer tới target qua `CollisionBody`, tốc độ từ `EnemyConfig.moveSpeed`.
-    - [ ] **Spawn** — tạm đặt tay 1-2 con để test (nhớ cho vào Auto Inject); spawner thật sau.
+    - [ ] **Spawn** — tạm đặt tay 1-2 con để test (nhớ cho vào Auto Inject); spawner thật xem **`Docs/SPAWN.md`**
+      (thiết kế zone đã chốt; bước 1 `SpawnArea`+bake làm được ngay, phần đẻ chờ enemy runtime này).
     - [ ] Art: hero/quái cận cảnh → **AnimatorController** (blend/attach); crowd đông → cân nhắc
       AnimationInstancing. `CharacterAnimator.Hit` là seam frame-đánh.
   - **Gotcha:** bán kính `Overlap` phải ≤ cell hash (`4`) không thì miss (có warning); đòn tự `Rebuild()`
@@ -267,6 +268,23 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
     - **Backpack của CHARACTER** (mỗi con 1 túi/capacity riêng — hướng hiện tại vì config ở MC): reactive như
       trên + inventory per-char.
   - Chỗ đụng: `GameUI` (nghe `Spawned` để rebind), `PlayerSystem.SwitchTo`, `InventorySystem` (id per-char / recreate).
+- [ ] **PrefabRegistry giữ hard-ref → mọi prefab thường trú RAM. Chuyển sang `Resources` + naming convention.**
+  `PrefabRegistry` giữ `List<Identifiable>`, mà nó là DI singleton → load lúc khởi động là kéo theo **toàn bộ
+  prefab có `Identifiable` + cả cây phụ thuộc** (mesh/texture/anim/material), thường trú suốt session.
+  `UnloadUnusedAssets` cũng không giải phóng được vì registry vẫn giữ ref.
+  - **Hướng đã chốt** (không dùng Addressables — rào cản kĩ thuật):
+    - Prefab nằm dưới `Resources/<Category>/{id}.prefab`, phẳng theo category; **id = tên file** (khớp
+      `Identifiable.Id` vốn đã fallback về `name`).
+    - Load theo yêu cầu: `Resources.LoadAsync<GameObject>($"Units/{id}")` — **cùng cơ chế `MapService` đang
+      dùng cho map**, gom project về một cách load duy nhất.
+    - `PrefabRegistry` **hạ xuống editor-only validator**, bỏ list runtime: cảnh báo **trùng id**, check
+      `Identifiable.Id` == tên file, check mỗi prefab có config khớp id. Đó là phần `Resources` không tự làm.
+    - Thu hồi RAM ở **chỗ đổi map** (đã có load boundary + input gate): `Resources.UnloadUnusedAssets()`.
+      Không gọi giữa combat — sweep toàn cục, gây khựng.
+  - **Đánh đổi chấp nhận:** không giải phóng lẻ từng asset được (muốn vậy phải ref-count). RAM đi theo bậc
+    thang — phình theo loại đã thực sự spawn, tụt sau mỗi sweep. Vẫn hơn hiện tại (thường trú vĩnh viễn).
+  - **Lưu ý:** Addressables **không gỡ được** — dependency bắc cầu của `com.unity.localization`, mà UI
+    framework đang dùng thật (`LocalizationWrapper`, `DynamicLabel`). Cứ để nằm im, **không dùng trong game code**.
 - [ ] **Pickable registry.** Đang là `static List<Pickable> Active`. Nâng thành DI service (như
   `CombatWorld`) nếu cần query không gian ở quy mô lớn.
 - [ ] **Config gắn bằng code, phụ thuộc interface.** `Damageable`/`Dropable` đang `[SerializeField]` SO cụ
