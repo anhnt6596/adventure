@@ -38,5 +38,13 @@ public class CollisionSystem : MonoBehaviour
         World.SetTerrain(t);
     }
 
+    // Is a world point on walkable ground (not water / off the map)? AI roaming uses it to keep off water.
+    // No terrain = no restriction (everything walkable).
+    public bool IsWalkable(Vector3 world)
+    {
+        if (terrain == null) return true;
+        return terrain.WorldToCell(world, out int x, out int y) && terrain.IsWalkable(x, y);
+    }
+
     void LateUpdate() => World.Step(iterations);
 }

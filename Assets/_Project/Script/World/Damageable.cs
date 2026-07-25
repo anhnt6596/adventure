@@ -19,8 +19,12 @@ public class Damageable : MonoBehaviour, IDamageable
     public bool IsAlive => _hp > 0f;
     public int Team => _unit != null ? _unit.Team : 2;
 
+    public float Hp => _hp;
+    public float MaxHp => Cfg != null ? Cfg.MaxHp : 0f;
+
     public event System.Action<object> Damaged;   // non-fatal hit; arg = damage source (HitFlash ignores it, AI targets it)
     public event System.Action<object> Died;   // killed — the arg is the damage source (force origin for drops)
+    public event System.Action HealthChanged;   // any HP change (spawn init, damage, death) — the HUD health bar listens
 
     void Awake()
     {
@@ -45,6 +49,7 @@ public class Damageable : MonoBehaviour, IDamageable
             return;
         }
         _hp = Cfg.MaxHp;
+        HealthChanged?.Invoke();
     }
 
     // In the combat world only while enabled: a disabled object can't be hit, a re-enabled one rejoins. The
@@ -60,6 +65,7 @@ public class Damageable : MonoBehaviour, IDamageable
     {
         if (!IsAlive) return;
         _hp -= amount;
+        HealthChanged?.Invoke();
         if (_hp <= 0f) { Die(source); return; }
         Damaged?.Invoke(source);
     }

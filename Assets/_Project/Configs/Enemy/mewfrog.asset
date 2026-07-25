@@ -17,4 +17,11 @@ MonoBehaviour:
   moveSpeed: 3
   attackDamage: 3
   attackSpeed: 1
+  attackDuration: 2
   hitRadius: 0.5
+  attackRange: 3
+  aggroRadius: 4
+  leashRadius: 8
+  reEngageRadius: 5
+  forgetTime: 3
+  wanderRadius: 3

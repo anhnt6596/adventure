@@ -18,6 +18,7 @@ public class EnemyConfig : Config, IDamageableConfig
     public float reEngageRadius = 5f;   // in Forget, resume if the target comes back within this
     public float forgetTime = 3f;       // seconds standing still before returning to idle
     public float wanderRadius = 3f;     // idle amble bound around the spawn point
+    public float recognizeTime = 1f;    // reaction delay: on first turning aggressive (spotted / got hit), freeze in Idle this long before engaging
 
     // IDamageableConfig — so EnemySpawner can bind this straight onto the enemy's Damageable at spawn, the
     // same numbers a placed thing would carry as a PropConfig. Team is a fallback: Damageable takes

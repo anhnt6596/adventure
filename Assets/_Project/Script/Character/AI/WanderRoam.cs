@@ -35,10 +35,25 @@ public class WanderRoam : IIdleBehavior
 
     void PickDest(AIContext ctx)
     {
-        Vector2 dir = Random.insideUnitCircle.normalized;
-        if (dir == Vector2.zero) dir = Vector2.up;
-        float dist = Random.Range(0.4f, 1f) * ctx.config.wanderRadius;
-        _dest = ctx.home + new Vector3(dir.x, 0f, dir.y) * dist;
+        // Try a few random spots in range; reject water / off-map so the roam stays on land (the frog spawned
+        // on a baked walkable cell, so home is safe). If every pick lands off it — e.g. spawned by a pond edge —
+        // just hold at home this round rather than walking into the water.
+        for (int i = 0; i < 8; i++)
+        {
+            Vector2 dir = Random.insideUnitCircle.normalized;
+            if (dir == Vector2.zero) dir = Vector2.up;
+            float dist = Random.Range(0.4f, 1f) * ctx.config.wanderRadius;
+            Vector3 spot = ctx.home + new Vector3(dir.x, 0f, dir.y) * dist;
+
+            if (CollisionSystem.Instance == null || CollisionSystem.Instance.IsWalkable(spot))
+            {
+                _dest = spot;
+                _hasDest = true;
+                return;
+            }
+        }
+
+        _dest = ctx.home;
         _hasDest = true;
     }
 }

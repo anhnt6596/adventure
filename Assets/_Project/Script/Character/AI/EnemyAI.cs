@@ -17,6 +17,7 @@ public abstract class EnemyAI : MonoBehaviour
     Damageable _self;
     State _state;
     float _forgetTimer;
+    float _recognize;   // reaction delay left before a freshly-aggressive unit engages (frozen in Idle)
 
     void Awake()
     {
@@ -54,9 +55,11 @@ public abstract class EnemyAI : MonoBehaviour
         {
             _s.Idle.Tick(_ctx);
             var t = _s.Aggro.Detect(_ctx);
-            if (t != null) _ctx.target = t;
+            if (t != null) Acquire(t);
             return;
         }
+
+        if (_recognize > 0f) { _recognize -= Time.deltaTime; return; }   // just turned aggressive -> freeze a beat before engaging
 
         FaceTarget();
         float d = _ctx.DistanceToTarget();
@@ -69,7 +72,7 @@ public abstract class EnemyAI : MonoBehaviour
         if (!_ctx.HasLiveTarget) { EnterForget(); return; }
         float d = _ctx.DistanceToTarget();
         if (d > _ctx.config.leashRadius) { EnterForget(); return; }
-        if (d <= _ctx.AttackRange) { _state = State.Idle; return; }   // in range -> back to Idle to re-decide (it'll shoot)
+        if (d <= _ctx.AttackRange) { _state = State.Attack; return; }   // reached range -> commit to attacking (NOT via Idle — that ping-pongs)
         FaceTarget();
         _ctx.controller.Move(_s.Pursuit.DirTo(_ctx, _ctx.target.Position));
     }
@@ -77,14 +80,13 @@ public abstract class EnemyAI : MonoBehaviour
     void TickAttack()
     {
         if (!_ctx.HasLiveTarget) { EnterForget(); return; }
-        if (_ctx.DistanceToTarget() > _ctx.config.leashRadius) { EnterForget(); return; }   // ran clean away -> give up
+        float d = _ctx.DistanceToTarget();
+        if (d > _ctx.config.leashRadius) { EnterForget(); return; }   // ran clean away -> give up
 
-        // Once it commits to attacking, COMMIT: fire regardless of range — a fast target outruns a "+1 range"
-        // grace every time, so range must not cancel a shot in progress. Only the leash above calls it off.
-        FaceTarget();                          // keep aimed while the shot is wound up
-        if (_ctx.controller.IsBusy) return;    // mid swing/cooldown -> hold the aim, wait
-        _s.Attack.Tick(_ctx);                  // fire along FacingDir
-        _state = State.Idle;                   // then re-decide in Idle (chase back in if it dashed out of range)
+        FaceTarget();                          // keep aimed — the shot leaves along FacingDir
+        if (_ctx.controller.IsBusy) return;    // a shot already wound up ALWAYS finishes (commit) — never bail
+        _s.Attack.Tick(_ctx);                  // fire
+        _state = State.Idle;                   // attack done -> back to Idle to re-aim + re-decide
     }
 
     void TickForget()
@@ -105,12 +107,21 @@ public abstract class EnemyAI : MonoBehaviour
             _ctx.controller.Face(_ctx.target.Position - _ctx.Tr.position);
     }
 
+    // Take a (possibly new) target. A FRESH aggression — no live target until now — starts the reaction delay
+    // that freezes it in Idle; re-targeting mid-fight doesn't (it's already worked up).
+    void Acquire(IDamageable t)
+    {
+        if (!_ctx.HasLiveTarget && t != null)
+            _recognize = _ctx.config != null ? _ctx.config.recognizeTime : 0f;
+        _ctx.target = t;
+    }
+
     // Hit from anywhere -> fight back. Passive monsters enter combat only through this. Route into Idle so the
-    // decide hub picks it up (face + choose) next frame.
+    // decide hub picks it up (react delay, then face + choose).
     void OnDamaged(object source)
     {
         var attacker = (source as Component)?.GetComponentInParent<IDamageable>();
-        _ctx.target = attacker ?? _ctx.FindHostile(_ctx.config != null ? _ctx.config.aggroRadius : 0f);
+        Acquire(attacker ?? _ctx.FindHostile(_ctx.config != null ? _ctx.config.aggroRadius : 0f));
         if (_ctx.target != null && _state == State.Forget) _state = State.Idle;
     }
 }

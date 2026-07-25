@@ -1,6 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/_Project/UI/GameHUD/GameHUD.uss" />
     <ui:VisualElement name="hud" class="hud" picking-mode="Ignore">
+        <ui:VisualElement name="health" class="health" picking-mode="Ignore">
+            <ui:VisualElement name="health-track" class="health-track" picking-mode="Ignore">
+                <ui:VisualElement name="health-fill" class="health-fill" picking-mode="Ignore" />
+                <ui:Label name="health-text" class="health-text" text="0/0" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <ui:VisualElement name="inventory" class="inventory">
             <ui:Button name="capacity-button" class="capacity">
                 <ui:VisualElement name="bag-icon" class="bag-icon" picking-mode="Ignore" />

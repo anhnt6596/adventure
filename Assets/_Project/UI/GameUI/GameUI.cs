@@ -211,9 +211,15 @@ public class GameUI : MonoBehaviour
         if (_screen != null) _screen.style.display = DisplayStyle.None;
 
         _ui?.Show<GameHUD>();                          // reveal the in-game HUD
+        var hud = _ui?.Get<GameHUD>();
+
         // the player's own inventory — its Picker created it with the current character's config
         var inventory = _player.Current != null ? _player.Current.GetComponentInChildren<Picker>()?.Inventory : null;
-        _ui?.Get<GameHUD>()?.SetInventory(inventory);
+        hud?.SetInventory(inventory);
+
+        // the player's HP bar (top-right) reads its Damageable
+        var health = _player.Current != null ? _player.Current.GetComponentInChildren<Damageable>() : null;
+        hud?.SetHealth(health);
     }
 
     void Release()

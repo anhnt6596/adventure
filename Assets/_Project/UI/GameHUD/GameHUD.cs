@@ -19,6 +19,10 @@ public class GameHUD : UIView
     VisualElement _list, _bag, _flyLayer;
     bool _expanded = true;
 
+    Damageable _health;
+    VisualElement _healthRoot, _healthFill;
+    Label _healthText;
+
     readonly Dictionary<ResourceDef, int> _displayed = new();          // lags the inventory; catches up on land
     readonly Dictionary<ResourceDef, VisualElement> _rowIcon = new();  // fly target per resource
 
@@ -45,6 +49,9 @@ public class GameHUD : UIView
         _list = root.Q<VisualElement>("item-list");
         _bag = root.Q<VisualElement>("bag-icon");
         _flyLayer = root.Q<VisualElement>("fly-layer");
+        _healthRoot = root.Q<VisualElement>("health");
+        _healthFill = root.Q<VisualElement>("health-fill");
+        _healthText = root.Q<Label>("health-text");
         root.Q<Button>("capacity-button")?.RegisterCallback<ClickEvent>(_ => Toggle());
         WarmFlyPool(20);
     }
@@ -58,18 +65,39 @@ public class GameHUD : UIView
         Refresh();
     }
 
-    public override void OnShow() { Sub(); Refresh(); }
+    // The player's HP bar. Bound the same way as the inventory (pushed from GameScope), refreshed off the
+    // Damageable's HealthChanged. Rebinds cleanly on a respawn/character-switch (a fresh Damageable).
+    public void SetHealth(Damageable health)
+    {
+        if (_health != null) _health.HealthChanged -= RefreshHealth;
+        _health = health;
+        if (_health != null) _health.HealthChanged += RefreshHealth;
+        RefreshHealth();
+    }
+
+    void RefreshHealth()
+    {
+        float max = _health != null ? _health.MaxHp : 0f;
+        float hp = _health != null ? Mathf.Max(0f, _health.Hp) : 0f;
+        if (_healthRoot != null) _healthRoot.style.display = max > 0f ? DisplayStyle.Flex : DisplayStyle.None;
+        if (_healthFill != null) _healthFill.style.width = Length.Percent(max > 0f ? Mathf.Clamp01(hp / max) * 100f : 0f);
+        if (_healthText != null) _healthText.text = $"{Mathf.CeilToInt(hp)}/{Mathf.CeilToInt(max)}";
+    }
+
+    public override void OnShow() { Sub(); Refresh(); RefreshHealth(); }
     public override void OnHide() { Unsub(); }
 
     void Sub()
     {
         if (_inv != null) { _inv.Changed -= Reconcile; _inv.Changed += Reconcile; }
+        if (_health != null) { _health.HealthChanged -= RefreshHealth; _health.HealthChanged += RefreshHealth; }
         PickupFly.Requested -= OnPickup; PickupFly.Requested += OnPickup;
     }
 
     void Unsub()
     {
         if (_inv != null) _inv.Changed -= Reconcile;
+        if (_health != null) _health.HealthChanged -= RefreshHealth;
         PickupFly.Requested -= OnPickup;
     }
 

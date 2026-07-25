@@ -2,9 +2,42 @@
     flex-grow: 1;
 }
 
-.inventory {
+.health {
     position: absolute;
     top: 16px;
+    right: 16px;
+}
+
+.health-track {
+    width: 340px;
+    height: 34px;
+    background-color: rgba(0, 0, 0, 0.55);
+    border-radius: 9px;
+    overflow: hidden;
+    justify-content: center;
+}
+
+.health-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: rgb(214, 58, 58);
+    transition-property: width;
+    transition-duration: 0.12s;
+}
+
+.health-text {
+    -unity-text-align: middle-center;
+    color: rgb(255, 255, 255);
+    font-size: 24px;
+    -unity-font-style: bold;
+}
+
+.inventory {
+    position: absolute;
+    top: 62px;
     right: 16px;
     align-items: flex-end;
 }
