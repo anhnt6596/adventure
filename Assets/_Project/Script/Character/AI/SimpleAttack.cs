@@ -1,6 +1,6 @@
-// The plain attack timing: fire whenever the swing window is free. The FSM only runs this while the target is
-// already inside AttackRange, so it just waits out the busy period and triggers again — repeating for as long
-// as the target stays in range. Range and the actual hit live on the skill (IAttack); this only decides WHEN.
+// The plain attack timing: fire whenever the swing window is free. The FSM only runs this while it's already
+// facing the target and inside AttackRange, so this just triggers and lets the cooldown gate the rest. Facing/
+// aim is the FSM's job (it faces before firing); range and the actual hit live on the skill.
 public class SimpleAttack : IAttackPlan
 {
     public void Tick(AIContext ctx)

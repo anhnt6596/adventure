@@ -5055,8 +5055,8 @@ MonoBehaviour:
   burstTime: 0.35
   burstScale: 1.6
   hitPadding: 0.05
-  seekRadius: 1.5
-  steerRate: 90
+  seekRadius: 2
+  steerRate: 120
 --- !u!1001 &4235611895995287631
 PrefabInstance:
   m_ObjectHideFlags: 0

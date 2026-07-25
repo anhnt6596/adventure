@@ -44,7 +44,7 @@ controller.Attack()  →  event Attacked  →  View phát anim  →  UnitAnimato
 ```
 AI chỉ **bấm cò** (`controller.Attack()`); skill nào bắn là do prefab gắn gì → **melee hay ranged do skill quyết**, không phải AI plan.
 
-- **Tầm đánh thuộc brain** (`EnemyConfig.attackRange`) — chỗ unit dừng chân để bắn. Projectile **không có tầm riêng**: bắn ra là homing tới target mãi (target chết/biến mất thì flame quái (locked, tự theo team) tắt lịm, không rise/burst). Skill không giữ tầm.
+- **Tầm đánh thuộc brain** (`EnemyConfig.attackRange`) — chỗ unit dừng chân để bắn. Projectile **không có tầm riêng**: `SoulFire` bắn thẳng theo `FacingDir`, đi tối đa `range`, seek + bẻ lái nhẹ (ramp) về địch, chạm thì burst / hết tầm burst rộng. Chung một luật cho MC lẫn quái; chỉ khác **ưu tiên team đối** (team 1↔2) khi chọn target.
 - **Damage lấy off chủ nhân**, không phải ICharacterStats (để quái tái dùng chung skill với MC):
   ```csharp
   DynamicUnit.AttackPower   // MC => stats.AttackPower.Value;  Enemy => config.attackDamage

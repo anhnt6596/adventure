@@ -52,6 +52,16 @@ public abstract class DynamicUnit : Unit
         _input += worldDir;
     }
 
+    // Aim the facing at a world direction WITHOUT moving — for a standing attack that must face its target
+    // first (its skill fires along FacingDir). No-op on a zero direction so it holds the last aim.
+    public void Face(Vector3 worldDir)
+    {
+        worldDir.y = 0f;
+        if (worldDir.sqrMagnitude < 1e-6f) return;
+        FacingDir = worldDir.normalized;
+        Facing = ViewAngleUtil.GetViewType8(Mathf.Atan2(FacingDir.x, FacingDir.z) * Mathf.Rad2Deg);
+    }
+
     public void Attack()
     {
         if (IsBusy) return;

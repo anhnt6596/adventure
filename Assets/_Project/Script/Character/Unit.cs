@@ -4,6 +4,6 @@
 // nothing carries a serialized config.
 public abstract class Unit : Identifiable
 {
-    public virtual int Team => 0;                               // 0 neutral / 1 player / 2 enemy+environment
+    public virtual int Team => 0;                               // 0 neutral / 1 player / 2 enemy / 3 prop (destructible/environment)
     public virtual IDamageableConfig DamageableConfig => null;  // HP/hit-radius/team + (props) drops; null = inert
 }

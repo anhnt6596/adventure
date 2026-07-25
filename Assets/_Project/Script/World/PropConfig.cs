@@ -9,14 +9,13 @@ public class PropConfig : Config, IDamageableConfig, IDeathDropableConfig
     [Header("Stats")]
     public float maxHp = 20f;
     public float hitRadius = 0.5f;
-    public int team = 2;              // 0 = neutral (hits all, incl self), 1 = player, 2 = enemy/environment
 
     [Header("Drops — what it provides on death")]
     public DeathDrop[] drops;
 
     public float MaxHp => maxHp;
     public float HitRadius => hitRadius;
-    public int Team => team;
+    public int Team => 3;   // props are always team 3 — destructible/environment, kept separate from enemies (team 2)
     public DeathDrop[] Drops => drops;
 }
 

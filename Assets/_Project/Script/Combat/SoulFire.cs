@@ -2,13 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using Lean.Pool;
 
-// A soul-fire projectile with two flight modes, chosen by the caster's TEAM:
-//   Player (team 1) - a straight shot in the caster's facing direction; travels up to Range, hits the first
-//                     hostile it touches (damage + burst), or bursts wide at the end of its range if it hits none.
-//   Enemy (else)    - a slow homing flame that locks its first target and chases it to the end; if that mark
-//                     dies or vanishes, it stops and fades out (no burst).
-// Phases: Spawning (glow fades/scales in) -> Flying (straight or homing) -> Bursting / Fading -> despawn.
-// ONE prefab / particle for both. Pooled: every field is (re)set in Launch, so a recycled flame is clean.
+// A soul-fire projectile — same for player and enemy. It flies straight in the caster's facing direction up to
+// Range, hitting the first hostile it touches (damage + burst) or bursting wide at the end if it hits nothing.
+// As it travels it SEEKS: its reach + steer strength ramp up (to their max by rampUpBy of Range), bending it
+// toward a nearby target — and it prefers the OPPOSING combat team (a player shot, team 1, chases team 2; an
+// enemy shot, team 2, chases team 1). ONE prefab / particle for everyone. Pooled: every field is (re)set in Launch.
 [DisallowMultipleComponent]
 public class SoulFire : MonoBehaviour
 {
@@ -20,31 +18,28 @@ public class SoulFire : MonoBehaviour
     [Header("Timing")]
     [SerializeField] float spawnTime = 0.1f;   // glow fades + scales in over this
     [SerializeField] float speed = 6f;         // flight speed — the flame's own, not the caster's
-    [SerializeField] float slowRadius = 1.5f;  // homing only: eases the drift down within this of the target
-    [SerializeField] float fadeTime = 0.4f;    // enemy: with no target, let the trail drift out this long, then despawn
     [SerializeField] float burstTime = 0.35f;  // glow bloom + fade, ~ the explosion length
     [SerializeField] float burstScale = 1.6f;  // glow scale multiplier at the burst peak
     [SerializeField] float hitPadding = 0.15f; // contact reach past the target's hit circle
 
-    [Header("Player shot")]
-    [SerializeField] float seekRadius = 1.5f;  // detect an enemy within this of the flame to steer toward (≤ CombatWorld cell 8)
-    [SerializeField] float steerRate = 180f;   // max turn toward it, deg/sec — small = a gentle nudge, not homing
+    [Header("Seek")]
+    [SerializeField] float seekRadius = 1.5f;  // seek reach at full ramp (≤ CombatWorld cell 8)
+    [SerializeField] float steerRate = 180f;   // max turn deg/sec at full ramp — small = a gentle nudge, not homing
+    [SerializeField, Range(0f, 1f)] float rampUpBy = 0.5f;   // reach + steer hit their max by this fraction of Range flown, then hold
 
-    enum Phase { Spawning, Flying, Fading, Bursting }
+    enum Phase { Spawning, Flying, Bursting }
     Phase _phase;
     float _t;
     float _burstScale;     // glow bloom target for the current burst (bigger when it self-destructs)
     Vector3 _glowScale;    // authored glow scale (the "current level" to grow into)
     Color _glowColor;
 
-    Transform _caster;
     float _range, _damage, _knockback;
-    int _team;
-    bool _locked;          // team != 1 -> homing enemy flame; team 1 -> straight player shot
-    Vector3 _dir;          // player shot: travel direction
-    float _traveled;       // player shot: distance covered so far
-    IDamageable _target;   // enemy: the locked mark
-    bool _acquired;        // enemy: has it locked once
+    int _team;             // caster's team — Overlap spares it (no friendly fire / no self-seek)
+    int _priorityTeam;     // the team this shot chases first (the opposing combatant)
+    Vector3 _dir;          // travel direction
+    float _traveled;       // distance covered so far
+    Component _source;     // the caster — passed as the damage source so a victim can hit back at the shooter
     readonly List<IDamageable> _found = new List<IDamageable>();
 
     // Cache the authored glow look once, before any shot mutates it - otherwise a pooled flame would
@@ -58,18 +53,16 @@ public class SoulFire : MonoBehaviour
         }
     }
 
-    public void Launch(Transform caster, float range, int team, float damage, float knockback, Vector3 direction)
+    public void Launch(float range, int team, float damage, float knockback, Vector3 direction, Component source)
     {
-        _caster = caster;
         _range = range;
+        _source = source;
         _team = team;
+        _priorityTeam = team == 1 ? 2 : team == 2 ? 1 : 0;   // chase the opposing combat team first
         _damage = damage;
         _knockback = knockback;
-        _locked = team != 1;
         _dir = direction.sqrMagnitude > 1e-6f ? direction.normalized : Vector3.forward;
         _traveled = 0f;
-        _target = null;
-        _acquired = false;
         _phase = Phase.Spawning;
         _t = 0f;
 
@@ -88,8 +81,7 @@ public class SoulFire : MonoBehaviour
         switch (_phase)
         {
             case Phase.Spawning: Spawning(dt); break;
-            case Phase.Flying:   if (_locked) FlyHoming(dt); else FlyStraight(dt); break;
-            case Phase.Fading:   Fading(dt); break;
+            case Phase.Flying:   Flying(dt);   break;
             default:             Bursting(dt); break;
         }
     }
@@ -106,75 +98,34 @@ public class SoulFire : MonoBehaviour
         if (k >= 1f) _phase = Phase.Flying;
     }
 
-    // Player shot: flies along _dir, but if an enemy is within seekRadius it bends a little toward it (a gentle
-    // nudge, not homing — the turn is capped by steerRate). Hits on contact -> burst; runs the full Range
-    // hitting nothing -> wide burst.
-    void FlyStraight(float dt)
+    void Flying(float dt)
     {
-        var near = NearestHostile(transform.position, seekRadius);
+        // Seek reach + steer strength ramp with distance flown (t, maxing out by rampUpBy of Range): near the
+        // muzzle it flies almost straight, farther out it reaches wider and turns harder toward a target.
+        float rampDist = _range * rampUpBy;
+        float t = rampDist > 0f ? Mathf.Clamp01(_traveled / rampDist) : 1f;
+        float reach = seekRadius * t;
+
+        var near = NearestHostile(transform.position, Mathf.Max(hitPadding, reach));
         if (near != null)
         {
             Vector3 to = near.Position - transform.position; to.y = 0f;
             float dist = to.magnitude;
-            if (dist <= near.HitRadius + hitPadding)   // touching — deal the hit
+            if (dist <= near.HitRadius + hitPadding)   // touching — deal the hit (always, from the muzzle on)
             {
-                near.TakeDamage(_damage, this);
+                near.TakeDamage(_damage, _source != null ? (object)_source : this);
                 if (_knockback > 0f && dist > 1e-4f) near.ApplyKnockback((to / dist) * _knockback);
                 StartBurst(burstScale);
                 return;
             }
-            if (dist > 1e-4f)   // in range but not touching — steer a touch toward it
-                _dir = Vector3.RotateTowards(_dir, to / dist, steerRate * Mathf.Deg2Rad * dt, 0f);
+            if (dist <= reach && dist > 1e-4f)   // within the growing seek reach — steer with the growing rate
+                _dir = Vector3.RotateTowards(_dir, to / dist, steerRate * t * Mathf.Deg2Rad * dt, 0f);
         }
 
         float step = speed * dt;
         transform.position += _dir * step;
         _traveled += step;
         if (_traveled >= _range) StartBurst(burstScale * 2f);   // ran the full range, hit nothing — wide burst
-    }
-
-    // Enemy flame: lock the nearest at launch and home it; fade out if it's lost.
-    void FlyHoming(float dt)
-    {
-        if (_target == null || !_target.IsAlive)
-        {
-            _target = _acquired ? null : NearestHostile(_caster != null ? _caster.position : transform.position, _range);   // locked: acquire once
-            _acquired = true;
-        }
-
-        if (_target == null) { StartFade(); return; }
-
-        Vector3 d = _target.Position - transform.position;
-        d.y = 0f;
-        float dist = d.magnitude;
-
-        if (dist <= _target.HitRadius + hitPadding)
-        {
-            _target.TakeDamage(_damage, this);
-            if (_knockback > 0f && dist > 1e-4f)
-                _target.ApplyKnockback((d / dist) * _knockback);
-            StartBurst(burstScale);
-            return;
-        }
-
-        float v = speed * (slowRadius > 0f ? Mathf.Clamp(dist / slowRadius, 0.3f, 1f) : 1f);
-        transform.position += (d / dist) * (v * dt);
-    }
-
-    // Stop dead: cut emission (no burst), let the last particles drift out over fadeTime, then despawn (enemy).
-    void StartFade()
-    {
-        _phase = Phase.Fading;
-        _t = 0f;
-        if (flame != null) flame.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-    }
-
-    void Fading(float dt)
-    {
-        _t += dt;
-        float k = fadeTime > 0f ? Mathf.Clamp01(_t / fadeTime) : 1f;
-        if (glow != null) SetGlowAlpha(_glowColor.a * (1f - k));   // glow fades out with the trailing particles
-        if (k >= 1f) LeanPool.Despawn(gameObject);
     }
 
     void StartBurst(float glowScale)
@@ -198,24 +149,30 @@ public class SoulFire : MonoBehaviour
         if (k >= 1f) LeanPool.Despawn(gameObject);
     }
 
-    // Nearest live hostile within radius of a centre (Overlap filters team + alive), ranked by distance from the
-    // flame itself — so the straight shot steers toward whatever's closest to it.
+    // Best hostile within radius of a centre (Overlap filters own team + alive). Prefers the priority team, then
+    // the nearest — so the shot chases an enemy over a bystander, and the closest of those.
     IDamageable NearestHostile(Vector3 centre, float radius)
     {
         CombatWorld.Instance.Rebuild();
         CombatWorld.Instance.Overlap(centre, radius, _team, _found);
-        return Nearest(transform.position);
-    }
 
-    IDamageable Nearest(Vector3 from)
-    {
         IDamageable best = null;
         float bestSq = float.MaxValue;
+        bool bestPriority = false;
+        Vector3 from = transform.position;
         for (int i = 0; i < _found.Count; i++)
         {
-            Vector3 d = _found[i].Position - from;
+            var c = _found[i];
+            bool priority = c.Team == _priorityTeam;
+            Vector3 d = c.Position - from; d.y = 0f;
             float sq = d.x * d.x + d.z * d.z;
-            if (sq < bestSq) { bestSq = sq; best = _found[i]; }
+            // a priority-team target beats any non-priority one; within the same class, prefer the nearer.
+            if (best == null || (priority && !bestPriority) || (priority == bestPriority && sq < bestSq))
+            {
+                best = c;
+                bestSq = sq;
+                bestPriority = priority;
+            }
         }
         return best;
     }
