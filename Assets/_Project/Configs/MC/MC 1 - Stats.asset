@@ -16,9 +16,9 @@ MonoBehaviour:
   moveSpeed: 2
   attackSpeed: 1
   attackPower: 5
-  attackDuration: 0.4
+  attackDuration: 0.5
   mass: 1
   pickupRadius: 0.3
   backpackCapacity: 20
-  maxHp: 20
+  maxHp: 20000
   hitRadius: 0.5

@@ -6,6 +6,8 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 
 ## 🎮 Core loop / gameplay
 
+- [ ] **Combat State chỉnh sửa.** Đòn tấn công có duration, trong lúc đợi duration của tấn công sẽ bị khóa (giống busy bây giờ) và thên cooldown cho tấn công: thời gian tính từ lúc bắt đầu tấn công, khi cooldown hết mới có thể tiếp tục kích hoạt tấn công, trong cooldown không khóa hành động khác. Attack Speed sẽ ảnh hưởng đến cooldown thay vì duration, duration là cố định. Cooldown sẽ không thể ngắn hơn duration. 
+- [ ] **Bot AI chỉnh sửa.** Tại bước tấn công, đã update Facing nhưng animation chưa dùng đúng cho hướng đó, tìm hiểu nguyên nhân
 - [ ] **Hệ thống modify stats của MC.** Buff / đồ / nâng cấp sửa stats **runtime** (MoveSpeed, AttackSpeed,
   AttackPower, MaxHp, Mass...). `MainCharStats` giờ chỉ copy phẳng từ config; `Stat` (MoveSpeed/AttackSpeed/
   AttackPower đã là `Stat`) là **seam sẵn** — thêm modifier (cộng/nhân, mỗi nguồn 1 id để gỡ) lên đó. **MaxHp

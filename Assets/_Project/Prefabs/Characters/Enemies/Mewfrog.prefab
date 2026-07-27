@@ -286,7 +286,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2353679818562381336
 Transform:
   m_ObjectHideFlags: 0
@@ -492,6 +492,7 @@ MonoBehaviour:
   animator: {fileID: 2806152131788188297}
   scaleNode: {fileID: 5349522427429684554}
   dirType: 0
+  isMirror: 1
 --- !u!1 &8673597517811594183
 GameObject:
   m_ObjectHideFlags: 0

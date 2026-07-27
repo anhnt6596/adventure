@@ -3173,6 +3173,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 570788638504119743}
+  - {fileID: 1258828079858193928}
   m_Father: {fileID: 3008127845935596630}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2595038459439399900
@@ -3567,6 +3568,117 @@ Transform:
   - {fileID: 3562362495267141920}
   m_Father: {fileID: 3008127845935596630}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8008761115640159662
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1258828079858193928}
+  - component: {fileID: 6701114214360373699}
+  m_Layer: 0
+  m_Name: PP1-1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1258828079858193928
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8008761115640159662}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 43.64, y: 0, z: 19.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5414954968100783881}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6701114214360373699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8008761115640159662}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac1845a757b855f4ab0f60545161e2be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnZone
+  area:
+    rid: 4741822560643842118
+  grid: {fileID: 1543617716253896139}
+  clearance: 0
+  enemies:
+  - id: pp1
+    weight: 1
+  capacity: 5
+  warm: 1
+  cells:
+  - {x: 24, y: 6}
+  - {x: 25, y: 6}
+  - {x: 24, y: 7}
+  - {x: 25, y: 7}
+  - {x: 26, y: 7}
+  - {x: 20, y: 8}
+  - {x: 21, y: 8}
+  - {x: 22, y: 8}
+  - {x: 23, y: 8}
+  - {x: 24, y: 8}
+  - {x: 25, y: 8}
+  - {x: 26, y: 8}
+  - {x: 17, y: 9}
+  - {x: 18, y: 9}
+  - {x: 19, y: 9}
+  - {x: 20, y: 9}
+  - {x: 21, y: 9}
+  - {x: 22, y: 9}
+  - {x: 23, y: 9}
+  - {x: 24, y: 9}
+  - {x: 25, y: 9}
+  - {x: 26, y: 9}
+  - {x: 17, y: 10}
+  - {x: 18, y: 10}
+  - {x: 19, y: 10}
+  - {x: 20, y: 10}
+  - {x: 21, y: 10}
+  - {x: 22, y: 10}
+  - {x: 23, y: 10}
+  - {x: 24, y: 10}
+  - {x: 25, y: 10}
+  - {x: 26, y: 10}
+  - {x: 17, y: 11}
+  - {x: 18, y: 11}
+  - {x: 19, y: 11}
+  - {x: 20, y: 11}
+  - {x: 21, y: 11}
+  - {x: 22, y: 11}
+  - {x: 23, y: 11}
+  - {x: 24, y: 11}
+  - {x: 25, y: 11}
+  - {x: 26, y: 11}
+  - {x: 17, y: 12}
+  - {x: 18, y: 12}
+  - {x: 19, y: 12}
+  - {x: 20, y: 12}
+  - {x: 21, y: 12}
+  - {x: 22, y: 12}
+  - {x: 23, y: 12}
+  - {x: 24, y: 12}
+  references:
+    version: 2
+    RefIds:
+    - rid: 4741822560643842118
+      type: {class: CircleArea, ns: , asm: Assembly-CSharp}
+      data:
+        radius: 10.39
 --- !u!1 &8108101255805201622
 GameObject:
   m_ObjectHideFlags: 0

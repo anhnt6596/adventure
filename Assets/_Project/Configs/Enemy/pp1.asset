@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1071df29c59a7654ab5b24990c13c8c0, type: 3}
+  m_Name: pp1
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyConfig
+  id: pp1
+  hp: 30
+  moveSpeed: 0.2
+  attackDamage: 5
+  attackSpeed: 1
+  attackDuration: 3
+  hitRadius: 0.5
+  attackRange: 0.8
+  aggroRadius: 4
+  leashRadius: 6
+  reEngageRadius: 5
+  forgetTime: 2
+  wanderRadius: 3
+  recognizeTime: 1

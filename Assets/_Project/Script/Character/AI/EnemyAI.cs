@@ -61,7 +61,6 @@ public abstract class EnemyAI : MonoBehaviour
 
         if (_recognize > 0f) { _recognize -= Time.deltaTime; return; }   // just turned aggressive -> freeze a beat before engaging
 
-        FaceTarget();
         float d = _ctx.DistanceToTarget();
         if (d > _ctx.config.leashRadius) { EnterForget(); return; }
         _state = d <= _ctx.AttackRange ? State.Attack : State.Chase;
@@ -70,10 +69,10 @@ public abstract class EnemyAI : MonoBehaviour
     void TickChase()
     {
         if (!_ctx.HasLiveTarget) { EnterForget(); return; }
+        FaceTarget();
         float d = _ctx.DistanceToTarget();
         if (d > _ctx.config.leashRadius) { EnterForget(); return; }
         if (d <= _ctx.AttackRange) { _state = State.Attack; return; }   // reached range -> commit to attacking (NOT via Idle — that ping-pongs)
-        FaceTarget();
         _ctx.controller.Move(_s.Pursuit.DirTo(_ctx, _ctx.target.Position));
     }
 
@@ -82,11 +81,10 @@ public abstract class EnemyAI : MonoBehaviour
         if (!_ctx.HasLiveTarget) { EnterForget(); return; }
         float d = _ctx.DistanceToTarget();
         if (d > _ctx.config.leashRadius) { EnterForget(); return; }   // ran clean away -> give up
-
         FaceTarget();                          // keep aimed — the shot leaves along FacingDir
         if (_ctx.controller.IsBusy) return;    // a shot already wound up ALWAYS finishes (commit) — never bail
         _s.Attack.Tick(_ctx);                  // fire
-        _state = State.Idle;                   // attack done -> back to Idle to re-aim + re-decide
+        _state = State.Chase;                   // attack done -> back to Chase to re-aim + re-decide
     }
 
     void TickForget()
