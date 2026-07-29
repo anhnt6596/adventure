@@ -369,6 +369,33 @@ migration này được code thật.
 
 ## 🌤️ Environment (day/night + weather)
 
+- [ ] **Sương mù / vùng tối viền map — lối sang map khác.** (Mai làm.) Vì camera **luôn giữ player ở giữa**,
+  người chơi không bao giờ "thấy" được rìa map một cách tự nhiên — đi tới biên thì lòi ra khoảng trống ngoài
+  map. Giải: một **vùng tối ở rìa**, player đi vào cổng nằm sát vùng đó thì nhảy map; sang map mới thì hiện ra
+  **như vừa bước từ trong vùng tối đi ra**. Vùng tối vừa che khoảng trống vừa là chỉ dấu "đây là lối đi".
+  - **Hình dạng (dự kiến, chốt lúc làm):** offset **từ rìa map đi vào trong**, ví dụ **~2 ô chuyển dần**, còn
+    **toàn bộ phần ngoài map thì che kín**. Nguồn kích thước: `TerrainGrid.Width/Height/CellSize/CellToWorld`.
+  - **⚠️ Phải là WORLD-SPACE, không phải vignette theo màn hình.** Hai lý do, cái nào cũng đủ để loại:
+    - Cột mốc là **rìa map**, một thứ đứng yên trong thế giới. Bám màn hình thì nó **trượt theo camera** và
+      không bao giờ khớp với cái cổng — mà cổng thì đứng im.
+    - Camera **xoay được** (Q/E). Vignette ở mép màn hình sẽ đúng ở một hướng nhìn và sai ở mọi hướng còn lại.
+    - Cùng bài học đã ghi ở mục Water ("mask, UV/noise và đường bờ phải bám world-space để nước không trượt").
+  - **Hai shader sẵn có KHÔNG dùng lại được**, đừng mất công thử: `Unlit/Fog` là overlay **toàn màn hình**,
+    additive, đang phục vụ glare ngày/đêm (`LightManager` lái); `Unlit/DarknessMask` là overlay dựa trên light
+    texture của hệ chiếu sáng. Cả hai đều screen-space và đã có chủ. Cái này cần một mặt phẳng/khối **gắn vào map**.
+  - **Che ngoài map phải đủ xa.** Đứng sát biên thì camera nhìn vượt rìa khá nhiều (rig đang ~12 đơn vị, pitch
+    35°) — vùng che "bên ngoài" phải phủ tới hết tầm nhìn đó, không chỉ vài ô.
+  - **Cảm giác KHỐI** — mai quyết: làm phẳng (một lớp tối gradient) hay có chiều sâu (noise cuộn, parallax, mù
+    dày dần). Nếu chọn có khối thì cân nhắc dùng chung `CloudShade.hlsl` đang định làm ở mục Mây bay — cùng là
+    "một hàm world-space trả độ tối", làm một lần dùng hai chỗ.
+  - **Seam đã có, ráp vào chứ đừng dựng lại:** `Portal` (kích hoạt warp) · `Gate` (điểm đặt chân khi tới) ·
+    `Map.GetGate(index)` · `MapService.WarpAsync` (đã chặn input suốt lúc swap qua `IInputGate`, và
+    `PlaceAtGate` đã đặt player + `SnapToTarget` camera).
+    - Muốn cảnh "bước ra từ vùng tối" thì **gate đến phải nằm TRONG vùng tối**, rồi player tự đi ra. Cân nhắc
+      giữ input thêm một nhịp sau khi swap để cú bước ra đó đọc được, thay vì thả ngay.
+  - **Chưa chốt:** vùng tối này có chịu ảnh hưởng ngày/đêm & thời tiết không, hay luôn tối như nhau? Ban đêm
+    mà cả map đều tối thì viền mất tác dụng chỉ đường.
+
 - [ ] **Weather system.** Cắm vào seam `--- Weather seam ---` trong `DayNightLighting.LateUpdate`:
   weather biến đổi `EnvironmentState` (ambient/fog/intensity) *sau* day/night rồi mới đẩy vào LightManager.
   - [ ] **SunnyWeather**: bóc cái glare vàng trưa (`#ACAE72`) từ base day/night ra đây
