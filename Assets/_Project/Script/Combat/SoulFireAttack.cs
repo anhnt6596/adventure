@@ -16,7 +16,7 @@ public class SoulFireAttack : MonoBehaviour
     Vector3 Muzzle => muzzle != null ? muzzle.position : transform.position;
 
     DynamicUnit _owner;                                 // the flame hunts targets not on this unit's team, deals its AttackPower
-    int Team => _owner != null ? _owner.Team : 0;
+    int Team => _owner != null ? _owner.Team : Teams.Universal;   // ownerless -> belongs to no side, so it hits everything
 
     void Awake() => _owner = GetComponentInParent<DynamicUnit>();
 

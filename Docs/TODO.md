@@ -6,6 +6,48 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 
 ## 🎮 Core loop / gameplay
 
+- [x] **CHIA LẠI PHE (team).** ✅ Thay hẳn quy ước cũ `0 trung lập / 1 player /
+  2 địch / 3 prop`. Ý chính: **địch không còn là MỘT phe**. Mỗi loài quái là một phe riêng, nên quái đánh nhau
+  được, và "kẻ thù của tôi" không còn suy ra được từ một con số duy nhất.
+
+  | Team | Là ai | Ghi chú |
+  |---|---|---|
+  | **0** | **không ai cả** — là *nguồn dmg chung* | dmg gắn team 0 thì **mọi thứ đều phải chịu**. Bẫy, lửa, môi trường. |
+  | **1** | người chơi | |
+  | **2** | **động vật hiền lành** (mewfrog) | **không bao giờ chủ động đánh nhau** |
+  | **10000** | **tài nguyên** (cây, đá, rương) | thay cho team 3 cũ |
+  | 3, 4, 5… | mỗi loài quái hung dữ một phe | PP1 (cây ăn thịt) một phe riêng; nó săn **các phe khác**, gồm cả mewfrog |
+
+  - **Không đụng `CombatWorld`** — luật lọc `if (attackerTeam != 0 && target.Team == attackerTeam) continue;`
+    vốn đã đúng: attacker team 0 không lọc gì cả, trúng tất. Đúng y nghĩa "dmg chung".
+  - **Mọi số phe gom vào `Teams`** (`Script/Combat/Teams.cs`) — `Universal/Player/Critter/Resource/FirstMonster`.
+    Hết magic int trong `_Project/Script`. Chính vì trước đây rải 8 file mà "prop là team 3" và "quái là team 2"
+    âm thầm hết khớp với một nửa số comment nói về chúng.
+  - **Quái mỗi loài một phe:** `EnemyConfig.team` (field mới, mặc định `FirstMonster`), `EnemyController.Team`
+    đọc từ đó thay vì hằng `2`. `mewfrog: 2` (Critter), `pp1: 3`. Đây mới là thứ cho quái đánh nhau — một phe
+    "địch" dùng chung vô tình biến mọi con quái thành đồng minh của nhau.
+  - **⚠️ Điểm cốt lõi, không phải chuyện đổi số: "khác phe" ≠ "là mục tiêu".** `CombatWorld` chỉ biết "khác phe
+    nên đòn trúng" — đúng với cái cây, và đó chính là lý do cái rìu bổ được nó. Nó **không** nói con vật có nên
+    *muốn* đánh cái cây hay không. Tách bằng `Teams.IsPrey(team)` (= `team < Resource`):
+    - `AIContext.FindHostile` lọc `IsPrey` → thú không bao giờ chọn tài nguyên làm mồi. Không có nó thì PP1
+      nhè gốc cây gần nhất mà gặm trong lúc player đi ngang.
+    - `SoulFire` bỏ `_priorityTeam` (đóng đinh thế 1↔2, vỡ khi có N phe) → ưu tiên `IsPrey`: vẫn đốt được cây,
+      nhưng không bao giờ ưu tiên cây hơn thứ đang đánh mình. Giải luôn mục "SoulFire ưu tiên target" bên dưới.
+    - `Resource = 10000` để xa hẳn mọi phe sinh vật nên `IsPrey` là **một ngưỡng**, không phải danh sách phải
+      nhớ mở rộng — loại cảnh vật mới tự rơi đúng phía.
+  - **Fallback đã sửa cho "sai to hơn là sai ngầm":** `Damageable.Team` khi không có `Unit` giờ là `Universal`
+    (ai cũng đánh được) chứ không phải `2` — với nghĩa mới, `2` sẽ khiến nó **âm thầm nhập bọn động vật hiền
+    lành và bị thú săn**. `ShapeAttack`/`SoulFireAttack` không chủ cũng `Universal`. Xoá key chết `team: 2`
+    trong `basic_tree.asset` (`PropConfig.Team` là property tính sẵn, field đó không còn tồn tại).
+  - **Còn hở, chưa chốt:**
+    - "Không bao giờ đánh nhau" của phe Critter mới chỉ đúng **một nửa**. Mewfrog không chủ động gây sự
+      (`PassiveAggro` trả `null`) nhưng **vẫn đánh trả** khi bị đánh — đường `EnemyAI.OnDamaged` là của FSM
+      chung, không đi qua behaviour nào nên không tắt được bằng asset. Nếu "hiền lành" nghĩa là *không bao giờ
+      đánh, kể cả bị đánh*, thì cần một cờ trên brain (kiểu `fightsBack`) hoặc `OnDamaged` phải hỏi behaviour.
+      **Chưa làm** — chờ chốt.
+    - Quái **cùng loài** không bắn trúng nhau (cùng phe → `CombatWorld` lọc). Khác loài thì có. Đúng ý chứ?
+    - PP1 giờ săn được mewfrog rồi, nhưng mewfrog **chưa biết chạy** — xem `SkittishRoam` ngay dưới.
+
 - [ ] **Mewfrog roaming biết né.** Đang đi dạo (`WanderRoam`) mà có sinh vật **khác loài** lọt vào bán kính nhỏ
   thì bỏ chạy ra xa, thay vì cứ lững thững đi tiếp. Đây là hành vi lúc **chưa aggro** — khác với `leashRadius`
   (bỏ đuổi) và khác `PassiveAggro` (chỉ đánh trả khi bị đánh).
@@ -13,9 +55,9 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
     hysteresis là field của **chính nó**) — quét `ctx.FindHostile(radius)` mỗi tick, có thì đi ngược hướng nó,
     không thì roam như cũ. Xong thì nó **tự hiện trong dropdown** slot Idle của `mewfrog Brain`; không sửa
     `EnemyConfig`, không sửa `EnemyAI`, không đăng ký ở đâu.
-  - **Cần chốt trước:** "khác loài" định nghĩa thế nào? Team không đủ (cây/đá cùng team 2 với quái, mà player
-    là team 1 — nên `FindHostile` sẽ trả về **cả player lẫn không gì khác**). Có thể cần id/kind trên
-    `UnitController`, gộp với mục "Đồng bộ mọi thứ nhận dmg là `UnitController`" ở Tech debt.
+  - ~~**Cần chốt trước:** "khác loài" định nghĩa thế nào?~~ **Đã có lời giải: khác PHE.** Quy ước phe mới
+    (đầu file) cho mỗi loài quái một team riêng, nên `FindHostile` tự nhiên trả về đúng "sinh vật khác loài".
+    Phụ thuộc: phải làm mục "CHIA LẠI PHE" trước, và phải lọc được phe tài nguyên (10000) ra khỏi kết quả.
   - Bán kính né nên **nhỏ hơn** `aggroRadius`, và cần hysteresis (chạy tới khi ra ngoài `radius × k`) —
     không thì lại strobe đúng như vụ Chase/Attack vừa rồi.
 - [x] **PP1 (Predator plant): cây phục kích có giờ hoạt động.** ✅ Làm hoàn toàn bằng behaviour mới + sửa asset,
@@ -158,7 +200,8 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
       `TakeDamage`. Đòn quái mirror y hệt nhưng **team 2**, đánh player.
     - Di chuyển: khuôn `Character.Move` + `CollisionBody` (không xuyên đá). Quái thay input tay bằng input
       do AI sinh (hướng tới target).
-    - Team: 0 trung lập / 1 player / 2 địch — không friendly-fire cùng team. Spawn **qua DI container** (hoặc
+    - Team: ~~0 trung lập / 1 player / 2 địch~~ — **quy ước này đã bị thay**, xem "CHIA LẠI PHE" ở đầu file.
+      Luật không đổi phần friendly-fire: không đánh trúng cùng team. Spawn **qua DI container** (hoặc
       Auto Inject của `GameScope`) để `CombatWorld` được inject vào `Damageable`/đòn.
   - **Phải làm tối nay:**
     - [ ] **Player hittable TRƯỚC** (mục "Máu Player" ở đầu file) — hiện `Character` chưa implement
@@ -396,6 +439,17 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
   - Boss thì **không** phải hệ AI khác: thêm đúng một state `Scripted` vào FSM để một component kịch bản giành
     quyền rồi trả lại (Souls/Hollow Knight đều là mỗi boss một kịch bản riêng, dùng chung nguyên liệu). Đừng
     fork cả cây AI, và đừng tự viết graph tool — cần thì lấy `com.unity.behavior`.
+- [x] **Mass của quái bị nuốt mất.** ✅ Knockback vốn **đã** chia theo mass đúng như mong muốn
+  (`CollisionBody.AddImpulse` → `impulse * InvMass`, `InvMass = 1/mass`: mass 1 = 100%, 2 = 50%, 0.5 = 200%,
+  0 = bất động) — nhưng với quái nó **không có tác dụng**: `DynamicUnit.Start` gọi `body.SetMass(Mass)` ghi đè
+  giá trị author trên prefab, mà `EnemyController.Mass` là **hằng `1f` cứng**. PP1 author mass 10 chạy thành 1,
+  Mewfrog author 0.5 cũng thành 1.
+  - Sửa: thêm `mass` vào `EnemyConfig`, `EnemyController.Mass => config.mass`. Chép đúng số đã author trên
+    prefab sang config (pp1 `10`, mewfrog `0.5`) nên **ý đồ giữ nguyên**, chỉ là giờ nó thật sự có hiệu lực.
+  - Ảnh hưởng **cả hai** thứ vì `CollisionBody.mass` dùng chung: knockback **và** độ bị đẩy dạt khi hai thân
+    chồng nhau. PP1 trước đây vừa bị bắn văng vừa bị xô dạt như con ếch.
+  - Cây/đá/`Log` không dính vì chúng là `Unit` chứ không phải `DynamicUnit` → `Start` không ghi đè, mass trên
+    prefab (`0` = bất động, `0.2`) vẫn đúng. Đó cũng là lý do bug này sống lâu mà không ai thấy.
 - [ ] **Mass động theo đồ/nâng cấp.** `UnitController.Start` đang `body.SetMass(Mass)` **một lần** từ stats gốc.
   Sau này mass đổi theo trang bị / nâng cấp / buff → cần **tính lại mass khi thay đổi** (event stats-changed →
   `SetMass`), không phải set cứng ở Start. Xem `// TEMP` trong `UnitController.Start`.
@@ -468,6 +522,7 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
 
 ## ✅ Đã xong gần đây (tham chiếu)
 
-Config-hoá stats MC · quy ước team (0 trung lập / 1 player / 2 địch) · `Damageable` (máu + drop) ·
+Config-hoá stats MC · ~~quy ước team (0 trung lập / 1 player / 2 địch)~~ **đã thay, xem "CHIA LẠI PHE" đầu
+file** · `Damageable` (máu + drop) ·
 hệ ngày/đêm (`DayNightClock/Config/Lighting`) + `Docs/LIGHTING.md` · hit-flash đỏ · **gỗ văng**
 (velocity, height-trên-art, collision khi bay) + pickup (`Picker`/`Pickable`/`FlyingPickup`).

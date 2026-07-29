@@ -8,7 +8,7 @@ public class Prop : Unit
 {
     IDamageableConfig _config;
 
-    public override int Team => _config?.Team ?? 3;
+    public override int Team => _config?.Team ?? Teams.Resource;
     public override IDamageableConfig DamageableConfig => _config;
 
     [Inject]

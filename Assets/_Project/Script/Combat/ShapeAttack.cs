@@ -21,14 +21,18 @@ public class ShapeAttack : MonoBehaviour
     [SerializeField] UnitAnimator animatorSource;             // drag the one on the art child; fires Hit at the connect frame
 
     DynamicUnit _owner;                                       // fights for whoever owns it — its Team, its AttackPower
-    int Team => _owner != null ? _owner.Team : 0;
+    int Team => _owner != null ? _owner.Team : Teams.Universal;   // ownerless -> belongs to no side, so it hits everything
     readonly List<IDamageable> _hits = new List<IDamageable>();
 
     // Anchored on THIS object's position — put the component wherever the attack should come from. There is
     // deliberately no anchor-Transform field: a transform offset is world-axis, and a billboard unit never
     // rotates its transform, so any non-zero one would pin the hitbox to a compass direction instead of to the
     // unit's facing. Facing-relative placement is what forwardOffset is for.
-    Vector3 Facing => _owner != null ? _owner.FacingDir : Vector3.forward;
+    // The fallback is +X (east), not +Z (north): it is only ever reached in edit mode, where Awake hasn't run
+    // and there is no owner to have a facing. The 2D art is authored facing RIGHT, so drawing the box to the
+    // right is the one orientation you can judge straight against the sprite sitting in front of you. Pointing
+    // it north means doing the rotation in your head every time you tune forwardOffset.
+    Vector3 Facing => _owner != null ? _owner.FacingDir : Vector3.right;
     Vector3 Centre => transform.position + Facing * forwardOffset;
 
     void Awake() => _owner = GetComponentInParent<DynamicUnit>();
@@ -76,8 +80,8 @@ public class ShapeAttack : MonoBehaviour
         }
     }
 
-    // In edit mode the owner isn't resolved and has no facing yet, so the rect draws along +Z — enough to judge
-    // its size, and it swings round to the real facing as soon as the game runs.
+    // In edit mode this draws to the RIGHT, matching how the art is drawn (see Facing) — enough to judge reach
+    // and offset against the sprite. It swings round to the unit's real facing as soon as the game runs.
     void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(1f, 0.4f, 0.3f, 0.6f);
@@ -102,7 +106,7 @@ public class ShapeAttack : MonoBehaviour
     {
         Vector3 fwd = forward;
         fwd.y = 0f;
-        fwd = fwd.sqrMagnitude > 1e-6f ? fwd.normalized : Vector3.forward;
+        fwd = fwd.sqrMagnitude > 1e-6f ? fwd.normalized : Vector3.right;
         Vector3 right = new Vector3(fwd.z, 0f, -fwd.x);
 
         Vector3 f = fwd * halfLength, r = right * halfWidth;

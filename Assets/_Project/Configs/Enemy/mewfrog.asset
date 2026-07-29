@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: mewfrog
   m_EditorClassIdentifier: Assembly-CSharp::EnemyConfig
   id: mewfrog
+  team: 2
   hp: 12
   moveSpeed: 3
   attackDamage: 3
   attackSpeed: 1
-  attackCooldown: 1
+  attackCooldown: 3
+  mass: 0.5
   brain: {fileID: 11400000, guid: 2f8d5b6c3e7a4091b2c5d8e1f4a7b0c3, type: 2}

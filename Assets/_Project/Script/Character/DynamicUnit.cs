@@ -24,13 +24,19 @@ public abstract class DynamicUnit : Unit
     // Which way the unit is turned in the WORLD, as an 8-sector index (ViewAngleUtil, clockwise from +Z):
     // its last move direction, held while idle. A view turns this into a screen-relative direction against
     // the camera, so the sprite re-aims when the camera orbits even while the unit stands still.
-    public int Facing { get; private set; }
-    public Vector3 FacingDir { get; private set; } = Vector3.forward;   // last move direction (world XZ) — where the unit is aimed
+    // A unit that has not moved or aimed yet starts facing EAST, not north — the 2D art is authored facing
+    // right, so this is the pose it was actually painted in, and it is the same direction ShapeAttack's gizmo
+    // draws toward in the editor. All three of these must agree from the very first frame, not just after the
+    // first Aim(): Facing is the sector, FacingDir is that sector as a vector, AimRaw is the unsnapped aim.
+    const int EastSector = 2;   // sectors run clockwise from +Z, so 2 * 45° = +X
+
+    public int Facing { get; private set; } = EastSector;
+    public Vector3 FacingDir { get; private set; } = SectorDir(EastSector);   // last move direction (world XZ) — where the unit is aimed
 
     // The same aim BEFORE it was snapped to a sector. Kept because two-direction art has no up or down pose:
     // sectors 0 and 4 straddle the vertical, so the sector index alone cannot say which way such a sprite
     // should face, and only the unsnapped direction still knows.
-    public Vector3 AimRaw { get; private set; } = Vector3.forward;
+    public Vector3 AimRaw { get; private set; } = SectorDir(EastSector);
 
     // The numbers the control loop needs; each unit kind sources them differently. Both attack numbers are
     // BASE seconds, authored at 1x attack speed — Attack() divides them by the rate.

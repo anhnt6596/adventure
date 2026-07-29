@@ -8,7 +8,7 @@ public class MCController : DynamicUnit
     ICharacterStats _stats;
     IDamageableConfig _dmg;
 
-    public override int Team => 1;                              // player
+    public override int Team => Teams.Player;
     public override IDamageableConfig DamageableConfig => _dmg; // HP from MainCharStatsConfig
 
     [Inject]

@@ -33,7 +33,7 @@ public class MoveArrow : MonoBehaviour
         if (mc == null) return;
 
         Vector3 dir = mc.FacingDir; dir.y = 0f;
-        if (dir.sqrMagnitude < 1e-6f) dir = Vector3.forward;
+        if (dir.sqrMagnitude < 1e-6f) dir = Vector3.right;   // unreachable in practice (FacingDir is never zero); east to match the rest
         dir.Normalize();
 
         transform.SetPositionAndRotation(

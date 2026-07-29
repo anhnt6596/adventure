@@ -13,7 +13,7 @@ public class PropConfig : Config, IDamageableConfig, IDeathDropableConfig
     public DeathDrop[] drops;
 
     public float MaxHp => maxHp;
-    public int Team => 3;   // props are always team 3 — destructible/environment, kept separate from enemies (team 2)
+    public int Team => Teams.Resource;   // scenery, never prey — an AI won't pick it, but an axe still works on it
     public DeathDrop[] Drops => drops;
 }
 

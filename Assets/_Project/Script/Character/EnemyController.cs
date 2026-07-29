@@ -13,14 +13,16 @@ public class EnemyController : DynamicUnit
     [Inject]
     public void Construct(EnemyConfig config) => this.config = config;
 
-    public override int Team => 2;   // enemy
+    // One team per KIND, off the config — see EnemyConfig.team. Falls back to the generic monster team only so
+    // a config-less enemy is still hostile to the player rather than silently universal.
+    public override int Team => config != null ? config.team : Teams.FirstMonster;
     public override IDamageableConfig DamageableConfig => config;   // Damageable reads HP off this
 
     // Null-safe so a missing config leaves the enemy inert (Start logs it) instead of crashing the base loop.
     protected override float MoveSpeed => config != null ? config.moveSpeed : 0f;
     protected override float AttackSpeed => config != null ? config.attackSpeed : 1f;
     protected override float AttackCooldown => config != null ? config.attackCooldown : 0f;
-    protected override float Mass => 1f;
+    protected override float Mass => config != null ? config.mass : 1f;
     public override float AttackPower => config != null ? config.attackDamage : 0f;
 
     protected override void Start()

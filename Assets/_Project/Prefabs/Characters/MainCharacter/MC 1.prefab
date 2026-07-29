@@ -236,10 +236,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShapeAttack
   shape: 0
-  radius: 0.36
+  radius: 0.5
   size: {x: 1.5, y: 3}
   forwardOffset: 0.2
-  knockback: 3
+  knockback: 1.5
   animatorSource: {fileID: 1003609662157716418}
 --- !u!114 &349107934453197144
 MonoBehaviour:
@@ -444,7 +444,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -183536290, guid: e020b27180e8cbf40b06af37ea7b8065, type: 3}
+  m_Sprite: {fileID: -1062409129, guid: e020b27180e8cbf40b06af37ea7b8065, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

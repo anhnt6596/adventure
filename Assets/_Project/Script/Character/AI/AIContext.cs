@@ -37,8 +37,13 @@ public class AIContext
         return d.magnitude;
     }
 
-    // Nearest live hittable NOT on this unit's team, within radius (CombatWorld query). Props share the enemy
-    // team, so a tree is never returned. Radius is bounded by the combat hash cell — keep it small.
+    // Nearest live PREY not on this unit's team, within radius (CombatWorld query). Radius is bounded by the
+    // combat hash cell — keep it small.
+    //
+    // The team filter alone is not enough here, and the difference matters: CombatWorld only knows "different
+    // team, so the blow lands", which is true of a tree and is exactly why an axe works on one. It says nothing
+    // about whether a creature should WANT to attack it. Without the IsPrey test a predator picks the nearest
+    // trunk and stands there chewing bark while the player walks past.
     static readonly List<IDamageable> _buf = new List<IDamageable>();
     public IDamageable FindHostile(float radius)
     {
@@ -50,6 +55,7 @@ public class AIContext
         foreach (var d in _buf)
         {
             if (d == null || !d.IsAlive) continue;
+            if (!Teams.IsPrey(d.Team)) continue;   // scenery is hittable, not huntable
             Vector3 v = d.Position - Tr.position; v.y = 0f;
             float sq = v.sqrMagnitude;
             if (sq < bestSqr) { bestSqr = sq; best = d; }

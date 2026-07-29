@@ -22,7 +22,10 @@ public class Damageable : MonoBehaviour, IDamageable
     public Vector3 Position => transform.position;
     public float HitRadius => hitRadius;
     public bool IsAlive => _hp > 0f;
-    public int Team => _unit != null ? _unit.Team : 2;
+    // No Unit means nobody declared a side, so take the one that is loudly wrong rather than quietly wrong:
+    // Universal is hittable by everyone. The old fallback was the enemy team, which under the new scheme would
+    // have made a stray Damageable join the peaceful animals and get hunted by predators.
+    public int Team => _unit != null ? _unit.Team : Teams.Universal;
 
     public float Hp => _hp;
     public float MaxHp => Cfg != null ? Cfg.MaxHp : 0f;

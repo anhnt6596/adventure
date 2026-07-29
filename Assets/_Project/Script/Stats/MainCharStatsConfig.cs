@@ -16,5 +16,5 @@ public class MainCharStatsConfig : Config, IInventoryConfig, IDamageableConfig
 
     public int Capacity => backpackCapacity;   // IInventoryConfig
     public float MaxHp => maxHp;               // IDamageableConfig — the HP the MC's Damageable reads
-    public int Team => 1;                       // player (Damageable actually takes team off MCController)
+    public int Team => Teams.Player;            // (Damageable actually takes team off MCController)
 }

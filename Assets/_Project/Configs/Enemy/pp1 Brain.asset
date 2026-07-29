@@ -20,7 +20,7 @@ MonoBehaviour:
     rid: 7312000000000000003
   attack:
     rid: 7312000000000000004
-  attackRange: 0.8
+  attackRange: 0.6
   leashRadius: 6
   reEngageRadius: 5
   forgetTime: 2
@@ -34,15 +34,15 @@ MonoBehaviour:
     - rid: 7312000000000000001
       type: {class: WanderRoam, ns: , asm: Assembly-CSharp}
       data:
-        radius: 1
+        radius: 4
         amble: 0.35
-        restMin: 20
-        restMax: 45
+        restMin: 0
+        restMax: 0
         activeHoursOnly: 1
     - rid: 7312000000000000002
       type: {class: PredatorAggro, ns: , asm: Assembly-CSharp}
       data:
-        huntRadius: 4
+        huntRadius: 2
     - rid: 7312000000000000003
       type: {class: StraightPursuit, ns: , asm: Assembly-CSharp}
       data: 

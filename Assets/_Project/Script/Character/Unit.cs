@@ -4,6 +4,6 @@
 // nothing carries a serialized config.
 public abstract class Unit : Identifiable
 {
-    public virtual int Team => 0;                               // 0 neutral / 1 player / 2 enemy / 3 prop (destructible/environment)
+    public virtual int Team => Teams.Universal;                 // see Teams — 0 means "nobody set one", and everything can hit it
     public virtual IDamageableConfig DamageableConfig => null;  // HP/team + (props) drops; null = inert
 }

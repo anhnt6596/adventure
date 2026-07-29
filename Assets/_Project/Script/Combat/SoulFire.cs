@@ -38,7 +38,6 @@ public class SoulFire : MonoBehaviour
 
     float _range, _damage, _knockback;
     int _team;             // caster's team — Overlap spares it (no friendly fire / no self-seek)
-    int _priorityTeam;     // the team this shot chases first (the opposing combatant)
     Vector3 _dir;          // travel direction
     float _traveled;       // distance covered so far
     Component _source;     // the caster — passed as the damage source so a victim can hit back at the shooter
@@ -60,7 +59,6 @@ public class SoulFire : MonoBehaviour
         _range = range;
         _source = source;
         _team = team;
-        _priorityTeam = team == 1 ? 2 : team == 2 ? 1 : 0;   // chase the opposing combat team first
         _damage = damage;
         _knockback = knockback;
         _dir = direction.sqrMagnitude > 1e-6f ? direction.normalized : Vector3.forward;
@@ -165,7 +163,10 @@ public class SoulFire : MonoBehaviour
         for (int i = 0; i < _found.Count; i++)
         {
             var c = _found[i];
-            bool priority = c.Team == _priorityTeam;
+            // Creatures first, scenery second — a shot will still burn a tree, but never in preference to the
+            // thing fighting you. This used to name the one opposing team outright (1 chases 2, 2 chases 1);
+            // with a team per monster kind there is no single opponent left to name.
+            bool priority = Teams.IsPrey(c.Team);
             Vector3 d = c.Position - from; d.y = 0f;
             float sq = d.x * d.x + d.z * d.z;
 

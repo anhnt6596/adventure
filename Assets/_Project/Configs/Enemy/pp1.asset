@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: pp1
   m_EditorClassIdentifier: Assembly-CSharp::EnemyConfig
   id: pp1
+  team: 3
   hp: 30
-  moveSpeed: 0.2
+  moveSpeed: 0.5
   attackDamage: 5
   attackSpeed: 1
-  attackCooldown: 3
+  attackCooldown: 2
+  mass: 4
   brain: {fileID: 11400000, guid: 3a7e6c5d4f8b2091c3d6e9f2a5b8c1d4, type: 2}
