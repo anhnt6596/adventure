@@ -6,6 +6,26 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 
 ## 🎮 Core loop / gameplay
 
+- [ ] **Mewfrog roaming biết né.** Đang đi dạo (`WanderRoam`) mà có sinh vật **khác loài** lọt vào bán kính nhỏ
+  thì bỏ chạy ra xa, thay vì cứ lững thững đi tiếp. Đây là hành vi lúc **chưa aggro** — khác với `leashRadius`
+  (bỏ đuổi) và khác `PassiveAggro` (chỉ đánh trả khi bị đánh).
+  - Seam đã có: `IIdleBehavior` trong `AIStrategies`. Viết `SkittishRoam` bọc/thay `WanderRoam` — quét
+    `ctx.FindHostile(radius)` mỗi tick, có thì đi ngược hướng nó, không thì roam như cũ.
+  - **Cần chốt trước:** "khác loài" định nghĩa thế nào? Team không đủ (cây/đá cùng team 2 với quái, mà player
+    là team 1 — nên `FindHostile` sẽ trả về **cả player lẫn không gì khác**). Có thể cần id/kind trên
+    `UnitController`, gộp với mục "Đồng bộ mọi thứ nhận dmg là `UnitController`" ở Tech debt.
+  - Bán kính né nên **nhỏ hơn** `aggroRadius`, và cần hysteresis (chạy tới khi ra ngoài `radius × k`) —
+    không thì lại strobe đúng như vụ Chase/Attack vừa rồi.
+- [ ] **AI enemy chuyển sang asset-driven.** Mục tiêu: thêm/sửa/xoá từng thuật toán của từng con mà không phải
+  đẻ một class `XxxAI` mới mỗi lần. Hiện `MewFrogAI.Build()` chọn 4 strategy bằng code.
+  - **⚠️ Ngược với quy ước đang ghi ngay dưới** (mục Enemy: "AI brain — FSM code thuần, KHÔNG behavior-tree SO,
+    KHÔNG data-driven") và ngược quy ước chung "runtime là plain code, SO chỉ giữ config phẳng". Đây là **đổi
+    hướng có chủ ý** — cần xoá/sửa hai chỗ kia khi làm, đừng để hai luật đá nhau trong cùng file.
+  - Hướng nhẹ nhất giữ được cả hai: SO **chỉ chọn** strategy (4 enum/dropdown → factory dựng object C#), không
+    nhét tham số hay logic vào SO. Thuật toán vẫn là plain code, asset chỉ là bảng lắp ráp.
+  - Nặng hơn (behavior tree / graph trong SO) thì mới thật sự "sửa thuật toán trong asset" — nhưng đó là hệ
+    khác hẳn, chốt riêng trước khi bắt tay.
+
 - [x] **Combat State chỉnh sửa.** ✅ `DynamicUnit` giờ giữ **hai** timer, cả hai chạy từ lúc đòn bắt đầu:
   `_busyTimer` = `AttackDuration / AttackRate` → `IsBusy` khoá cả di chuyển lẫn tấn công như cũ;
   `_cooldownTimer` = `AttackCooldown / AttackRate`, **clamp `>= duration`**, chỉ gate đòn kế tiếp qua
@@ -95,7 +115,9 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
     - [ ] **Player hittable TRƯỚC** (mục "Máu Player" ở đầu file) — hiện `Character` chưa implement
       `IDamageable`, chưa `combat.Add` → **quái không có gì để đánh**. Đây là chặn đầu tiên.
     - [ ] **AI brain** — FSM **code thuần** (idle → phát hiện theo aggro radius → đuổi → đánh khi trong tầm +
-      cooldown → mất dấu/về). KHÔNG behavior-tree SO, KHÔNG data-driven (xem quy ước "runtime là plain code").
+      cooldown → mất dấu/về). ~~KHÔNG behavior-tree SO, KHÔNG data-driven~~ — **đã lật**, xem mục "AI enemy
+      chuyển sang asset-driven" ở đầu file. FSM khung vẫn là code thuần; phần được asset-hoá là việc *chọn*
+      strategy nào cho con nào.
     - [ ] **EnemyMelee** — mirror `ShapeAttack`, team 2, dmg/tầm/nhịp từ `EnemyConfig`.
     - [ ] **EnemyMotor** — steer tới target qua `CollisionBody`, tốc độ từ `EnemyConfig.moveSpeed`.
     - [ ] **Spawn** — tạm đặt tay 1-2 con để test (nhớ cho vào Auto Inject); spawner thật xem **`Docs/SPAWN.md`**

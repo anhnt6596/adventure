@@ -86,29 +86,41 @@ public class CharacterAnimSet : ScriptableObject
     // The sector order is the one UnitView feeds in: 0 Up, 1 UpRight, 2 Right, 3 DownRight, 4 Down,
     // 5 DownLeft, 6 Left, 7 UpLeft. Sectors 5..7 are the left-hand half — the only ones a mirror can serve,
     // and each has a right-hand twin at 8 - sector (5<->3, 6<->2, 7<->1).
-    public (int index, bool flip) Resolve(int dir8)
+    public (int index, bool flip) Resolve(float screenDeg)
     {
-        dir8 = ((dir8 % 8) + 8) % 8;
-
-        bool left = dir8 >= 5;
-        bool flip = mirror && left;
-        int folded = flip ? 8 - dir8 : dir8;   // mirrored sectors borrow their right-hand twin's art
+        float deg = Mathf.Repeat(screenDeg, 360f);
 
         switch (dirs)
         {
-            case DirCount.Eight:
-                return (folded, flip);                    // slots ARE sectors: 0..7, or 0..4 when mirrored
+            // Only a side pose exists, so every heading resolves to a side — the half of the circle it is in.
+            case DirCount.Two:
+            {
+                bool left = deg > 180f;
+                if (mirror) return (0, left);                 // slots: 0 Side
+                return (left ? 1 : 0, false);                 // slots: 0 Right, 1 Left
+            }
 
+            // Four EQUAL quadrants, each centred on its axis: Up -45..45, Right 45..135, and so on. This is
+            // why the angle is folded here rather than an 8-sector index: sector edges sit at 22.5 + n*45, so
+            // no grouping of whole sectors can make a 90 degree band centred on Up. Grouping them 1/3/1/3 —
+            // the obvious way — is what gives the side pose three times the reach of Up and Down.
             case DirCount.Four:
-                // Up and Down keep their own art; everything on a side collapses onto that side's pose.
-                if (folded == 0) return (0, flip);
-                if (folded == 4) return (2, flip);
-                if (mirror) return (1, flip);             // slots: 0 Up, 1 Side, 2 Down
-                return (left ? 3 : 1, false);             // slots: 0 Up, 1 Right, 2 Down, 3 Left
+            {
+                int q = Mathf.FloorToInt(Mathf.Repeat(deg + 45f, 360f) / 90f);   // 0 Up, 1 Right, 2 Down, 3 Left
+                if (q == 0) return (0, false);
+                if (q == 2) return (2, false);
+                if (mirror) return (1, q == 3);               // slots: 0 Up, 1 Side, 2 Down
+                return (q == 3 ? 3 : 1, false);               // slots: 0 Up, 1 Right, 2 Down, 3 Left
+            }
 
+            // Eight poses match the sector grid exactly, so this is the one case where sectors ARE the answer.
             default:
-                if (mirror) return (0, flip);             // slots: 0 Side
-                return (left ? 1 : 0, false);             // slots: 0 Right, 1 Left
+            {
+                int s = ViewAngleUtil.GetViewType8(deg);
+                bool left = s >= 5;
+                bool flip = mirror && left;
+                return (flip ? 8 - s : s, flip);              // slots ARE sectors: 0..7, or 0..4 when mirrored
+            }
         }
     }
 }

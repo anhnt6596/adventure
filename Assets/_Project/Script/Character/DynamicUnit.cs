@@ -27,6 +27,11 @@ public abstract class DynamicUnit : Unit
     public int Facing { get; private set; }
     public Vector3 FacingDir { get; private set; } = Vector3.forward;   // last move direction (world XZ) — where the unit is aimed
 
+    // The same aim BEFORE it was snapped to a sector. Kept because two-direction art has no up or down pose:
+    // sectors 0 and 4 straddle the vertical, so the sector index alone cannot say which way such a sprite
+    // should face, and only the unsnapped direction still knows.
+    public Vector3 AimRaw { get; private set; } = Vector3.forward;
+
     // The numbers the control loop needs; each unit kind sources them differently. Both attack numbers are
     // BASE seconds, authored at 1x attack speed — Attack() divides them by the rate.
     protected abstract float MoveSpeed { get; }
@@ -87,6 +92,7 @@ public abstract class DynamicUnit : Unit
     // MOVEMENT is not snapped: Velocity still follows the raw input, only the aim quantises.
     void Aim(float x, float z)
     {
+        AimRaw = new Vector3(x, 0f, z).normalized;
         Facing = ViewAngleUtil.GetViewType8(Mathf.Atan2(x, z) * Mathf.Rad2Deg);
         FacingDir = SectorDir(Facing);
     }

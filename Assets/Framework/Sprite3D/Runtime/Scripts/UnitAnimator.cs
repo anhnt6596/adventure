@@ -45,8 +45,9 @@ public class UnitAnimator : MonoBehaviour
     Sprite[] _frames;      // the resolved direction's list; re-resolved whenever the direction changes
     float _cursor;         // playhead, measured in FRAMES so the hit index is a plain comparison
     int _frame = -1;
-    int _dir8;
-    int _resolved = -1;    // last authored slot applied, so an unchanged direction costs nothing
+    float _dirDeg;         // screen heading in degrees, clockwise from up
+    int _resolved = -1;    // last authored slot applied, so an unchanged pose costs nothing
+    bool _flipped;
     bool _hitFired;
     Vector3 _oriScale;
 
@@ -93,12 +94,13 @@ public class UnitAnimator : MonoBehaviour
         Resolve(true);
     }
 
-    // The direction the unit reads as ON SCREEN, as an 8-sector index (0 Up, then clockwise). Cheap to call
-    // every frame — it only does work when the sector actually changes.
-    public void SetDir(int dir8)
+    // Where the unit is headed as seen ON SCREEN, in degrees clockwise from screen-up. An ANGLE, not a sector:
+    // each set quantises it at its own granularity, and a set with four poses cannot get four even quadrants
+    // out of an eight-sector grid. Cheap to call every frame — the work only happens when the pose it lands
+    // on actually changes.
+    public void SetDir(float screenDeg)
     {
-        if (_dir8 == dir8) return;
-        _dir8 = dir8;
+        _dirDeg = screenDeg;
         Resolve(false);
     }
 
@@ -106,14 +108,11 @@ public class UnitAnimator : MonoBehaviour
     {
         if (set == null || _clip == null || _clip.dirs == null) { _frames = null; return; }
 
-        var (index, flip) = set.Resolve(_dir8);
-        if (!force && index == _resolved)
-        {
-            ApplyFlip(flip);   // the slot can stay put while the flip flips (a mirrored set does exactly that)
-            return;
-        }
+        var (index, flip) = set.Resolve(_dirDeg);
+        if (!force && index == _resolved && flip == _flipped) return;
 
         _resolved = index;
+        _flipped = flip;
         _frames = index >= 0 && index < _clip.dirs.Length ? _clip.dirs[index]?.frames : null;
         ApplyFlip(flip);
         if (_frame >= 0) Draw(_frame);   // keep showing the same beat of the action, just from the new side

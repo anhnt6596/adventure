@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MainCharStatsConfig
   id: MC 1
   moveSpeed: 2
-  attackSpeed: 2
+  attackSpeed: 1
   attackPower: 5
-  attackCooldown: 0.5
+  attackCooldown: 0.3
   mass: 1
   pickupRadius: 0.3
   backpackCapacity: 20
