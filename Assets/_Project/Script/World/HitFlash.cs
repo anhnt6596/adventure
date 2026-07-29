@@ -40,8 +40,7 @@ public class HitFlash : MonoBehaviour
         if (_t <= 0f) return;
 
         _t -= Time.deltaTime;
-        if (_t > 0f) SetAmount(_t / duration * strength);   // peaks at `strength`, fading to 0
-        else Clear();                                       // done → drop the block so sprites batch again
+        SetAmount(_t > 0f ? _t / duration * strength : 0f);   // peaks at `strength`, fading to 0
     }
 
     void SetAmount(float amount)
@@ -57,9 +56,8 @@ public class HitFlash : MonoBehaviour
         }
     }
 
-    void Clear()
-    {
-        for (int i = 0; i < renderers.Length; i++)
-            if (renderers[i] != null) renderers[i].SetPropertyBlock(null);
-    }
+    // Deliberately NOT SetPropertyBlock(null). Dropping the block used to be free — this was the only thing
+    // writing one. FadeWhenBlocking now keeps its own values in the same block, and clearing it wholesale would
+    // wipe the fade every time a tree finished flashing, snapping it back to solid while the player is still
+    // standing behind it. Ending a flash means writing zero, not erasing everyone's work.
 }

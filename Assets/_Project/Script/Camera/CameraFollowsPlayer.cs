@@ -22,5 +22,11 @@ public class CameraFollowsPlayer : IStartable
         if (_player.Current != null) Aim(_player.Current);   // player may already be spawned before this runs
     }
 
-    void Aim(MCController c) => _camera.Target = c.transform;
+    // Two things want to know which body is the player's right now, and both mean the same thing by it: the
+    // camera aims at it, and anything standing between the camera and it fades out of the way.
+    void Aim(MCController c)
+    {
+        _camera.Target = c.transform;
+        BlockerFadeManager.Subject = c.transform;
+    }
 }

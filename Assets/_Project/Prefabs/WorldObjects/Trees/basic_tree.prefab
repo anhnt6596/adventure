@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 2073095464694278207}
   - component: {fileID: 8486517818659713739}
   - component: {fileID: 3085066272831242940}
+  - component: {fileID: 1904772650338197411}
   m_Layer: 0
   m_Name: basic_tree
   m_TagString: Untagged
@@ -121,6 +122,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0da7e644266248148bb0be17d91eb860, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Dropable
+--- !u!114 &1904772650338197411
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1470501848412717628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2d7f4b9c6e30158b4d7a0c3f6e9b2d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FadeWhenBlocking
+  fadedAlpha: 0.45
+  fadeSpeed: 6
+  fadeFrom: 0.2
+  fadeTo: 0.3
+  reach: 0.1
+  reachTop: -0.4
+  stickyEdge: 0.06
+  renderers: []
 --- !u!1 &6425603057950927440
 GameObject:
   m_ObjectHideFlags: 0
@@ -243,7 +264,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 9a2920f0e96024640b8363297f25de6c, type: 2}
+  - {fileID: 2100000, guid: d8a2c5b9e3f60417a8b2d5e8c1f4b7a0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

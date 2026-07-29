@@ -403,6 +403,77 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
 - [ ] **Mũi tên hướng di chuyển.** Hiện mũi tên chỉ hướng MC đang hướng/di chuyển — dùng `DynamicUnit.FacingDir`
   (world XZ, đã có). Cũng là **chỉ báo hướng bắn SoulFire** (tia MC bay theo `FacingDir`). World-space dưới chân
   MC hoặc UI; cân nhắc snap 8 hướng cho khớp sprite.
+- [x] **Vật cản mờ đi khi che player.** ✅ `FadeWhenBlocking` (gắn lên vật muốn mờ) + `BlockerFadeManager`
+  (static, tự tạo, một `LateUpdate` cho tất cả — khuôn `BillboardManager`). Subject do `CameraFollowsPlayer`
+  đẩy sang: thứ đáng lộ ra chính là thứ camera đang bám, policy đó vốn đã nằm ở đó.
+  - **Thuật toán: test rect trong screen-space, 3 tầng rẻ→đắt.** (1) cổng độ sâu — chỉ thứ ở TRƯỚC player mới
+    che được, 1 dot; (2) khoảng vuông góc tới tia camera→player so với bán kính bao — trong screen-space player
+    **là một điểm**, nên vật chỉ che được nếu tia xuyên qua nó; (3) rect chính xác từ **4 góc của quad**.
+    Tầng 3 cần thiết vì bao hình **cầu** rất sai với sprite cây (cao, hẹp) — dừng ở tầng 2 thì player đứng
+    *cạnh* gốc cũng làm cây mờ.
+  - **⚠️ Không dùng `renderer.bounds` cho rect.** Nó là AABB thế giới, mà billboard **ngả theo camera nhìn
+    xuống**, nên AABB phải bao cả góc trên-xa và dưới-gần của quad — hai điểm **không nằm trên sprite**. Chiều
+    ngang không sao (trục rộng của quad vẫn nằm ngang), nhưng **chiều dọc phồng lên**: mép trên của rect nhận
+    vơ một dải trời phía trên tán, nơi chẳng vẽ gì. Ngả càng nhiều càng sai, và sai đúng chỗ cây cần đúng nhất
+    là cái ngọn. Chiếu thẳng 4 góc quad (`sprite.bounds` + `transform.right/up`) vừa đúng vừa rẻ hơn một nửa.
+    `bounds` chỉ còn dùng ở tầng 2, nơi ước lượng thừa là vô hại.
+  - **Hai trục hỏi HAI câu khác nhau** — vì hình chiếu của player lên màn hình không đối xứng quanh thứ ta gọi
+    tên được rẻ tiền:
+    - **Ngang = một điểm** (đường tâm player). Player trên màn hình là một cột hẹp, nên tâm là đại diện công
+      bằng; coi họ là một hộp rộng thì cây mờ chỉ vì quẹt trúng vai.
+    - **Dọc = cả chiều cao người.** Player là một dải cao **dựng lên từ** điểm mà camera ghim ở tâm màn hình,
+      nên hỏi ở *một* độ cao thì chỉ bắt được cây che đúng độ cao đó — che đầu hay che chân đều báo "không che".
+  - **⚠️ Bán kính ở tầng 2 phải BẤT BIẾN THEO XOAY.** Dùng `bounds.extents.magnitude` (AABB của quad nghiêng)
+    thì bán kính **phình/teo theo yaw camera** — mỏng khi nhìn dọc trục, béo ở góc chéo. Hệ quả: hiệu ứng mạnh
+    yếu khác nhau tuỳ hướng nhìn, mà lại rất khó đoán ra. Dùng nửa đường chéo của chính quad
+    (`sprite.bounds.extents` × `lossyScale`) — nó không xoay được.
+  - **Chỉ update quanh player, qua `Core.SpatialHash`.** Thứ che được player **bắt buộc** nằm giữa camera và
+    player, nên bán kính query **chính là khoảng cách camera** (+ margin) — kích thước map không tham gia. Hash
+    rebuild theo **dirty flag** lúc register/unregister chứ không mỗi frame, vì blocker đứng yên (vật **di
+    chuyển** thì phải gọi `Rebuild` lại — hiện chưa có cái nào).
+    - Bẫy đi kèm: vật **rời** vùng query lúc đang mờ dở sẽ không được tick nữa → kẹt mờ vĩnh viễn. Manager giữ
+      danh sách `_wasNear`, cái nào rớt ra mà chưa `Settled` thì vẫn kéo theo cho tới khi về đục hẳn.
+  - **⚠️ CẢ HAI phía đều phải đo từ TÂM SPRITE, không phải `transform.position`.** Đây là cái bẫy dai nhất, và
+    nó cắn ở **hai đầu** với hai triệu chứng khác nhau:
+    - **Phía vật cản:** transform nằm dưới đất ở gốc cây, còn art thì cao hẳn lên và ngả về phía camera. Đo từ
+      gốc thì cây đang **lấy tán nuốt player** vẫn bị chấm là "xa tia" → loại ngay ở tầng 2, chưa kịp tới bước
+      test hình. Cây càng cao càng chắc trượt — đúng lý do **cái ngọn** là phần lì nhất không chịu mờ.
+      Dùng tâm sprite còn được thêm một cái: nó **chính là** thứ Unity dùng để sắp thứ tự vẽ giữa các renderer
+      trong suốt, nên tầng 1 khớp đúng với draw order mà nó đang cố đoán, thay vì xấp xỉ qua vị trí mặt đất.
+    - **Phía player:** `CameraRig.Pivot` lấy vị trí **mặt đất** → chân player luôn ở tâm màn hình, cả thân vẽ
+      **phía trên**. Test ở chân thì mọi cây che thân/đầu đều báo "không che". Lấy `bounds.center` của art
+      (không phải offset chiều cao gõ tay) nên tự đúng với mọi nhân vật, đổi art khỏi chỉnh lại. `CameraRig.Pivot` lấy vị trí
+    **mặt đất** của player → chân luôn nằm ngay tâm màn hình, còn cả thân được vẽ **phía trên** điểm đó. Test ở
+    chân thì mọi cây che thân/đầu mà chưa chạm tới chân đều báo "không che" — sai lệch **dồn hết vào chiều dọc**,
+    đúng phần ngọn, tức đúng phần thật sự che người. Lấy `bounds.center` của art player (không phải một offset
+    chiều cao gõ tay) nên tự đúng với mọi nhân vật to nhỏ khác nhau, đổi art không phải chỉnh lại.
+  - **Không chỗ nào đọc/giả định pitch.** Tất cả lấy từ camera sống: `rayDir` từ vị trí camera, `WorldToScreenPoint`
+    dùng ma trận thật, trục quad lấy từ billboard (do `BillboardManager` xoay theo `CameraViewDir.CamForward`).
+    Đổi góc rig hay xoay lúc chạy đều không phải sửa gì ở đây.
+  - **Vì sao screen-space đúng ở đây chứ không phải xấp xỉ:** sprite là billboard, luôn quay mặt vào camera →
+    dấu chân trên màn hình của nó **chính là** cái quad.
+  - **Đã loại:** raycast (project không dùng Unity physics, cây **không có Collider** — `CollisionSystem` là hệ
+    tự viết); depth/stencil trong shader (sprite `ZWrite Off`, không có depth để test).
+  - **Fade có GRADIENT, không phẳng** — shader riêng `Sprite/Flash Fade` (`SpriteFlashFade.shader/.mat`,
+    `Sprite/Flash` cũ **giữ nguyên**, chưa đụng). Dưới `fadeFrom` (% chiều cao) alpha = 1 → **gốc cây đặc
+    nguyên**, từ đó tới `fadeTo` mờ dần về `fadedAlpha`, trên nữa thì giữ. Nhờ vậy cây tránh đường mà thế giới
+    vẫn đọc ra "có một cái cây ở đó", không thành bóng ma.
+    - **⚠️ Ramp chạy theo OBJECT-SPACE Y, KHÔNG phải `texcoord.y`.** Sprite cắt từ sheet mang **sub-rect của
+      atlas** làm UV nên `texcoord.y` không hề chạy 0→1 dọc sprite; gradient dựng trên nó sẽ nằm sai độ cao, và
+      sai khác nhau ở từng sprite. Mesh thì Unity dựng từ chính `sprite.bounds`, nên object space có sẵn trục
+      đó — CPU quy đổi % của người dùng sang toạ độ ấy (`PushFadeRange`). Billboard xoay **transform** chứ không
+      xoay mesh, nên trục này luôn là "hướng lên" của sprite bất kể camera.
+  - **⚠️ `HitFlash` KHÔNG được `SetPropertyBlock(null)` nữa.** Fade dùng chung MPB với nó; null cả block thì
+    **mỗi lần cây ăn đòn xong là độ mờ bị xoá**, cây bật lại đặc trong lúc player vẫn đứng sau. Kết thúc flash =
+    ghi `_FlashAmount = 0`, không phải xoá phần của người khác. (Comment cũ nói null để sprite batch lại — đúng
+    hồi nó là thứ duy nhất ghi block.)
+  - **`reach` tách theo cạnh, cho phép ÂM.** Rect là **AABB** mà tán cây thì **thon lại phía trên** → mép trên
+    chủ yếu là trời trống, cần bóp vào (`reachTop` âm); hai bên sát pixel thật nên cần nới (`reach` dương). Một
+    số chung ép phải thoả hiệp và sai ở cả hai đầu. **Không có knob đáy**: đáy box vốn đã ôm sát thân, và cổng
+    độ sâu (phải nằm giữa camera và player) đã giữ mép dưới trung thực rồi. `stickyEdge` thì cộng đều mọi cạnh —
+    nó là chống nhấp nháy, không phải để tạo hình.
+  - Bóng **không** mờ: `SpriteShadow` tạo renderer bóng lúc runtime treo vào **root**, cố ý nằm ngoài
+    `Billboard` — nên luật auto-fill "chỉ lấy renderer dưới `Billboard`" loại nó mà không phụ thuộc thứ tự Awake.
 - [ ] **Hit flash mạnh hơn (tùy chọn).** `HitFlash` đang dùng `SpriteRenderer.color` (nhân → chỉ tối
   lại thành đỏ, không sáng rực). Muốn "pop" đỏ/trắng chói thì thêm `_Flash` vào shader sprite (lerp về
   màu flash). Giờ để tạm màu-nhân.
