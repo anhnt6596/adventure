@@ -79,7 +79,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Harvestable
+  m_EditorClassIdentifier: Assembly-CSharp::Damageable
+  hitRadius: 0.25
 --- !u!114 &2073095464694278207
 MonoBehaviour:
   m_ObjectHideFlags: 0

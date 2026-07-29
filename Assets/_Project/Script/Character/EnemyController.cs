@@ -14,7 +14,7 @@ public class EnemyController : DynamicUnit
     public void Construct(EnemyConfig config) => this.config = config;
 
     public override int Team => 2;   // enemy
-    public override IDamageableConfig DamageableConfig => config;   // Damageable reads HP/hit-radius off this
+    public override IDamageableConfig DamageableConfig => config;   // Damageable reads HP off this
 
     // Null-safe so a missing config leaves the enemy inert (Start logs it) instead of crashing the base loop.
     protected override float MoveSpeed => config != null ? config.moveSpeed : 0f;

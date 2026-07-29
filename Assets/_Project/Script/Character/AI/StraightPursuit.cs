@@ -1,7 +1,9 @@
+using System;
 using UnityEngine;
 
 // Dumb pursuit: heads straight at the target on the ground plane, no obstacle avoidance. It'll bump into
 // walls and rocks (its CollisionBody stops it sliding through) — fine for simple monsters.
+[Serializable]
 public class StraightPursuit : IPursuit
 {
     public Vector2 DirTo(AIContext ctx, Vector3 targetPos)

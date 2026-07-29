@@ -18,11 +18,4 @@ MonoBehaviour:
   attackDamage: 5
   attackSpeed: 1
   attackCooldown: 3
-  hitRadius: 0.5
-  attackRange: 0.8
-  aggroRadius: 4
-  leashRadius: 6
-  reEngageRadius: 5
-  forgetTime: 2
-  wanderRadius: 3
-  recognizeTime: 1
+  brain: {fileID: 11400000, guid: 3a7e6c5d4f8b2091c3d6e9f2a5b8c1d4, type: 2}

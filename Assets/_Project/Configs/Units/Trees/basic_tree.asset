@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageableConfig
   id: basic_tree
   maxHp: 20
-  hitRadius: 0.25
   team: 2
   drops:
   - prefab: {fileID: 9176653165436844561, guid: af26f63897f537841aca1e3dbaa7331e, type: 3}

@@ -282,6 +282,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Damageable
+  hitRadius: 0.3
 --- !u!1 &8299895054748087226
 GameObject:
   m_ObjectHideFlags: 0

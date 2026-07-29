@@ -12,11 +12,9 @@ public class MainCharStatsConfig : Config, IInventoryConfig, IDamageableConfig
     public int backpackCapacity = 20;   // total resources the character can carry
 
     [Header("Health")]
-    public float maxHp = 100f;
-    public float hitRadius = 0.5f;      // body size for being hit
+    public float maxHp = 100f;          // hit radius is NOT here — it's a field on the MC prefab's Damageable, authored against the art
 
     public int Capacity => backpackCapacity;   // IInventoryConfig
-    public float MaxHp => maxHp;               // IDamageableConfig — HP/hit-radius the MC's Damageable reads
-    public float HitRadius => hitRadius;
+    public float MaxHp => maxHp;               // IDamageableConfig — the HP the MC's Damageable reads
     public int Team => 1;                       // player (Damageable actually takes team off MCController)
 }

@@ -9,22 +9,38 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 - [ ] **Mewfrog roaming biết né.** Đang đi dạo (`WanderRoam`) mà có sinh vật **khác loài** lọt vào bán kính nhỏ
   thì bỏ chạy ra xa, thay vì cứ lững thững đi tiếp. Đây là hành vi lúc **chưa aggro** — khác với `leashRadius`
   (bỏ đuổi) và khác `PassiveAggro` (chỉ đánh trả khi bị đánh).
-  - Seam đã có: `IIdleBehavior` trong `AIStrategies`. Viết `SkittishRoam` bọc/thay `WanderRoam` — quét
-    `ctx.FindHostile(radius)` mỗi tick, có thì đi ngược hướng nó, không thì roam như cũ.
+  - Seam đã có và giờ rẻ hẳn: viết `SkittishRoam : IIdleBehavior` (`[Serializable]`, `fleeRadius` + hệ số
+    hysteresis là field của **chính nó**) — quét `ctx.FindHostile(radius)` mỗi tick, có thì đi ngược hướng nó,
+    không thì roam như cũ. Xong thì nó **tự hiện trong dropdown** slot Idle của `mewfrog Brain`; không sửa
+    `EnemyConfig`, không sửa `EnemyAI`, không đăng ký ở đâu.
   - **Cần chốt trước:** "khác loài" định nghĩa thế nào? Team không đủ (cây/đá cùng team 2 với quái, mà player
     là team 1 — nên `FindHostile` sẽ trả về **cả player lẫn không gì khác**). Có thể cần id/kind trên
     `UnitController`, gộp với mục "Đồng bộ mọi thứ nhận dmg là `UnitController`" ở Tech debt.
   - Bán kính né nên **nhỏ hơn** `aggroRadius`, và cần hysteresis (chạy tới khi ra ngoài `radius × k`) —
     không thì lại strobe đúng như vụ Chase/Attack vừa rồi.
-- [ ] **AI enemy chuyển sang asset-driven.** Mục tiêu: thêm/sửa/xoá từng thuật toán của từng con mà không phải
-  đẻ một class `XxxAI` mới mỗi lần. Hiện `MewFrogAI.Build()` chọn 4 strategy bằng code.
-  - **⚠️ Ngược với quy ước đang ghi ngay dưới** (mục Enemy: "AI brain — FSM code thuần, KHÔNG behavior-tree SO,
-    KHÔNG data-driven") và ngược quy ước chung "runtime là plain code, SO chỉ giữ config phẳng". Đây là **đổi
-    hướng có chủ ý** — cần xoá/sửa hai chỗ kia khi làm, đừng để hai luật đá nhau trong cùng file.
-  - Hướng nhẹ nhất giữ được cả hai: SO **chỉ chọn** strategy (4 enum/dropdown → factory dựng object C#), không
-    nhét tham số hay logic vào SO. Thuật toán vẫn là plain code, asset chỉ là bảng lắp ráp.
-  - Nặng hơn (behavior tree / graph trong SO) thì mới thật sự "sửa thuật toán trong asset" — nhưng đó là hệ
-    khác hẳn, chốt riêng trước khi bắt tay.
+- [x] **AI enemy chuyển sang asset-driven.** ✅ Không dùng enum→factory (không chở được tham số), mà
+  **`[SerializeReference]`**: `EnemyBrainConfig` (SO) giữ 4 slot `IIdleBehavior/IAggro/IPursuit/IAttackPlan`,
+  mỗi slot serialize **object C# thật** nên vừa *chọn* thuật toán vừa mang *tham số riêng* của nó. Thuật toán
+  vẫn là plain C# — asset chỉ là bảng lắp ráp, **không method, không logic trong SO**.
+  - `EnemyAI` hết `abstract`, xoá `MewFrogAI` (PP1 đang mượn não con ếch chỉ vì đẻ class mới thì phiền — đúng
+    triệu chứng). Prefab Mewfrog/PP1 trỏ thẳng `EnemyAI`; mỗi con một brain asset riêng.
+  - **Copy per-unit là bắt buộc:** brain asset dùng chung cả loài, mà behaviour có state (`WanderRoam._dest/_rest`)
+    → `EnemyAI.BuildBrain` gọi `Instantiate(brain)` (deep-copy cả managed reference), `OnDestroy` dọn. Không copy
+    thì cả bầy đi cùng một đích cùng một nhịp **và** asset bị dirty trên đĩa.
+  - **Luật số nằm ở đâu — chia theo CHỦ SỞ HỮU:** `EnemyConfig` là **thân** (hp/speed/damage/hitRadius + đúng
+    một con trỏ `brain`); `EnemyBrainConfig` là **trí** — cả số của FSM khung (`attackRange`, `leashRadius`,
+    `reEngageRadius`, `forgetTime`, `recognizeTime`, `retaliateRadius`) lẫn 4 behaviour. Số chỉ **một**
+    behaviour đọc thì nằm trong chính behaviour đó (`WanderRoam.radius` ← `wanderRadius` cũ,
+    `SightAggro.radius` ← `aggroRadius` cũ). Nhờ vậy hai loài stats y hệt vẫn nghĩ khác nhau, và một bộ não
+    dùng lại được cho nhiều loài.
+  - `aggroRadius` → **`retaliateRadius`**, đổi cả nghĩa: nó là bán kính FSM tự quét "đứa nào vừa đánh tôi",
+    **không phải** tầm nhìn. Con `PassiveAggro` không có tầm nhìn nhưng vẫn cần đánh trả.
+  - Thêm `SightAggro` (chủ động gây sự) — chưa con nào dùng; muốn PP1 phục kích thì đổi **một dropdown** trong
+    `pp1 Brain`, không đụng code. Đó là toàn bộ điểm của việc này.
+  - `EnemyBrainConfigEditor` vẽ 4 dropdown + field của behaviour ngay dưới, list dựng bằng `TypeCache` → thêm
+    behaviour mới = **1 class `[Serializable]`**, tự hiện trong dropdown, không phải đăng ký ở đâu cả.
+  - **Bẫy còn lại:** `[SerializeReference]` lưu tên class → **đổi tên/namespace là đứt ref, mất data**. Rename
+    thì gắn `[MovedFrom]`.
 
 - [x] **Combat State chỉnh sửa.** ✅ `DynamicUnit` giờ giữ **hai** timer, cả hai chạy từ lúc đòn bắt đầu:
   `_busyTimer` = `AttackDuration / AttackRate` → `IsBusy` khoá cả di chuyển lẫn tấn công như cũ;
@@ -326,6 +342,27 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
 
 ## 🧹 Tech debt / cleanup
 
+- [x] **`hitRadius` rời config → `[SerializeField]` trên `Damageable`.** ✅ Bán kính bị đánh là thuộc tính của
+  **thân này**, không phải của loài: hai thứ dùng chung config vẫn có thể vẽ to nhỏ khác nhau, và số này phải
+  khớp với **art** — thứ chỉ nhìn được trong prefab, cạnh gizmo. Gỡ khỏi `IDamageableConfig` + `EnemyConfig` +
+  `PropConfig` + `MainCharStatsConfig`; `basic_tree` giữ `0.25`, còn lại `0.5` (mặc định, y như cũ).
+  - Gizmo đổi sang **vòng tròn đỏ**, và giờ đọc **giá trị authored ngay trong edit mode** — trước kia `Cfg`
+    luôn null ngoài play mode nên nó vẽ cứng `0.5`, tức là vô dụng đúng ở lúc cần nó nhất.
+  - Quy ước rút ra: **số SPATIAL author cạnh art (prefab + gizmo), số của loài ở config.** `ShapeAttack.radius`
+    vốn đã theo luật này rồi; giờ `hitRadius` cùng một chỗ. `attackRange` là ngoại lệ có lý do — nó là *quyết
+    định* ("đứng cách bao xa thì dừng"), không phải kích thước, nên ở brain.
+- [ ] **Một unit = một đòn.** `DynamicUnit.Attack()` **không có tham số**, `event Action Attacked` không chở
+  thông tin đòn nào, `AnimAction` có đúng **một** slot `Attack`, và `ShapeAttack` là component gắn cứng trên
+  prefab → một con quái không thể có hai đòn. Chưa cần vội (mới 1 tuần tuổi), nhưng **con quái thứ ba** kiểu
+  vừa húc vừa phun sẽ ép trả nợ này, và nó chặn mọi thứ dính tới boss.
+  - Hình dạng: `Attack(Move m)` với `Move` = { clip nào + hitbox nào + hitFrame + cooldown riêng }. Kéo theo
+    `AnimAction.Attack` thành nhiều slot, `Attacked` chở `Move`, `ShapeAttack` thành nhiều khuôn chọn được.
+  - Làm xong cái đó thì **chọn đòn** cắm đúng vào slot `IAttackPlan` sẵn có: `[SerializeReference] List<Move>`
+    mỗi Move tự chấm điểm theo cự ly/HP/cooldown, cao nhất thắng (mô hình Monster Hunter). Cộng thêm lên hạ
+    tầng brain hiện tại, không phải làm lại. Quái 1 đòn thì selector trivial → không tốn gì.
+  - Boss thì **không** phải hệ AI khác: thêm đúng một state `Scripted` vào FSM để một component kịch bản giành
+    quyền rồi trả lại (Souls/Hollow Knight đều là mỗi boss một kịch bản riêng, dùng chung nguyên liệu). Đừng
+    fork cả cây AI, và đừng tự viết graph tool — cần thì lấy `com.unity.behavior`.
 - [ ] **Mass động theo đồ/nâng cấp.** `UnitController.Start` đang `body.SetMass(Mass)` **một lần** từ stats gốc.
   Sau này mass đổi theo trang bị / nâng cấp / buff → cần **tính lại mass khi thay đổi** (event stats-changed →
   `SetMass`), không phải set cứng ở Start. Xem `// TEMP` trong `UnitController.Start`.

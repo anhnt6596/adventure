@@ -1,15 +1,20 @@
+using System;
 using UnityEngine;
 
-// Idle roam: picks a random spot within config.wanderRadius of the spawn, walks straight to it, then stands
-// and rests a few seconds before choosing the next one. Committing to a fixed point (instead of re-aiming
-// every frame) keeps the heading — and the sprite's facing — steady: it strolls, pauses, strolls, with a
-// single clean turn at each new spot. Per-instance state, so each unit roams on its own schedule.
+// Idle roam: picks a random spot within radius of the spawn, walks straight to it, then stands and rests a few
+// seconds before choosing the next one. Committing to a fixed point (instead of re-aiming every frame) keeps the
+// heading — and the sprite's facing — steady: it strolls, pauses, strolls, with a single clean turn at each new
+// spot. Per-instance state, so each unit roams on its own schedule (EnemyAI copies the brain per unit — without
+// that copy a whole pack would share one destination and one timer).
+[Serializable]
 public class WanderRoam : IIdleBehavior
 {
-    const float Amble = 0.5f;        // fraction of full speed while strolling
-    const float Arrive = 0.3f;       // close enough to the spot to call it arrived
-    const float RestMin = 1.5f;      // pause range between strolls
-    const float RestMax = 3.5f;
+    [SerializeField] float radius = 3f;        // how far from the spawn point it is willing to amble
+    [SerializeField] float amble = 0.5f;       // fraction of full speed while strolling
+    [SerializeField] float restMin = 1.5f;     // pause range between strolls
+    [SerializeField] float restMax = 3.5f;
+
+    const float Arrive = 0.3f;                 // close enough to the spot to call it arrived — not a tuning knob
 
     Vector3 _dest;
     bool _hasDest;
@@ -25,12 +30,12 @@ public class WanderRoam : IIdleBehavior
         if (to.sqrMagnitude <= Arrive * Arrive)
         {
             _hasDest = false;
-            _rest = Random.Range(RestMin, RestMax);   // arrived — rest, then head somewhere new
+            _rest = UnityEngine.Random.Range(restMin, restMax);   // arrived — rest, then head somewhere new
             return;
         }
 
         to.Normalize();
-        ctx.controller.Move(new Vector2(to.x, to.z) * Amble);
+        ctx.controller.Move(new Vector2(to.x, to.z) * amble);
     }
 
     void PickDest(AIContext ctx)
@@ -40,9 +45,9 @@ public class WanderRoam : IIdleBehavior
         // just hold at home this round rather than walking into the water.
         for (int i = 0; i < 8; i++)
         {
-            Vector2 dir = Random.insideUnitCircle.normalized;
+            Vector2 dir = UnityEngine.Random.insideUnitCircle.normalized;
             if (dir == Vector2.zero) dir = Vector2.up;
-            float dist = Random.Range(0.4f, 1f) * ctx.config.wanderRadius;
+            float dist = UnityEngine.Random.Range(0.4f, 1f) * radius;
             Vector3 spot = ctx.home + new Vector3(dir.x, 0f, dir.y) * dist;
 
             if (CollisionSystem.Instance == null || CollisionSystem.Instance.IsWalkable(spot))

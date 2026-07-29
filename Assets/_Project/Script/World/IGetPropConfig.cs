@@ -1,4 +1,4 @@
-// Wall over ConfigRegistry for prop/destructible configs: fetch a PropConfig (HP/hit-radius/team + drops)
+// Wall over ConfigRegistry for prop/destructible configs: fetch a PropConfig (HP/team + drops)
 // by id. A Prop asks this by its own Id — it never touches the registry directly.
 public interface IGetPropConfig
 {

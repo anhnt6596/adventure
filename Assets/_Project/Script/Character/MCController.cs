@@ -9,7 +9,7 @@ public class MCController : DynamicUnit
     IDamageableConfig _dmg;
 
     public override int Team => 1;                              // player
-    public override IDamageableConfig DamageableConfig => _dmg; // HP/hit-radius from MainCharStatsConfig
+    public override IDamageableConfig DamageableConfig => _dmg; // HP from MainCharStatsConfig
 
     [Inject]
     public void Construct(ICharacterStats stats, IDamageableConfig dmg)

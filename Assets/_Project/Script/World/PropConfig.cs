@@ -2,19 +2,17 @@ using UnityEngine;
 
 // Stats + death drops for one kind of prop (Oak, Rock, Chest...). Keyed by id in ConfigRegistry like
 // EnemyConfig; a Prop resolves it by its own Id. One SO covers both concerns: IDamageableConfig
-// (HP/hit-radius/team) for the Damageable, IDeathDropableConfig (loot) for the Dropable.
+// (HP/team) for the Damageable, IDeathDropableConfig (loot) for the Dropable.
 [CreateAssetMenu(menuName = "Config/Prop")]
 public class PropConfig : Config, IDamageableConfig, IDeathDropableConfig
 {
     [Header("Stats")]
     public float maxHp = 20f;
-    public float hitRadius = 0.5f;
 
     [Header("Drops — what it provides on death")]
     public DeathDrop[] drops;
 
     public float MaxHp => maxHp;
-    public float HitRadius => hitRadius;
     public int Team => 3;   // props are always team 3 — destructible/environment, kept separate from enemies (team 2)
     public DeathDrop[] Drops => drops;
 }

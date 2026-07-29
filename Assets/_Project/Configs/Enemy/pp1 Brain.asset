@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d3f1a2b4c5d6e7f8091a2b3c4d5e6f7, type: 3}
+  m_Name: pp1 Brain
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBrainConfig
+  idle:
+    rid: 7312000000000000001
+  aggro:
+    rid: 7312000000000000002
+  pursuit:
+    rid: 7312000000000000003
+  attack:
+    rid: 7312000000000000004
+  attackRange: 0.8
+  leashRadius: 6
+  reEngageRadius: 5
+  forgetTime: 2
+  recognizeTime: 1
+  retaliateRadius: 4
+  references:
+    version: 2
+    RefIds:
+    - rid: 7312000000000000001
+      type: {class: WanderRoam, ns: , asm: Assembly-CSharp}
+      data:
+        radius: 3
+        amble: 0.5
+        restMin: 1.5
+        restMax: 3.5
+    - rid: 7312000000000000002
+      type: {class: PassiveAggro, ns: , asm: Assembly-CSharp}
+      data: {}
+    - rid: 7312000000000000003
+      type: {class: StraightPursuit, ns: , asm: Assembly-CSharp}
+      data: {}
+    - rid: 7312000000000000004
+      type: {class: SimpleAttack, ns: , asm: Assembly-CSharp}
+      data: {}

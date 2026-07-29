@@ -6,7 +6,8 @@ using UnityEngine;
 public class AIContext
 {
     public EnemyController controller;
-    public EnemyConfig config;
+    public EnemyConfig config;     // the BODY: hp, speed, damage
+    public EnemyBrainConfig brain; // the MIND: this unit's own copy — FSM distances/timers and the four behaviours
     public Vector3 home;           // spawn position — idle behaviours orbit it
     public IDamageable target;     // current target (null = none)
 
@@ -15,7 +16,7 @@ public class AIContext
 
     // Brain-owned: how close the unit gets before it stops and attacks. The projectile has no range of its own
     // — once fired it homes the target wherever it goes, so this is purely the "where do I plant my feet" call.
-    public float AttackRange => config != null ? config.attackRange : 0f;
+    public float AttackRange => brain != null ? brain.attackRange : 0f;
 
     public float DistanceToTarget()
     {

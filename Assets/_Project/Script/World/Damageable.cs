@@ -1,11 +1,16 @@
 using UnityEngine;
 
-// Anything with HP that can be hit and dies. Its stats (HP, hit radius, team) come off the Unit it sits on —
-// a Prop resolves its PropConfig by id, an enemy carries its EnemyConfig — so nothing is dragged onto the
-// prefab. What it PROVIDES on death is a separate concern: Damageable just fires Died, and a DropOnDeath (or
-// anything else — sound, XP, break FX) listens. Lives in the combat world so attacks find it.
+// Anything with HP that can be hit and dies. HP and team come off the Unit it sits on — a Prop resolves its
+// PropConfig by id, an enemy carries its EnemyConfig. The hit radius does NOT: it is authored right here on the
+// prefab, because it is a property of this BODY, not of the kind. Two things sharing a config can be drawn at
+// different sizes, and the radius has to match what you see or an attack that visually connects will miss —
+// which you can only judge against the art, in the prefab, next to the gizmo. What it PROVIDES on death is a
+// separate concern: Damageable just fires Died, and a DropOnDeath (or anything else — sound, XP, break FX)
+// listens. Lives in the combat world so attacks find it.
 public class Damageable : MonoBehaviour, IDamageable
 {
+    [SerializeField] float hitRadius = 0.5f;   // body size for being hit — the red gizmo circle. Attack REACH is a different thing; it lives on the attack component (ShapeAttack.radius).
+
     Unit _unit;                    // the unit this belongs to — supplies config + team
     CollisionBody _body;           // the physics body a knockback shoves (null = can't be shoved)
 
@@ -15,7 +20,7 @@ public class Damageable : MonoBehaviour, IDamageable
     bool _inWorld;                 // guards against a double Add/Remove
 
     public Vector3 Position => transform.position;
-    public float HitRadius => Cfg != null ? Cfg.HitRadius : 0.5f;
+    public float HitRadius => hitRadius;
     public bool IsAlive => _hp > 0f;
     public int Team => _unit != null ? _unit.Team : 2;
 
@@ -77,19 +82,20 @@ public class Damageable : MonoBehaviour, IDamageable
         gameObject.SetActive(false);   // OnDisable's LeaveWorld is then a no-op
     }
 
-    // The hit circle sits at transform.position — this must line up with where the thing is drawn,
-    // or an attack that visually connects will miss.
+    // The hit circle sits at transform.position — this must line up with where the thing is drawn, or an attack
+    // that visually connects will miss. Drawn on the ground plane (XZ), not as a sphere: the hit test is a
+    // 2D circle. Now that the radius is a field on this component it reads the AUTHORED value in edit mode —
+    // it used to fall back to a flat 0.5 with no config around, which made it useless for the one job it has.
     void OnDrawGizmos()
     {
-        float r = Cfg != null ? Cfg.HitRadius : 0.5f;
-        Gizmos.color = new Color(0.5f, 1f, 0.4f, 0.7f);
+        Gizmos.color = new Color(1f, 0.25f, 0.25f, 0.9f);
         const int seg = 24;
         Vector3 c = transform.position;
-        Vector3 prev = c + new Vector3(r, 0, 0);
+        Vector3 prev = c + new Vector3(hitRadius, 0, 0);
         for (int i = 1; i <= seg; i++)
         {
             float a = i * Mathf.PI * 2f / seg;
-            Vector3 next = c + new Vector3(Mathf.Cos(a) * r, 0, Mathf.Sin(a) * r);
+            Vector3 next = c + new Vector3(Mathf.Cos(a) * hitRadius, 0, Mathf.Sin(a) * hitRadius);
             Gizmos.DrawLine(prev, next);
             prev = next;
         }

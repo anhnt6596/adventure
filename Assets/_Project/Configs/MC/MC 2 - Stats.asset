@@ -21,4 +21,3 @@ MonoBehaviour:
   pickupRadius: 0.3
   backpackCapacity: 20
   maxHp: 100
-  hitRadius: 0.5
