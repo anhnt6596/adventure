@@ -1,9 +1,10 @@
 using UnityEngine;
 
 // The shared monster FSM. Combat is a small loop built around Idle as the DECIDE hub: every time it lands on
-// Idle it turns to face the target, then picks move (Chase) or shoot (Attack). After a shot it returns to Idle
-// to re-decide — so the unit always RE-AIMS before the next shot (its skill fires along FacingDir). Each
-// subclass only supplies the four strategies (Build). The real hit lives on the skill this triggers.
+// Idle it turns to face the target, then picks move (Chase) or shoot (Attack). A unit only ever MOVES while
+// it is loaded: swinging and recovering are both spent standing, aimed at the target, so the recovery reads
+// as the opening it is meant to be. Each subclass only supplies the four strategies (Build). The real hit
+// lives on the skill this triggers.
 [RequireComponent(typeof(EnemyController))]
 public abstract class EnemyAI : MonoBehaviour
 {
@@ -63,7 +64,8 @@ public abstract class EnemyAI : MonoBehaviour
 
         float d = _ctx.DistanceToTarget();
         if (d > _ctx.config.leashRadius) { EnterForget(); return; }
-        _state = d <= _ctx.AttackRange ? State.Attack : State.Chase;
+        if (d <= _ctx.AttackRange) _state = State.Attack;
+        else _state = State.Chase;
     }
 
     void TickChase()
@@ -72,7 +74,11 @@ public abstract class EnemyAI : MonoBehaviour
         FaceTarget();
         float d = _ctx.DistanceToTarget();
         if (d > _ctx.config.leashRadius) { EnterForget(); return; }
-        if (d <= _ctx.AttackRange) { _state = State.Attack; return; }   // reached range -> commit to attacking (NOT via Idle — that ping-pongs)
+        // Arrived: hand over AND run the attack in the same frame. Just switching state would spend this frame
+        // neither moving nor swinging, and one frame of standing still is one frame of idle art punched into
+        // the middle of a run — a visible blip on every single approach.
+        if (d <= _ctx.AttackRange) { _state = State.Attack; TickAttack(); return; }
+
         _ctx.controller.Move(_s.Pursuit.DirTo(_ctx, _ctx.target.Position));
     }
 
@@ -82,11 +88,15 @@ public abstract class EnemyAI : MonoBehaviour
         float d = _ctx.DistanceToTarget();
         if (d > _ctx.config.leashRadius) { EnterForget(); return; }   // ran clean away -> give up
         FaceTarget();                          // keep aimed — the shot leaves along FacingDir
-        if (_ctx.controller.IsBusy) return;    // a shot already wound up ALWAYS finishes (commit) — never bail
-        _s.Attack.Tick(_ctx);                  // fires if the cooldown is up; a no-op while it isn't
-        // Back to Chase either way — waiting out a cooldown must NOT freeze it here, or a target that steps
-        // out of range mid-cooldown would just be watched instead of followed.
-        _state = State.Chase;
+
+        // Swinging or recovering: the unit PLANTS. It does not close, does not re-chase. The recovery is
+        // meant to be the opening its target gets, and a monster that walks through its own recovery never
+        // gives one. This is also what keeps the approach from strobing: the unit only ever moves while it is
+        // ready to strike, so reaching range ends the movement in an attack instead of in a stop.
+        if (!_ctx.controller.CanAttack) return;
+
+        if (d <= _ctx.AttackRange) { _s.Attack.Tick(_ctx); return; }   // loaded and in reach — swing
+        _state = State.Chase;                                          // loaded but short — go and get them
     }
 
     void TickForget()

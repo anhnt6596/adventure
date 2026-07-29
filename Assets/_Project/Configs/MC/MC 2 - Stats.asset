@@ -16,7 +16,7 @@ MonoBehaviour:
   moveSpeed: 3
   attackSpeed: 1
   attackPower: 2
-  attackDuration: 0.6
+  attackCooldown: 0.6
   mass: 1
   pickupRadius: 0.3
   backpackCapacity: 20

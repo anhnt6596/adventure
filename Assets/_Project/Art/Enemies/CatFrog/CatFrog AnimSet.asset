@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 018cb5feffac6ea48b08895cf8042f9d, type: 3}
+  m_Name: CatFrog AnimSet
+  m_EditorClassIdentifier: Sprite3D::CharacterAnimSet
+  dirs: 2
+  mirror: 1
+  clips:
+  - action: 0
+    fps: 20
+    loop: 1
+    hitFrame: -1
+    dirs:
+    - frames:
+      - {fileID: -1745731753, guid: 9aed81b85d8bd474db54d27a920fc04b, type: 3}
+      - {fileID: -1825463132, guid: 9aed81b85d8bd474db54d27a920fc04b, type: 3}
+      - {fileID: 952679221, guid: 9aed81b85d8bd474db54d27a920fc04b, type: 3}
+      - {fileID: -1893985991, guid: 9aed81b85d8bd474db54d27a920fc04b, type: 3}
+      - {fileID: 1387893591, guid: 9aed81b85d8bd474db54d27a920fc04b, type: 3}
+      - {fileID: 333503945, guid: 9aed81b85d8bd474db54d27a920fc04b, type: 3}
+      - {fileID: -1201366769, guid: 9aed81b85d8bd474db54d27a920fc04b, type: 3}
+      - {fileID: -1048798696, guid: 9aed81b85d8bd474db54d27a920fc04b, type: 3}
+  - action: 1
+    fps: 20
+    loop: 1
+    hitFrame: -1
+    dirs:
+    - frames:
+      - {fileID: -133599721, guid: f2999914d2e108f439253c4e107fcfae, type: 3}
+      - {fileID: -1390486686, guid: f2999914d2e108f439253c4e107fcfae, type: 3}
+      - {fileID: 30801357, guid: f2999914d2e108f439253c4e107fcfae, type: 3}
+      - {fileID: 2127755234, guid: f2999914d2e108f439253c4e107fcfae, type: 3}
+      - {fileID: -1342398790, guid: f2999914d2e108f439253c4e107fcfae, type: 3}
+      - {fileID: 446582097, guid: f2999914d2e108f439253c4e107fcfae, type: 3}
+      - {fileID: -439416085, guid: f2999914d2e108f439253c4e107fcfae, type: 3}
+  - action: 2
+    fps: 20
+    loop: 0
+    hitFrame: 4
+    dirs:
+    - frames:
+      - {fileID: -338186541, guid: eede77baf2d6d4042916cd2ced23288e, type: 3}
+      - {fileID: -66673505, guid: eede77baf2d6d4042916cd2ced23288e, type: 3}
+      - {fileID: 1880344478, guid: eede77baf2d6d4042916cd2ced23288e, type: 3}
+      - {fileID: -2020607304, guid: eede77baf2d6d4042916cd2ced23288e, type: 3}
+      - {fileID: -2020607304, guid: eede77baf2d6d4042916cd2ced23288e, type: 3}
+      - {fileID: 1880344478, guid: eede77baf2d6d4042916cd2ced23288e, type: 3}

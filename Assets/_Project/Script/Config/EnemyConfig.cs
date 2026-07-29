@@ -7,8 +7,7 @@ public class EnemyConfig : Config, IDamageableConfig
     public float moveSpeed = 2f;
     public float attackDamage = 1f;
     public float attackSpeed = 1f;
-    public float attackDuration = 2f;   // lock while the swing plays (can't move or attack), at 1x attackSpeed — match it to the attack clip's length
-    public float attackCooldown = 0f;   // seconds between attack starts, at 1x attackSpeed; floored at attackDuration (0 = swing back-to-back)
+    public float attackCooldown = 0f;   // recovery AFTER the swing ends, at 1x attackSpeed; one attack costs swing + this (0 = swing back-to-back)
     public float hitRadius = 0.5f;   // body size for being hit (defensive). Attack reach is a different thing — it stays on the attack component.
     // attack range is spatial → it lives on the view/attack component (like ShapeAttack.radius), not here
 

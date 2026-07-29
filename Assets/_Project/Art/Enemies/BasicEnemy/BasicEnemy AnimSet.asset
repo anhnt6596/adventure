@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 018cb5feffac6ea48b08895cf8042f9d, type: 3}
+  m_Name: BasicEnemy AnimSet
+  m_EditorClassIdentifier: Sprite3D::CharacterAnimSet
+  dirs: 2
+  mirror: 1
+  clips:
+  - action: 0
+    fps: 10
+    loop: 1
+    hitFrame: -1
+    dirs:
+    - frames:
+      - {fileID: 2134843744, guid: 74183f00d75fdb94eb607b8e8185cd85, type: 3}
+      - {fileID: -1505046714, guid: 74183f00d75fdb94eb607b8e8185cd85, type: 3}
+      - {fileID: -819658462, guid: 74183f00d75fdb94eb607b8e8185cd85, type: 3}
+      - {fileID: -2050318732, guid: 74183f00d75fdb94eb607b8e8185cd85, type: 3}
+      - {fileID: -1934757061, guid: 74183f00d75fdb94eb607b8e8185cd85, type: 3}
+      - {fileID: 6687811, guid: 74183f00d75fdb94eb607b8e8185cd85, type: 3}
+      - {fileID: -606817351, guid: 74183f00d75fdb94eb607b8e8185cd85, type: 3}
+      - {fileID: 1845862716, guid: 74183f00d75fdb94eb607b8e8185cd85, type: 3}
+  - action: 1
+    fps: 10
+    loop: 1
+    hitFrame: -1
+    dirs:
+    - frames:
+      - {fileID: 1419110358, guid: c539d21d48580c147b3fff7a8ef18717, type: 3}
+      - {fileID: -871983983, guid: c539d21d48580c147b3fff7a8ef18717, type: 3}
+      - {fileID: -707221237, guid: c539d21d48580c147b3fff7a8ef18717, type: 3}
+      - {fileID: 321824460, guid: c539d21d48580c147b3fff7a8ef18717, type: 3}
+      - {fileID: 1298331096, guid: c539d21d48580c147b3fff7a8ef18717, type: 3}
+      - {fileID: 1052665119, guid: c539d21d48580c147b3fff7a8ef18717, type: 3}
+  - action: 2
+    fps: 10
+    loop: 0
+    hitFrame: 2
+    dirs:
+    - frames:
+      - {fileID: -183536290, guid: e020b27180e8cbf40b06af37ea7b8065, type: 3}
+      - {fileID: 2107608355, guid: e020b27180e8cbf40b06af37ea7b8065, type: 3}
+      - {fileID: -1062409129, guid: e020b27180e8cbf40b06af37ea7b8065, type: 3}
+      - {fileID: 1227500336, guid: e020b27180e8cbf40b06af37ea7b8065, type: 3}

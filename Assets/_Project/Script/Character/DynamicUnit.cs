@@ -13,11 +13,11 @@ public abstract class DynamicUnit : Unit
     float _busyTimer;       // the swing itself — locks the unit out of moving and attacking
     float _cooldownTimer;   // gates the NEXT attack only; the unit is free to move while it runs
 
-    // Two separate windows, both starting at the moment an attack fires. IsBusy is the commitment: the swing
-    // is playing and nothing else can happen. The cooldown outlives it and only says "no attack yet" — walking
-    // away mid-cooldown is the whole point, that's the opening the player gets.
+    // Two nested windows. IsBusy is the commitment: the swing is playing and nothing else can happen. The
+    // cooldown starts at the same moment but RUNS PAST it — swing first, then recovery — so it always outlives
+    // the lock and on its own says everything about when the next attack may start.
     public bool IsBusy => _busyTimer > 0f;
-    public bool CanAttack => _busyTimer <= 0f && _cooldownTimer <= 0f;
+    public bool CanAttack => _cooldownTimer <= 0f;
     public Vector3 Velocity { get; private set; }
     public event Action Attacked;
 
@@ -31,14 +31,21 @@ public abstract class DynamicUnit : Unit
     // BASE seconds, authored at 1x attack speed — Attack() divides them by the rate.
     protected abstract float MoveSpeed { get; }
     protected abstract float AttackSpeed { get; }
-    protected abstract float AttackDuration { get; }   // how long the swing locks the unit
     protected abstract float AttackCooldown { get; }   // seconds between attack STARTS
     protected abstract float Mass { get; }
 
     // Public and sanitised. A 0 or negative stat would divide the timers to infinity and freeze the swing
     // animation outright, so it reads as 1x. The view scales the attack clip by this, which is what keeps the
-    // sprite in step with the timers below — including the Hit AnimationEvent that lands the damage.
+    // sprite in step with the timers below — including the hit frame that lands the damage.
     public float AttackRate => AttackSpeed > 0f ? AttackSpeed : 1f;
+
+    // How long the swing locks the unit, measured from the attack ANIMATION and pushed in by the view. There
+    // is deliberately no config number for it: the lock and the swing are one thing seen twice, so a second
+    // hand-typed value could only ever agree or be a bug. Wanting a longer gap between attacks is
+    // AttackCooldown's job — and that one leaves the unit free to move, which a longer lock would not.
+    float _swingDuration;
+
+    public void SetSwingClipLength(float seconds) => _swingDuration = Mathf.Max(0f, seconds);
 
     // Public because attack skills read it off their owner (a ShapeAttack on an enemy deals the enemy's damage,
     // the same one on the MC deals the MC's) — the number's source differs per kind, the skill doesn't care.
@@ -95,18 +102,18 @@ public abstract class DynamicUnit : Unit
     {
         if (!CanAttack) return;
 
-        // Attack speed scales the swing AND the gap by the same factor, the way action games have always done
-        // it: the lock:gap ratio holds at every rate, so a fast attacker feels like the same attack sped up
-        // rather than a different one. Scaling only the gap would make attack speed a dead stat the moment the
-        // clamp below caught it — a +20% buff that visibly does nothing.
+        // Attack speed scales the swing AND the recovery by the same factor, the way action games have always
+        // done it: the ratio between them holds at every rate, so a fast attacker feels like the same attack
+        // sped up rather than a different one, and the stat can never go dead.
         float rate = AttackRate;
-        float duration = Mathf.Max(0f, AttackDuration) / rate;
+        float duration = _swingDuration / rate;
 
         _busyTimer = duration;
-        // Both windows run from HERE, the start of the attack — so the cooldown is the full attack cadence,
-        // not a gap tacked on after the swing. The clamp is a config guard only: dividing both by the same rate
-        // preserves their order, so a cooldown authored above the duration can never fall under it.
-        _cooldownTimer = Mathf.Max(AttackCooldown / rate, duration);
+
+        // The cooldown is the recovery that begins where the SWING ENDS, so the timer spans both: one attack
+        // costs duration + cooldown. Carrying the swing inside it is what lets a single countdown express that
+        // — and it is why the cooldown can never expire mid-swing, with no clamp needed to promise it.
+        _cooldownTimer = duration + AttackCooldown / rate;
         Attacked?.Invoke();
     }
 

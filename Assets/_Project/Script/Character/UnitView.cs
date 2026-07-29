@@ -12,39 +12,42 @@ public class UnitView : MonoBehaviour
     {
         if (character == null) character = GetComponent<DynamicUnit>();
         if (characterAnimator == null) characterAnimator = GetComponentInChildren<UnitAnimator>();
+
+        // The view owns the animation, so it is the only thing that can measure the swing. Pushed once —
+        // the set does not change at runtime — so the combat lock never has to restate the clip's length.
+        if (character != null && characterAnimator != null)
+            character.SetSwingClipLength(characterAnimator.LengthOf(AnimAction.Attack));
     }
 
     protected virtual void OnEnable() => character.Attacked += PlayAttack;
     protected virtual void OnDisable() => character.Attacked -= PlayAttack;
 
-    // Push the aim BEFORE the trigger. The Animator consumes triggers in its own update, which runs after
-    // Update — where the attack fires — and before LateUpdate, so leaving the direction to LateUpdate would
-    // pick the attack state off the PREVIOUS frame's facing. An AI that turns to its target and swings in the
-    // same Update (EnemyAI.TickAttack does exactly that) would swing the way it used to be turned.
+    // Aim first, then start the swing, so the very first frame drawn is already the right side of the unit —
+    // an AI that turns to its target and attacks in the same Update (EnemyAI.TickAttack does exactly that)
+    // would otherwise show one frame of the old facing.
     //
-    // The swing also plays as fast as the unit swings, so the clip stretches with the busy window instead of
-    // being cut off or leaving a dead tail — and the Hit AnimationEvent inside it lands at the same fraction
-    // of the swing at every attack speed, no separate timing to keep in sync.
+    // The swing plays as fast as the unit swings, so the clip stretches with the busy window instead of being
+    // cut off or leaving a dead tail — and the hit frame inside it lands at the same fraction of the swing at
+    // every attack speed, no separate timing to keep in sync.
     void PlayAttack()
     {
         PushDir();
         characterAnimator.PlaybackSpeed = character.AttackRate;
-        characterAnimator.TriggerAttack();
+        characterAnimator.Play(AnimAction.Attack);
     }
 
     protected virtual void LateUpdate()
     {
         // Aim goes out EVERY frame, mid-swing included. The attack lock can run for seconds while the AI keeps
-        // turning to track its target, and on a mirrored unit the facing IS the sprite flip — freezing it
-        // leaves the whole swing aimed where the fight started. Safe to keep pushing: entering an attack state
-        // needs the Attack trigger, so a direction change on its own can't restart the swing.
+        // turning to track its target; the animator re-reads the direction without disturbing the playhead, so
+        // this only ever changes which side of the swing is drawn, never how far along it is.
         PushDir();
 
-        if (character.IsBusy) return;   // mid-swing: State stays on attack, don't let idle/move claim it back
+        if (character.IsBusy) return;   // mid-swing: leave the action alone, don't let idle/move claim it back
         characterAnimator.PlaybackSpeed = 1f;   // swing over — idle/move play at their authored rate
 
         bool moving = character.Velocity.sqrMagnitude > 0.0001f;
-        characterAnimator.UpdateState(moving ? 1 : 0);
+        characterAnimator.Play(moving ? AnimAction.Move : AnimAction.Idle);
     }
 
     // World facing minus the camera's own view sector = which way the unit reads on screen. Recomputed every
@@ -52,6 +55,6 @@ public class UnitView : MonoBehaviour
     void PushDir()
     {
         int screenDir = (character.Facing - CameraViewDir.CurrentViewDir8 + 8) % 8;
-        characterAnimator.UpdateDir(screenDir);
+        characterAnimator.SetDir(screenDir);
     }
 }

@@ -21,9 +21,13 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
     có timing thứ hai phải canh. Dùng `animator.speed` (global, giới hạn trong cửa sổ swing) thay vì per-state
     speed multiplier: 3 controller hiện tại đều để `m_SpeedParameterActive: 0`, và cách này đúng cho cả
     controller thêm sau.
-  - **Còn nợ:** `attackDuration` trong config và độ dài clip attack là hai số rời nhau, không ai ràng buộc ai —
-    lệch thì swing bị cắt ngang (duration ngắn hơn clip) hoặc đứng đơ một nhịp (dài hơn). Nên soi lại 4 asset
-    (`MC 1` 0.5 · `MC 2` 0.6 · `mewfrog` 2 · `pp1` 3) cho khớp clip, hoặc lấy thẳng độ dài clip thay vì gõ tay.
+  - ✅ **Hết nợ `attackDuration` lệch clip — field đã XOÁ hẳn.** Độ dài khoá giờ chỉ đến từ clip:
+    `UnitView` đo `UnitAnimator.LengthOf(Attack)` = `frames.Length / fps` rồi đẩy vào
+    `DynamicUnit.SetSwingClipLength`. Cả nó lẫn animation cùng chia/nhân `AttackRate` nên **khoá và swing kết
+    thúc đúng cùng một thời điểm ở mọi attack speed** (đại số bằng nhau, không phải xấp xỉ). Số cũ của 4 asset
+    đã dời sang `attackCooldown` (`MC 1` 0.5 · `MC 2` 0.6 · `mewfrog` 2 · `pp1` 3) nên **nhịp đánh giữ
+    nguyên**, chỉ khác là giờ chỉ bị root đúng đoạn vung. Muốn giãn nhịp thì dùng `attackCooldown` — nó không
+    khoá di chuyển; **không** thêm lại một số "duration" thứ hai.
 - [x] **Bot AI chỉnh sửa.** ✅ Nguyên nhân **không nằm ở AI** — `EnemyAI.TickAttack` update `Facing` đúng. Lỗi ở
   `UnitView`: hướng chỉ được đẩy xuống animator trong `LateUpdate`, mà `LateUpdate` lại `return` sớm khi
   `IsBusy`. Hai hệ quả cộng dồn:
@@ -50,6 +54,19 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 - [ ] **Damage do chạm / DoT + cooldown theo nguồn.** Quái húc / đứng trong lửa: mỗi *nguồn* có nhịp
   trừ máu riêng (vd 0.5s/lần), độc lập nhau. KHÔNG i-frame ở người nhận (mọi dmg đều tính). Làm khi
   dựng enemy.
+
+- [ ] **Sprite animation bỏ AnimatorController → `CharacterAnimSet` (đang làm).** Gốc của cả hai vấn đề "animator
+  cực" và "xoay cam phá animation đang chạy" là **hướng bị nướng vào identity của state**: state = hành động ×
+  hướng. Nên số state nhân lên (8 hướng = 24 state + 24 transition/nhân vật), và đổi hướng = đổi state = mất
+  playhead. Soi `.anim` ra thì nội dung thật của một clip chỉ là **mảng sprite + fps + 1 event `OnHit`** — toàn
+  bộ máy trạng thái chỉ để chọn phát mảng nào.
+  - **Đã code:** `CharacterAnimSet` (data: dirs 2/4/8 + mirror + clip theo action), `UnitAnimator` viết lại chạy
+    frame bằng code (giữ nguyên GUID nên `animatorSource` trong prefab không đứt), `UnitView` đổi sang
+    `Play(AnimAction)` / `SetDir(dir8)`, tool `Assets > Sprite3D > Build Character Anim Set`.
+  - **Còn phải làm (cần Unity):** chạy tool trên 3 folder art → gán set vào 4 prefab → xoá `Animator` component +
+    3 `.controller` + 24 `.anim` sau khi verify.
+  - `hitFrame` là **index**, không phải AnimationEvent → hết cửa lệch. Kéo theo: `attackDuration` có thể đọc
+    thẳng `frames.Length / fps` thay vì gõ tay (xem mục "Còn nợ" ở Combat State).
 
 ## 🌳 Content systems
 

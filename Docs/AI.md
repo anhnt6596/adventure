@@ -71,7 +71,7 @@ Prefab MewFrog: `EnemyController` + `MewFrogAI` + `EnemyView`/`UnitAnimator` (c�
 - **Hành vi mới** (vd kiểu đánh phức tạp) → viết 1 class strategy (`class Kiter : IAttackPlan`), cắm vào. Khung + quái khác không đụng.
 
 ## Số trong `EnemyConfig`
-`attackRange` (dừng-chân-để-bắn), `aggroRadius`, `leashRadius`, `reEngageRadius`, `forgetTime`, `wanderRadius`, `attackDuration` (+ `moveSpeed`/`attackSpeed`/`attackDamage`/`hp`/`hitRadius`). Tầm đánh **không** ở skill nữa — brain giữ.
+`attackRange` (dừng-chân-để-bắn), `aggroRadius`, `leashRadius`, `reEngageRadius`, `forgetTime`, `wanderRadius`, `attackCooldown` (+ `moveSpeed`/`attackSpeed`/`attackDamage`/`hp`/`hitRadius`). Tầm đánh **không** ở skill nữa — brain giữ.
 
 ## Phụ thuộc & lưu ý
 - **Player phải hittable để combat thật.** Enemy nhắm qua CombatWorld (IDamageable). MC hiện *chưa* là IDamageable (TODO "Máu Player") → MewFrog chase/attack được nhưng đòn **whiff** cho tới khi làm MC hittable. Test tạm bằng một Damageable team-1 (dummy).
