@@ -182,6 +182,35 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 
 ## 🌳 Content systems
 
+- [ ] **Dựng Plant1 + Plant2 thành quái, y khuôn PP1.** Art nằm sẵn ở `Assets/DraftArt/Predator plant/Plant1`
+  và `Plant2`, cấu trúc thư mục **giống hệt** `Plant3` (đã thành PP1): `Attack/Death/Hurt/Idle/Run/Walk`.
+  Làm được **hoàn toàn ngoài Unity** — đã kiểm, chốt bên dưới. Xong thì sửa AI để thành hai loài khác nhau.
+  - **Chỗ tưởng là chặn nhưng không phải — CẮT SPRITE SHEET.** Meta trong DraftArt đang `spriteMode: 0`,
+    `nameFileIdTable: {}` (chưa cắt), còn PP1 đã có 16 sprite con. Sinh tay được vì lưới suy ra bằng số học:
+    - Cell **64×64**, cắt **trái→phải, hàng TRÊN trước** (frame 0 ở `y = height-64`).
+    - Kích thước sheet Plant1/Plant2 **trùng khít** Plant3: `Idle 256×256` (4×4 = 16 frame),
+      `Attack 448×256` (7×4 = 28). Cùng bộ art nên cùng cell.
+    - `spriteID` (32 hex) và `internalID` (int32) **không cần Unity sinh** — chỉ cần **duy nhất trong file** và
+      khớp giữa mục sprite ↔ `nameFileIdTable` ↔ `fileID` mà AnimSet trỏ tới. Tự phát thoải mái.
+  - **Các bước** (mẫu để soi: `Plant3_*.png.meta`, `Predator plant AnimSet.asset`, `PP1.prefab`, `pp1.asset`,
+    `pp1 Brain.asset`):
+    1. Chuyển art sang `_Project/Art/Enemies/...` kèm `.meta` (giữ GUID, đừng để đứt ref).
+    2. Sinh meta đã cắt cho các `_full.png`.
+    3. `CharacterAnimSet` — `dirs: 4`, `mirror: 0`, `fps: 6`, frame theo action, `hitFrame` cho Attack.
+    4. Prefab — nhân bản `PP1.prefab`, trỏ lại AnimSet + sprite.
+    5. `EnemyConfig` + `EnemyBrainConfig`, **team riêng cho mỗi loài** (4, 5 — xem "CHIA LẠI PHE").
+    6. Đăng ký vào `Config Registry.asset` + `Prefab Registry.asset`.
+  - **⚠️ BA THỨ PHẢI CANH BẰNG MẮT, tôi không suy ra được — chốt trước thì mai chạy một mạch:**
+    - **`hitFrame`.** PP1 để `4`. Đòn khác thì frame chạm khác; đây là thứ chỉ nhìn animation mới biết.
+    - **Số frame THẬT mỗi action.** Sheet 4×4 = 16 ô nhưng vài ô cuối có thể trống — không đọc được pixel, nên
+      sẽ lấy tạm đúng số frame PP1 dùng. Lệch thì animation hụt hoặc chớp ô trống, liếc là thấy.
+    - **`hitRadius` + `size`/`forwardOffset` của `ShapeAttack`.** Lấy PP1 làm mặc định rồi canh lại theo art.
+  - **Chưa chốt — hai con này là loài gì?** Quyết định `brain`: hung hơn PP1? Bỏ khung giờ 6–10h? Săn chủ động
+    (`SightAggro`) thay vì `PredatorAggro`? Đây là phần **rẻ nhất**, chỉ đổi dropdown trong brain asset.
+  - Không cần `FadeWhenBlocking` — đây là quái, không phải vật cản đường.
+  - **Cùng công thức dùng lại được ngay:** `DraftArt/slime` có **Slime1/2/3** cấu trúc y hệt, và `DraftArt/Trees`,
+    `Crystals`, `Objects_separately` còn nguyên.
+
 - [ ] **Drops → Resources.** `DeathDrop.prefab` đang là ref trực tiếp → nằm luôn trong RAM cùng config.
   Chuyển sang **id/path load qua Resources** (load khi cần, free sau). Xem `// TODO(drops)` trong
   `DamageableConfig.cs`.
