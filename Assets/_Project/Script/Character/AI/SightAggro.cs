@@ -12,5 +12,10 @@ public class SightAggro : IAggro
 {
     [SerializeField] float radius = 4f;
 
-    public IDamageable Detect(AIContext ctx) => ctx.FindHostile(radius);
+    public IDamageable Detect(AIContext ctx)
+    {
+        var found = ctx.FindHostile(radius);
+        if (found != null) ctx.committed = true;   // seeing it and picking it IS the decision to go after it
+        return found;
+    }
 }

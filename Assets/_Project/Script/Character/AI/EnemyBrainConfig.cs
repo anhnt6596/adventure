@@ -34,5 +34,23 @@ public class EnemyBrainConfig : ScriptableObject
     public float recognizeTime = 1f;    // reaction delay: on first turning aggressive (spotted / got hit), freeze in Idle this long before engaging
     public float retaliateRadius = 4f;  // hit by something it can't identify -> look this far for the culprit. NOT sight range (that's SightAggro's); even a blind passive monster needs it. Keep ≤ CombatWorld hash cell.
 
+    // The creature's waking window, in hours of the day. It is a trait of the ANIMAL, not of any one behaviour,
+    // which is why it sits here: a predator plant that only hunts at dawn wants its roaming AND its hunting to
+    // agree on when dawn is, and two copies of the number would drift. Behaviours read it via ctx.IsActiveHours.
+    // The default 0..24 means always awake, so a monster that doesn't care never notices this exists.
+    [Header("Body clock")]
+    public float activeFrom = 0f;
+    public float activeTo = 24f;
+
+    // Wraps past midnight when the window runs backwards (a night creature: 20 -> 4).
+    public bool IsActiveAt(float hour)
+    {
+        if (activeFrom == activeTo) return true;                          // degenerate window -> always awake
+        if (activeTo > activeFrom) return hour >= activeFrom && hour < activeTo;
+        return hour >= activeFrom || hour < activeTo;
+    }
+
+    public bool HasBodyClock => activeFrom != activeTo && !(activeFrom <= 0f && activeTo >= 24f);
+
     public bool IsComplete => idle != null && aggro != null && pursuit != null && attack != null;
 }

@@ -18,6 +18,39 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
     `UnitController`, gộp với mục "Đồng bộ mọi thứ nhận dmg là `UnitController`" ở Tech debt.
   - Bán kính né nên **nhỏ hơn** `aggroRadius`, và cần hysteresis (chạy tới khi ra ngoài `radius × k`) —
     không thì lại strobe đúng như vụ Chase/Attack vừa rồi.
+- [x] **PP1 (Predator plant): cây phục kích có giờ hoạt động.** ✅ Làm hoàn toàn bằng behaviour mới + sửa asset,
+  **không đụng FSM khung** — đúng lời hứa của nấc 2. Đặc trưng con này: **thức 6h–10h**.
+  - **Idle** = `WanderRoam` với `activeHoursOnly` (field mới) + `rest 20–45s`, `radius 1`: ngoài giờ đứng chết,
+    trong giờ thi thoảng nhích một đoạn ngắn. Không đẻ class mới vì khác biệt duy nhất là *một cái cổng* và
+    *mấy con số* — đúng thứ nên nằm trong asset.
+  - **Aggro** = `PredatorAggro`: **mọi giờ** cắn bất cứ thứ gì lọt vào `attackRange` (đớp cơ hội, **không**
+    dấn thân → vẫn đứng yên); **trong giờ** săn trong `huntRadius` (4) và **dấn thân luôn**, không cần bị đánh.
+  - **Pursuit** = `StraightPursuit` — chỉ chạy khi đã dấn thân, vì "không đuổi" **không** cài ở pursuit mà ở
+    chỗ giữ target (xem dưới). Đã thử `AmbushPursuit` (trả `Vector2.zero` khi chưa committed) rồi **bỏ**: nó
+    khiến cây đứng im nhưng vẫn ở state Chase và vẫn `FaceTarget` → quay đầu bám theo con mồi, sai vibe.
+  - **`AIContext.committed` + `EnemyAI.Reflex` — luật FSM mới:** `committed` = "trận này thật rồi", bật khi
+    **bị đánh** (`OnDamaged`) hoặc khi **aggro behaviour CHỌN** một mục tiêu nó định đuổi (`SightAggro`,
+    `PredatorAggro` lúc trong giờ). Chưa committed = `Reflex`: **không giữ target quá cái khoảnh khắc ra đòn** —
+    không đuổi, không bám. Quay **đúng một frame** — frame ra đòn — rồi `Release()` về Idle như chưa có gì.
+    - Quay ở đúng frame đó là **bắt buộc**, không phải trang trí: `ShapeAttack` của PP1 là Rect ném **về phía
+      trước** (`forwardOffset 0.4`), không quay thì cú đớp bay theo hướng roam lần cuối và con mồi đứng ngay
+      sát sườn vẫn thoát. Quay ở đây mà **không** quay ở các frame trước chính là ranh giới giữa *ngắm* và *bám*.
+    - Thứ tự đúng: `Face` ghi `FacingDir` → `Attack` bắn → `UnitView.PlayAttack` đẩy hướng đó vào animation,
+      tất cả trong cùng một frame. Buông target ngay sau đó không ảnh hưởng đòn đang vung: `IsBusy` khoá di
+      chuyển suốt swing nên `FacingDir` đứng yên, và `ShapeAttack` trúng bằng overlap chứ không đọc target.
+    - `Release()` là chỗ **duy nhất** xoá `committed` — giữ lâu hơn thì một phát đánh biến ambusher thành con
+      chuyên đuổi vĩnh viễn.
+    - Hệ quả: `SightAggro` **phải** set `committed` (nhìn thấy và chọn = quyết định đi tới), không thì con nào
+      dùng nó cũng tụt thành reflex-snapper.
+  - **`activeFrom`/`activeTo` đặt ở `EnemyBrainConfig`**, không phải trong từng behaviour: giờ thức là nết của
+    **con vật**, mà cả roam lẫn săn đều phải đồng ý với nhau về "sáng sớm là mấy giờ"; hai bản số sẽ lệch nhau.
+    Đọc qua `ctx.IsActiveHours`. Mặc định `0..24` = luôn thức → con nào không quan tâm thì không thấy nó tồn tại.
+    Có wrap qua nửa đêm (`20 → 4`) cho con ăn đêm sau này.
+  - `EnemyAI` inject `DayNightClock` (đã có sẵn trong `GameScope`), và **cảnh báo** nếu brain có khung giờ thật
+    mà không inject được clock — hỏng kiểu này trông y hệt lỗi chỉnh số, phải nói ra.
+  - Luật `Reflex` bịt luôn một cái hở mà bản `AmbushPursuit` từng có: hồi đó cây đớp xong **giữ** target nên
+    `Detect` không chạy lại, con mồi đứng sẵn trong `huntRadius` lúc 6h gõ thì cây không bao giờ dấn thân. Giờ
+    reflex luôn trả về Idle không target → `Detect` chạy mỗi tick → 6h là vồ ngay.
 - [x] **AI enemy chuyển sang asset-driven.** ✅ Không dùng enum→factory (không chở được tham số), mà
   **`[SerializeReference]`**: `EnemyBrainConfig` (SO) giữ 4 slot `IIdleBehavior/IAggro/IPursuit/IAttackPlan`,
   mỗi slot serialize **object C# thật** nên vừa *chọn* thuật toán vừa mang *tham số riêng* của nó. Thuật toán

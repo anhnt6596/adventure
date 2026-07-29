@@ -13,6 +13,7 @@ public class WanderRoam : IIdleBehavior
     [SerializeField] float amble = 0.5f;       // fraction of full speed while strolling
     [SerializeField] float restMin = 1.5f;     // pause range between strolls
     [SerializeField] float restMax = 3.5f;
+    [SerializeField] bool activeHoursOnly;     // stand dead still outside the creature's waking window (EnemyBrainConfig's). A long rest range on top of this is what makes something that only stirs now and then, at dawn.
 
     const float Arrive = 0.3f;                 // close enough to the spot to call it arrived — not a tuning knob
 
@@ -22,6 +23,10 @@ public class WanderRoam : IIdleBehavior
 
     public void Tick(AIContext ctx)
     {
+        // Off-hours: stop where it is and drop the destination, so waking up picks a fresh spot rather than
+        // resuming a walk it started hours ago toward somewhere nothing is any more.
+        if (activeHoursOnly && !ctx.IsActiveHours) { _hasDest = false; return; }
+
         if (_rest > 0f) { _rest -= Time.deltaTime; return; }   // resting — stand still, hold facing
 
         if (!_hasDest) PickDest(ctx);
