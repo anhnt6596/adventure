@@ -4,9 +4,11 @@ using Lean.Pool;
 
 // A soul-fire projectile — same for player and enemy. It flies straight in the caster's facing direction up to
 // Range, hitting the first hostile it touches (damage + burst) or bursting wide at the end if it hits nothing.
-// As it travels it SEEKS: its reach + steer strength ramp up (to their max by rampUpBy of Range), bending it
-// toward a nearby target — and it prefers the OPPOSING combat team (a player shot, team 1, chases team 2; an
-// enemy shot, team 2, chases team 1). ONE prefab / particle for everyone. Pooled: every field is (re)set in Launch.
+// As it travels it SEEKS: each frame it scans a cone ahead of its travel direction and bends toward the best
+// target in there — so it never turns back on something it already flew past, and it prefers the OPPOSING combat
+// team (a player shot, team 1, chases team 2; an enemy shot, team 2, chases team 1). A hit, unlike the seek, is
+// direction-blind: anything touching the flame stops it. ONE prefab / particle for everyone. Pooled: every field
+// is (re)set in Launch.
 [DisallowMultipleComponent]
 public class SoulFire : MonoBehaviour
 {
@@ -23,9 +25,9 @@ public class SoulFire : MonoBehaviour
     [SerializeField] float hitPadding = 0.15f; // contact reach past the target's hit circle
 
     [Header("Seek")]
-    [SerializeField] float seekRadius = 1.5f;  // seek reach at full ramp (≤ CombatWorld cell 8)
-    [SerializeField] float steerRate = 180f;   // max turn deg/sec at full ramp — small = a gentle nudge, not homing
-    [SerializeField, Range(0f, 1f)] float rampUpBy = 0.5f;   // reach + steer hit their max by this fraction of Range flown, then hold
+    [SerializeField] float seekRange = 3f;     // how far ahead the cone reaches (≤ CombatWorld cell 8)
+    [SerializeField, Range(0f, 180f)] float seekAngle = 60f;  // full cone opening around the travel direction
+    [SerializeField] float steerRate = 180f;   // max turn deg/sec toward the scanned target — small = a gentle nudge, not homing
 
     enum Phase { Spawning, Flying, Bursting }
     Phase _phase;
@@ -100,26 +102,21 @@ public class SoulFire : MonoBehaviour
 
     void Flying(float dt)
     {
-        // Seek reach + steer strength ramp with distance flown (t, maxing out by rampUpBy of Range): near the
-        // muzzle it flies almost straight, farther out it reaches wider and turns harder toward a target.
-        float rampDist = _range * rampUpBy;
-        float t = rampDist > 0f ? Mathf.Clamp01(_traveled / rampDist) : 1f;
-        float reach = seekRadius * t;
+        Scan(out var contact, out var target);
 
-        var near = NearestHostile(transform.position, Mathf.Max(hitPadding, reach));
-        if (near != null)
+        if (contact != null)   // touching — deal the hit (always, from the muzzle on, from any direction)
         {
-            Vector3 to = near.Position - transform.position; to.y = 0f;
+            Vector3 to = contact.Position - transform.position; to.y = 0f;
             float dist = to.magnitude;
-            if (dist <= near.HitRadius + hitPadding)   // touching — deal the hit (always, from the muzzle on)
-            {
-                near.TakeDamage(_damage, _source != null ? (object)_source : this);
-                if (_knockback > 0f && dist > 1e-4f) near.ApplyKnockback((to / dist) * _knockback);
-                StartBurst(burstScale);
-                return;
-            }
-            if (dist <= reach && dist > 1e-4f)   // within the growing seek reach — steer with the growing rate
-                _dir = Vector3.RotateTowards(_dir, to / dist, steerRate * t * Mathf.Deg2Rad * dt, 0f);
+            contact.TakeDamage(_damage, _source != null ? (object)_source : this);
+            if (_knockback > 0f && dist > 1e-4f) contact.ApplyKnockback((to / dist) * _knockback);
+            StartBurst(burstScale);
+            return;
+        }
+        if (target != null)   // something ahead in the cone — bend toward it
+        {
+            Vector3 to = target.Position - transform.position; to.y = 0f;
+            _dir = Vector3.RotateTowards(_dir, to.normalized, steerRate * Mathf.Deg2Rad * dt, 0f);
         }
 
         float step = speed * dt;
@@ -149,33 +146,53 @@ public class SoulFire : MonoBehaviour
         if (k >= 1f) LeanPool.Despawn(gameObject);
     }
 
-    // Best hostile within radius of a centre (Overlap filters own team + alive). Prefers the priority team, then
-    // the nearest — so the shot chases an enemy over a bystander, and the closest of those.
-    IDamageable NearestHostile(Vector3 centre, float radius)
+    // One sweep of the hostiles around the flame (Overlap filters own team + alive), split into the two things
+    // the shot cares about: `contact` is anything already touching it, whatever the direction — a hit can't be
+    // dodged by standing off to the side; `target` is the best hostile inside the cone ahead, the one to steer at.
+    void Scan(out IDamageable contact, out IDamageable target)
     {
-        CombatWorld.Instance.Rebuild();
-        CombatWorld.Instance.Overlap(centre, radius, _team, _found);
+        contact = null;
+        target = null;
 
-        IDamageable best = null;
-        float bestSq = float.MaxValue;
-        bool bestPriority = false;
         Vector3 from = transform.position;
+        CombatWorld.Instance.Rebuild();
+        CombatWorld.Instance.Overlap(from, Mathf.Max(hitPadding, seekRange), _team, _found);
+
+        float minDot = Mathf.Cos(seekAngle * 0.5f * Mathf.Deg2Rad);
+        float contactSq = float.MaxValue, targetSq = float.MaxValue;
+        bool contactPriority = false, targetPriority = false;
+
         for (int i = 0; i < _found.Count; i++)
         {
             var c = _found[i];
             bool priority = c.Team == _priorityTeam;
             Vector3 d = c.Position - from; d.y = 0f;
             float sq = d.x * d.x + d.z * d.z;
-            // a priority-team target beats any non-priority one; within the same class, prefer the nearer.
-            if (best == null || (priority && !bestPriority) || (priority == bestPriority && sq < bestSq))
+
+            float touch = c.HitRadius + hitPadding;
+            if (sq <= touch * touch && Better(priority, sq, contact, contactPriority, contactSq))
             {
-                best = c;
-                bestSq = sq;
-                bestPriority = priority;
+                contact = c;
+                contactPriority = priority;
+                contactSq = sq;
+            }
+            // The cone test needs a direction, so it skips anything sitting on the flame — that one is a
+            // contact anyway, and the hit above already claimed it.
+            if (sq > 1e-8f && sq <= seekRange * seekRange
+                && Vector3.Dot(_dir, d / Mathf.Sqrt(sq)) >= minDot
+                && Better(priority, sq, target, targetPriority, targetSq))
+            {
+                target = c;
+                targetPriority = priority;
+                targetSq = sq;
             }
         }
-        return best;
     }
+
+    // A priority-team target beats any non-priority one; within the same class, the nearer wins — so the shot
+    // chases an enemy over a bystander, and the closest of those.
+    static bool Better(bool priority, float sq, IDamageable best, bool bestPriority, float bestSq)
+        => best == null || (priority && !bestPriority) || (priority == bestPriority && sq < bestSq);
 
     void SetGlowAlpha(float a)
     {

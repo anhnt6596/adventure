@@ -38,6 +38,16 @@ public class UnitAnimator : MonoBehaviour
         animator.SetTrigger("Attack");
     }
 
+    // Playback rate for the whole Animator. The caller scopes it to the window it means to stretch — a view
+    // raises it for a swing and drops it back to 1 when the swing ends — so a fast attacker's swing speeds up
+    // without dragging the walk cycle along with it. Per-state speed multipliers would be narrower, but they
+    // must be authored into every controller; this works for any controller that ever gets added.
+    public float PlaybackSpeed
+    {
+        get => animator.speed;
+        set { if (!Mathf.Approximately(animator.speed, value)) animator.speed = value; }
+    }
+
     // Raised by an AnimationEvent at the frame an attack connects. The attack logic lives on the
     // actor and listens here — the view only relays the timing.
     public event Action Hit;

@@ -20,6 +20,7 @@ public class EnemyController : DynamicUnit
     protected override float MoveSpeed => config != null ? config.moveSpeed : 0f;
     protected override float AttackSpeed => config != null ? config.attackSpeed : 1f;
     protected override float AttackDuration => config != null ? config.attackDuration : 0.4f;   // busy/lock per attack, from config
+    protected override float AttackCooldown => config != null ? config.attackCooldown : 0f;
     protected override float Mass => 1f;
     public override float AttackPower => config != null ? config.attackDamage : 0f;
 

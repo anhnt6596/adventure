@@ -4,6 +4,7 @@ public class MainCharStats : ICharacterStats
     public Stat AttackSpeed { get; }
     public Stat AttackPower { get; }
     public float AttackDuration { get; }
+    public float AttackCooldown { get; }
     public float Mass { get; }
     public float PickupRadius { get; }
 
@@ -13,6 +14,7 @@ public class MainCharStats : ICharacterStats
         AttackSpeed = new Stat(config.attackSpeed);
         AttackPower = new Stat(config.attackPower);
         AttackDuration = config.attackDuration;
+        AttackCooldown = config.attackCooldown;
         Mass = config.mass;
         PickupRadius = config.pickupRadius;
     }

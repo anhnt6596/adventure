@@ -3,7 +3,7 @@ using Lean.Pool;
 
 // A ranged attack: spits a slow homing soul-fire that seeks the nearest hostile in range, drifts over, and
 // burns on contact. Range + the hit live here (the flame carries the owner's damage + team); the AI/player
-// only triggers it via the owner's Attack(). One attack = one class, like SwingAttack; the flight lives in
+// only triggers it via the owner's Attack(). One attack = one class, like ShapeAttack; the flight lives in
 // SoulFire.
 public class SoulFireAttack : MonoBehaviour
 {

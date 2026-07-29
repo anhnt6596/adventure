@@ -6,8 +6,36 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 
 ## 🎮 Core loop / gameplay
 
-- [ ] **Combat State chỉnh sửa.** Đòn tấn công có duration, trong lúc đợi duration của tấn công sẽ bị khóa (giống busy bây giờ) và thên cooldown cho tấn công: thời gian tính từ lúc bắt đầu tấn công, khi cooldown hết mới có thể tiếp tục kích hoạt tấn công, trong cooldown không khóa hành động khác. Attack Speed sẽ ảnh hưởng đến cooldown thay vì duration, duration là cố định. Cooldown sẽ không thể ngắn hơn duration. 
-- [ ] **Bot AI chỉnh sửa.** Tại bước tấn công, đã update Facing nhưng animation chưa dùng đúng cho hướng đó, tìm hiểu nguyên nhân
+- [x] **Combat State chỉnh sửa.** ✅ `DynamicUnit` giờ giữ **hai** timer, cả hai chạy từ lúc đòn bắt đầu:
+  `_busyTimer` = `AttackDuration / AttackRate` → `IsBusy` khoá cả di chuyển lẫn tấn công như cũ;
+  `_cooldownTimer` = `AttackCooldown / AttackRate`, **clamp `>= duration`**, chỉ gate đòn kế tiếp qua
+  `CanAttack` chứ **không khoá hành động nào khác** — trong cooldown vẫn chạy được. Thêm `attackCooldown` vào
+  `MainCharStatsConfig` + `EnemyConfig` (mặc định `0` = đánh liên tục, clamp tự kéo lên bằng duration → asset
+  cũ giữ nguyên nhịp). `SimpleAttack` gate bằng `CanAttack`; `EnemyAI.TickAttack` vẫn trả về Chase sau mỗi lần
+  thử để lúc chờ cooldown nó còn biết đuổi theo.
+  - **Attack speed scale CẢ HAI cửa sổ** (theo cách các action game vẫn làm), không chỉ cooldown: tỉ lệ
+    khoá:trống giữ nguyên ở mọi rate, và attack speed không bao giờ thành dead stat khi chạm clamp. Clamp
+    giờ chỉ còn là guard cho config sai (chia cả hai cho cùng số thì thứ tự không đổi).
+  - **Animation scale theo**: `UnitView.PlayAttack` set `UnitAnimator.PlaybackSpeed = AttackRate`, trả về `1`
+    khi hết busy. Nhờ vậy `Hit` AnimationEvent tự rơi đúng cùng một mốc % của swing ở mọi attack speed — không
+    có timing thứ hai phải canh. Dùng `animator.speed` (global, giới hạn trong cửa sổ swing) thay vì per-state
+    speed multiplier: 3 controller hiện tại đều để `m_SpeedParameterActive: 0`, và cách này đúng cho cả
+    controller thêm sau.
+  - **Còn nợ:** `attackDuration` trong config và độ dài clip attack là hai số rời nhau, không ai ràng buộc ai —
+    lệch thì swing bị cắt ngang (duration ngắn hơn clip) hoặc đứng đơ một nhịp (dài hơn). Nên soi lại 4 asset
+    (`MC 1` 0.5 · `MC 2` 0.6 · `mewfrog` 2 · `pp1` 3) cho khớp clip, hoặc lấy thẳng độ dài clip thay vì gõ tay.
+- [x] **Bot AI chỉnh sửa.** ✅ Nguyên nhân **không nằm ở AI** — `EnemyAI.TickAttack` update `Facing` đúng. Lỗi ở
+  `UnitView`: hướng chỉ được đẩy xuống animator trong `LateUpdate`, mà `LateUpdate` lại `return` sớm khi
+  `IsBusy`. Hai hệ quả cộng dồn:
+  - **Frame bắt đầu đòn:** Animator tiêu thụ trigger ở animation phase — chạy **sau `Update`** (nơi đòn bắn ra)
+    và **trước `LateUpdate`** — nên transition `Attack && Dir == n` đọc `Dir` của frame **trước**. AI xoay mặt
+    rồi đánh trong cùng một `Update` thì đòn vung theo hướng cũ.
+  - **Suốt swing:** busy khoá luôn `UpdateDir`, nên cả 2–3s đòn đánh hướng bị đóng băng. Với unit mirror
+    (`Mewfrog`/`MC 1`: `dirType 0` + `isMirror 1` → `Dir` luôn = 1) thì hướng **chính là** flip `scaleNode`,
+    tức là frozen = sai hẳn. Với `PP1` (`dirType 1`, `isMirror 0`) thì hướng nằm ở `Dir` int → dính cả hai.
+  - **Sửa:** tách `PushDir()`, gọi ở **đầu `LateUpdate`** (trước guard `IsBusy`) **và** trong `PlayAttack()`
+    ngay trước `TriggerAttack()`. Chỉ `UpdateState` còn nằm sau guard. Đẩy `Dir` giữa swing an toàn: vào state
+    attack cần trigger `Attack`, đổi hướng suông không restart được đòn.
 - [ ] **Hệ thống modify stats của MC.** Buff / đồ / nâng cấp sửa stats **runtime** (MoveSpeed, AttackSpeed,
   AttackPower, MaxHp, Mass...). `MainCharStats` giờ chỉ copy phẳng từ config; `Stat` (MoveSpeed/AttackSpeed/
   AttackPower đã là `Stat`) là **seam sẵn** — thêm modifier (cộng/nhân, mỗi nguồn 1 id để gỡ) lên đó. **MaxHp
@@ -39,7 +67,7 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
       xem mục "Đồng bộ: mọi thứ nhận dmg là `UnitController`" ở phần Tech debt.
     - `CombatWorld.Overlap(centre, radius, attackerTeam, results)` — dò mục tiêu quanh quái (query **team 1**
       = player trong bán kính aggro).
-    - `SwingAttack` là **khuôn đòn**: ở frame `Hit` của `CharacterAnimator` → `Overlap` quanh origin →
+    - `ShapeAttack` là **khuôn đòn**: ở frame `Hit` của `CharacterAnimator` → `Overlap` quanh origin →
       `TakeDamage`. Đòn quái mirror y hệt nhưng **team 2**, đánh player.
     - Di chuyển: khuôn `Character.Move` + `CollisionBody` (không xuyên đá). Quái thay input tay bằng input
       do AI sinh (hướng tới target).
@@ -50,14 +78,14 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
       `IDamageable`, chưa `combat.Add` → **quái không có gì để đánh**. Đây là chặn đầu tiên.
     - [ ] **AI brain** — FSM **code thuần** (idle → phát hiện theo aggro radius → đuổi → đánh khi trong tầm +
       cooldown → mất dấu/về). KHÔNG behavior-tree SO, KHÔNG data-driven (xem quy ước "runtime là plain code").
-    - [ ] **EnemyMelee** — mirror `SwingAttack`, team 2, dmg/tầm/nhịp từ `EnemyConfig`.
+    - [ ] **EnemyMelee** — mirror `ShapeAttack`, team 2, dmg/tầm/nhịp từ `EnemyConfig`.
     - [ ] **EnemyMotor** — steer tới target qua `CollisionBody`, tốc độ từ `EnemyConfig.moveSpeed`.
     - [ ] **Spawn** — tạm đặt tay 1-2 con để test (nhớ cho vào Auto Inject); spawner thật xem **`Docs/SPAWN.md`**
       (thiết kế zone đã chốt; bước 1 `SpawnArea`+bake làm được ngay, phần đẻ chờ enemy runtime này).
     - [ ] Art: hero/quái cận cảnh → **AnimatorController** (blend/attach); crowd đông → cân nhắc
       AnimationInstancing. `CharacterAnimator.Hit` là seam frame-đánh.
   - **Gotcha:** bán kính `Overlap` phải ≤ cell hash (`4`) không thì miss (có warning); đòn tự `Rebuild()`
-    trước query — xem `SwingAttack.OnSwingHit`.
+    trước query — xem `ShapeAttack.OnHit`.
   - **SoulFire ưu tiên target.** `SoulFire.FindNearest` giờ lấy `Damageable` gần nhất không cùng team (nên
     hiện gồm cả cây/đá). Khi có Enemy thật → sửa để **ưu tiên quái trước, cây cối sau** (vd lọc theo loại/
     tag/team, hoặc 2 pass: quét quái trước, không có mới tới cây). Xem `// TODO` trong `SoulFire.FindNearest`.

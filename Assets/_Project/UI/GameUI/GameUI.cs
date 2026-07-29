@@ -61,7 +61,32 @@ public class GameUI : MonoBehaviour
 
         root.Q<Button>("start-button")?.RegisterCallback<ClickEvent>(_ => StartGame());
 
+        // Each body is a fresh Inventory + Damageable, so a respawn or a character switch leaves the HUD
+        // pointed at the dead one — re-bind on every spawn, not just at START.
+        if (_player != null) _player.Spawned += OnPlayerSpawned;
+
         SetupCheats(root);
+    }
+
+    void OnPlayerSpawned(MCController _)
+    {
+        BindHud();
+#if UNITY_EDITOR
+        RefreshCharacterCheat();
+        RebindBag();   // a switched character has its own inventory
+#endif
+    }
+
+    // Point the HUD at the live body. Before START the HUD isn't shown and Get returns null, so this is a
+    // no-op then — StartGame binds it the moment it reveals it.
+    void BindHud()
+    {
+        var hud = _ui?.Get<GameHUD>();
+        if (hud == null) return;
+
+        var mc = _player?.Current;
+        hud.SetInventory(mc != null ? mc.GetComponentInChildren<Picker>()?.Inventory : null);
+        hud.SetHealth(mc != null ? mc.GetComponentInChildren<Damageable>() : null);
     }
 
     // Dev drawer on the left edge: the tab opens a vertical panel that will hold the cheat tools (empty for
@@ -106,17 +131,10 @@ public class GameUI : MonoBehaviour
         _mcDropdown.RegisterValueChangedCallback(_ => RefreshCharacterCheat());
         _changeMcButton.RegisterCallback<ClickEvent>(_ => ChangeMc());
 
-        if (_player != null) _player.Spawned += OnPlayerSpawned;
         RefreshCharacterCheat();
     }
 
     string CurrentMcId => _player?.Current != null ? _player.Current.Id : null;
-
-    void OnPlayerSpawned(MCController _)
-    {
-        RefreshCharacterCheat();
-        RebindBag();   // a switched character has its own inventory
-    }
 
     // Bag cheat: list each resource kind held, with a button to wipe that kind. The remove path is a real
     // Inventory.Remove (crafting/spending will use it too), not a cheat-only shortcut.
@@ -179,8 +197,11 @@ public class GameUI : MonoBehaviour
         }
     }
 
+    // Also reached from OnPlayerSpawned, which fires whether or not the cheat panel wired up.
     void RefreshCharacterCheat()
     {
+        if (_mcDropdown == null || _changeMcButton == null) return;
+
         var current = CurrentMcId;
         if (_mcDropdown.value == null || !_mcDropdown.choices.Contains(_mcDropdown.value))
             _mcDropdown.SetValueWithoutNotify(current ?? (_mcDropdown.choices.Count > 0 ? _mcDropdown.choices[0] : null));
@@ -199,8 +220,8 @@ public class GameUI : MonoBehaviour
     void OnDestroy()
     {
         Release();
-#if UNITY_EDITOR
         if (_player != null) _player.Spawned -= OnPlayerSpawned;
+#if UNITY_EDITOR
         if (_bagInventory != null) _bagInventory.Changed -= RefreshBag;
 #endif
     }
@@ -210,16 +231,8 @@ public class GameUI : MonoBehaviour
         Release();
         if (_screen != null) _screen.style.display = DisplayStyle.None;
 
-        _ui?.Show<GameHUD>();                          // reveal the in-game HUD
-        var hud = _ui?.Get<GameHUD>();
-
-        // the player's own inventory — its Picker created it with the current character's config
-        var inventory = _player.Current != null ? _player.Current.GetComponentInChildren<Picker>()?.Inventory : null;
-        hud?.SetInventory(inventory);
-
-        // the player's HP bar (top-right) reads its Damageable
-        var health = _player.Current != null ? _player.Current.GetComponentInChildren<Damageable>() : null;
-        hud?.SetHealth(health);
+        _ui?.Show<GameHUD>();   // reveal the in-game HUD
+        BindHud();
     }
 
     void Release()

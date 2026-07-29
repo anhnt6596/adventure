@@ -54,4 +54,45 @@ public class CombatWorld
             if (d.x * d.x + d.z * d.z <= reach * reach) results.Add(target);
         }
     }
+
+    // Targets whose hit circle overlaps an ORIENTED rectangle on the ground plane — the lane a thrust or a
+    // cleave sweeps. `forward` is the rect's local +Z (the attacker's facing; it need not be normalised),
+    // halfLength runs along it and halfWidth across it, both measured from `centre`. Same team rule as Overlap.
+    public void OverlapBox(Vector3 centre, Vector3 forward, float halfWidth, float halfLength, int attackerTeam, List<IDamageable> results)
+    {
+        results.Clear();
+
+        float hw = Mathf.Max(0f, halfWidth), hl = Mathf.Max(0f, halfLength);
+
+        // The corner is the rect's furthest point, so that — not an edge — is what the broad phase must cover
+        // and what the cell has to fit.
+        float bounding = Mathf.Sqrt(hw * hw + hl * hl);
+        if (bounding > _hash.CellSize)
+            Debug.LogWarning($"[Combat] Query reach {bounding} exceeds the hash cell {_hash.CellSize}; targets will be missed.");
+
+        Vector3 fwd = forward;
+        fwd.y = 0f;
+        fwd = fwd.sqrMagnitude > 1e-6f ? fwd.normalized : Vector3.forward;
+        Vector3 right = new Vector3(fwd.z, 0f, -fwd.x);   // +90° about Y, so (0,0,1) reads as (1,0,0)
+
+        _hash.Query(centre, bounding, _query);
+
+        foreach (var target in _query)
+        {
+            if (!target.IsAlive) continue;
+            if (attackerTeam != 0 && target.Team == attackerTeam) continue;
+
+            Vector3 d = target.Position - centre;
+            d.y = 0f;
+
+            // Into the rect's own frame, then clamp onto it: what's left is the gap from the target to the
+            // nearest point ON the rect, which its hit circle has to cover to count. Inside the rect the
+            // clamp is a no-op and the gap is zero, so containment falls out of the same test.
+            float lx = Vector3.Dot(d, right), lz = Vector3.Dot(d, fwd);
+            float gx = lx - Mathf.Clamp(lx, -hw, hw);
+            float gz = lz - Mathf.Clamp(lz, -hl, hl);
+
+            if (gx * gx + gz * gz <= target.HitRadius * target.HitRadius) results.Add(target);
+        }
+    }
 }

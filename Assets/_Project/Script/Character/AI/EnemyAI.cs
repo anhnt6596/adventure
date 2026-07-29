@@ -83,8 +83,10 @@ public abstract class EnemyAI : MonoBehaviour
         if (d > _ctx.config.leashRadius) { EnterForget(); return; }   // ran clean away -> give up
         FaceTarget();                          // keep aimed — the shot leaves along FacingDir
         if (_ctx.controller.IsBusy) return;    // a shot already wound up ALWAYS finishes (commit) — never bail
-        _s.Attack.Tick(_ctx);                  // fire
-        _state = State.Chase;                   // attack done -> back to Chase to re-aim + re-decide
+        _s.Attack.Tick(_ctx);                  // fires if the cooldown is up; a no-op while it isn't
+        // Back to Chase either way — waiting out a cooldown must NOT freeze it here, or a target that steps
+        // out of range mid-cooldown would just be watched instead of followed.
+        _state = State.Chase;
     }
 
     void TickForget()

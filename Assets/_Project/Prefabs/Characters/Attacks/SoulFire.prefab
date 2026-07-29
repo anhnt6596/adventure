@@ -5050,12 +5050,11 @@ MonoBehaviour:
   burst: {fileID: 2404101980525971392}
   spawnTime: 0.1
   speed: 6
-  slowRadius: 1.5
-  fadeTime: 0.4
   burstTime: 0.35
   burstScale: 1.6
   hitPadding: 0.05
-  seekRadius: 2
+  seekRange: 3
+  seekAngle: 60
   steerRate: 120
 --- !u!1001 &4235611895995287631
 PrefabInstance:

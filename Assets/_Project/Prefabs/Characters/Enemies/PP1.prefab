@@ -231,11 +231,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 908c11e1ac13d9a4fa0e712a9d2fbda2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SwingAttack
+  m_EditorClassIdentifier: Assembly-CSharp::ShapeAttack
+  shape: 1
   radius: 1
+  size: {x: 0.6, y: 0.8}
+  forwardOffset: 0.4
   knockback: 0
   animatorSource: {fileID: 639855831500468208}
-  origin: {fileID: 194829221086538142}
 --- !u!1 &8299895054748087226
 GameObject:
   m_ObjectHideFlags: 0

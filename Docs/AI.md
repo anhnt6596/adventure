@@ -49,7 +49,7 @@ AI chỉ **bấm cò** (`controller.Attack()`); skill nào bắn là do prefab g
   ```csharp
   DynamicUnit.AttackPower   // MC => stats.AttackPower.Value;  Enemy => config.attackDamage
   ```
-  Skill đọc `_owner.AttackPower` (owner là `DynamicUnit`), **bỏ `[Inject] ICharacterStats`**. → cùng một `SwingAttack`/`SoulFireAttack` chạy cho cả MC lẫn quái.
+  Skill đọc `_owner.AttackPower` (owner là `DynamicUnit`), **bỏ `[Inject] ICharacterStats`**. → cùng một `ShapeAttack`/`SoulFireAttack` chạy cho cả MC lẫn quái.
 
 ## Tạo 1 con quái
 ```csharp

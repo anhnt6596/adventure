@@ -10,9 +10,14 @@ public abstract class DynamicUnit : Unit
     protected CollisionBody body;   // the unit's body, auto-found under it — not wired by hand
 
     Vector2 _input;
-    float _busyTimer;
+    float _busyTimer;       // the swing itself — locks the unit out of moving and attacking
+    float _cooldownTimer;   // gates the NEXT attack only; the unit is free to move while it runs
 
+    // Two separate windows, both starting at the moment an attack fires. IsBusy is the commitment: the swing
+    // is playing and nothing else can happen. The cooldown outlives it and only says "no attack yet" — walking
+    // away mid-cooldown is the whole point, that's the opening the player gets.
     public bool IsBusy => _busyTimer > 0f;
+    public bool CanAttack => _busyTimer <= 0f && _cooldownTimer <= 0f;
     public Vector3 Velocity { get; private set; }
     public event Action Attacked;
 
@@ -22,13 +27,20 @@ public abstract class DynamicUnit : Unit
     public int Facing { get; private set; }
     public Vector3 FacingDir { get; private set; } = Vector3.forward;   // last move direction (world XZ) — where the unit is aimed
 
-    // The numbers the control loop needs; each unit kind sources them differently.
+    // The numbers the control loop needs; each unit kind sources them differently. Both attack numbers are
+    // BASE seconds, authored at 1x attack speed — Attack() divides them by the rate.
     protected abstract float MoveSpeed { get; }
     protected abstract float AttackSpeed { get; }
-    protected abstract float AttackDuration { get; }
+    protected abstract float AttackDuration { get; }   // how long the swing locks the unit
+    protected abstract float AttackCooldown { get; }   // seconds between attack STARTS
     protected abstract float Mass { get; }
 
-    // Public because attack skills read it off their owner (a SwingAttack on an enemy deals the enemy's damage,
+    // Public and sanitised. A 0 or negative stat would divide the timers to infinity and freeze the swing
+    // animation outright, so it reads as 1x. The view scales the attack clip by this, which is what keeps the
+    // sprite in step with the timers below — including the Hit AnimationEvent that lands the damage.
+    public float AttackRate => AttackSpeed > 0f ? AttackSpeed : 1f;
+
+    // Public because attack skills read it off their owner (a ShapeAttack on an enemy deals the enemy's damage,
     // the same one on the MC deals the MC's) — the number's source differs per kind, the skill doesn't care.
     public abstract float AttackPower { get; }
 
@@ -64,14 +76,27 @@ public abstract class DynamicUnit : Unit
 
     public void Attack()
     {
-        if (IsBusy) return;
-        _busyTimer = AttackSpeed > 0f ? AttackDuration / AttackSpeed : AttackDuration;
+        if (!CanAttack) return;
+
+        // Attack speed scales the swing AND the gap by the same factor, the way action games have always done
+        // it: the lock:gap ratio holds at every rate, so a fast attacker feels like the same attack sped up
+        // rather than a different one. Scaling only the gap would make attack speed a dead stat the moment the
+        // clamp below caught it — a +20% buff that visibly does nothing.
+        float rate = AttackRate;
+        float duration = Mathf.Max(0f, AttackDuration) / rate;
+
+        _busyTimer = duration;
+        // Both windows run from HERE, the start of the attack — so the cooldown is the full attack cadence,
+        // not a gap tacked on after the swing. The clamp is a config guard only: dividing both by the same rate
+        // preserves their order, so a cooldown authored above the duration can never fall under it.
+        _cooldownTimer = Mathf.Max(AttackCooldown / rate, duration);
         Attacked?.Invoke();
     }
 
     protected virtual void Update()
     {
         if (_busyTimer > 0f) _busyTimer -= Time.deltaTime;
+        if (_cooldownTimer > 0f) _cooldownTimer -= Time.deltaTime;
 
         var move = Vector2.ClampMagnitude(_input, 1f);
         _input = Vector2.zero;
