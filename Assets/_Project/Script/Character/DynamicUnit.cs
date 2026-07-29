@@ -70,8 +70,25 @@ public abstract class DynamicUnit : Unit
     {
         worldDir.y = 0f;
         if (worldDir.sqrMagnitude < 1e-6f) return;
-        FacingDir = worldDir.normalized;
-        Facing = ViewAngleUtil.GetViewType8(Mathf.Atan2(FacingDir.x, FacingDir.z) * Mathf.Rad2Deg);
+        Aim(worldDir.x, worldDir.z);
+    }
+
+    // The one place the aim is set, so Facing and FacingDir can never drift apart. It SNAPS: FacingDir is
+    // derived from the 8-sector the sprite is drawn in, not from the raw direction. A continuous aim under an
+    // 8-frame sprite would send the attack shape and the shot up to 22.5° off from where the unit visibly
+    // points — invisible on a circle centred on the unit, but plain to see once the hitbox is a lane.
+    // MOVEMENT is not snapped: Velocity still follows the raw input, only the aim quantises.
+    void Aim(float x, float z)
+    {
+        Facing = ViewAngleUtil.GetViewType8(Mathf.Atan2(x, z) * Mathf.Rad2Deg);
+        FacingDir = SectorDir(Facing);
+    }
+
+    // Sector n is centred on n * 45°, measured the way GetViewType8 reads it: clockwise from +Z.
+    static Vector3 SectorDir(int sector)
+    {
+        float rad = sector * 45f * Mathf.Deg2Rad;
+        return new Vector3(Mathf.Sin(rad), 0f, Mathf.Cos(rad));
     }
 
     public void Attack()
@@ -104,11 +121,7 @@ public abstract class DynamicUnit : Unit
         // While a knockback shove is carrying the body, it drives movement — don't fight it with input.
         if (body != null && body.IsKnocked) { Velocity = Vector3.zero; return; }
 
-        if (move.sqrMagnitude > 0.0001f)
-        {
-            Facing = ViewAngleUtil.GetViewType8(Mathf.Atan2(move.x, move.y) * Mathf.Rad2Deg);
-            FacingDir = new Vector3(move.x, 0f, move.y).normalized;
-        }
+        if (move.sqrMagnitude > 0.0001f) Aim(move.x, move.y);
 
         Velocity = new Vector3(move.x, 0f, move.y) * MoveSpeed;
         transform.position += Velocity * Time.deltaTime;
