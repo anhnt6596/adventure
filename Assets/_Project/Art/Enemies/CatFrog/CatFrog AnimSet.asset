@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Sprite3D::CharacterAnimSet
   dirs: 2
   mirror: 1
+  rest: 0
   clips:
   - action: 0
     fps: 20
@@ -54,3 +55,4 @@ MonoBehaviour:
       - {fileID: -2020607304, guid: eede77baf2d6d4042916cd2ced23288e, type: 3}
       - {fileID: -2020607304, guid: eede77baf2d6d4042916cd2ced23288e, type: 3}
       - {fileID: 1880344478, guid: eede77baf2d6d4042916cd2ced23288e, type: 3}
+      - {fileID: -66673505, guid: eede77baf2d6d4042916cd2ced23288e, type: 3}
