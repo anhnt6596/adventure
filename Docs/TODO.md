@@ -513,6 +513,24 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
 
 ## 🐛 Debug / tooling
 
+- [ ] **BUG: đổi map thì quái map cũ không chết, số quái nhân đôi.** Đi sang map khác → quái của map cũ vẫn
+  đứng đó, mà zone của map mới **vẫn chạy `warm`** nên đẻ thêm một lứa đầy → gấp đôi. Quay đi quay lại vài lần
+  là ngập.
+  - **Nguyên nhân — quái không thuộc về map.** `EnemySpawner.cs:44` gọi
+    `Object.Instantiate(ident.gameObject, position, rotation)` — **không truyền parent**, nên con quái nằm ở
+    **gốc scene** chứ không phải dưới map. `MapService.WarpAsync` huỷ `old` (GameObject của map) thì zone chết
+    theo vì nó là con, còn **quái thì không** — chẳng có gì trỏ tới chúng để dọn.
+  - Không chỉ là chuyện số lượng: quái mồ côi **vẫn nằm trong `CombatWorld`**, tức player có thể ăn đòn từ
+    một con thuộc cái map đã rời khỏi.
+  - **Hướng sửa gọn nhất:** cho quái làm **con của map** (`Instantiate(prefab, pos, rot, parent)` — bản overload
+    giữ world position). Lúc đó `MapService` `SetActive(false)` rồi `Destroy` sẽ dọn sạch, và đi đúng đường đã có:
+    `Damageable.OnDisable` tự rời `CombatWorld`, `CollisionBody.OnDisable` tự rời `CollisionSystem`. Không phải
+    viết thêm sổ sách theo dõi.
+    - Parent là **map** hay là **zone**? Zone thì gọn hơn về ngữ nghĩa (zone sở hữu lứa của mình, sau này làm
+      respawn debt / wipe-lock trong `Docs/SPAWN.md` là cần đúng cái đó). Map thì đủ để bịt bug này.
+  - Kiểm luôn khi sửa: `EnemySpawner._scopes` cache **một scope cho mỗi `EnemyConfig`**, không phải mỗi map —
+    cái đó đúng và không cần đụng, nhưng đừng vô tình dọn nhầm nó theo map.
+
 - [ ] **Số máu trên đầu (editor/test).** Thanh máu ẩn hẳn; chỉ hiện *số* HP trên đầu ở chế độ
   editor/test (gate bằng `#if UNITY_EDITOR` hoặc cờ debug). Chưa làm.
 
