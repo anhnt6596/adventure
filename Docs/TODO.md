@@ -55,7 +55,7 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
   trừ máu riêng (vd 0.5s/lần), độc lập nhau. KHÔNG i-frame ở người nhận (mọi dmg đều tính). Làm khi
   dựng enemy.
 
-- [ ] **Sprite animation bỏ AnimatorController → `CharacterAnimSet` (đang làm).** Gốc của cả hai vấn đề "animator
+- [x] **Sprite animation bỏ AnimatorController → `CharacterAnimSet`.** ✅ Gốc của cả hai vấn đề "animator
   cực" và "xoay cam phá animation đang chạy" là **hướng bị nướng vào identity của state**: state = hành động ×
   hướng. Nên số state nhân lên (8 hướng = 24 state + 24 transition/nhân vật), và đổi hướng = đổi state = mất
   playhead. Soi `.anim` ra thì nội dung thật của một clip chỉ là **mảng sprite + fps + 1 event `OnHit`** — toàn
@@ -63,8 +63,9 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
   - **Đã code:** `CharacterAnimSet` (data: dirs 2/4/8 + mirror + clip theo action), `UnitAnimator` viết lại chạy
     frame bằng code (giữ nguyên GUID nên `animatorSource` trong prefab không đứt), `UnitView` đổi sang
     `Play(AnimAction)` / `SetDir(dir8)`, tool `Assets > Sprite3D > Build Character Anim Set`.
-  - **Còn phải làm (cần Unity):** chạy tool trên 3 folder art → gán set vào 4 prefab → xoá `Animator` component +
-    3 `.controller` + 24 `.anim` sau khi verify.
+  - **Đã dọn:** gỡ `Animator` khỏi 5 prefab, xoá 3 `.controller` + 24 `.anim` + tool `AnimSetBuilder` (nó đọc
+    `.anim` — đúng cái format vừa khai tử, giữ lại chỉ để lại đường mòn). Nhân vật mới: thả sprite vào array
+    trong inspector của set, không đụng controller. Giữ `Sprite3D.Editor.asmdef` cho `CharacterAnimSetEditor`.
   - `hitFrame` là **index**, không phải AnimationEvent → hết cửa lệch. Kéo theo: `attackDuration` có thể đọc
     thẳng `frames.Length / fps` thay vì gõ tay (xem mục "Còn nợ" ở Combat State).
 
