@@ -22,4 +22,9 @@ public struct WallSeg
     public const float Chamfer = 2f / 8f;
 
     public const int MaxPerCell = 12;   // 4 straight edges + 4 convex chamfers + 4 concave bulges
+
+    // The terrain id carried by a face that is NOT ground: the side of a bridge deck, say. TerrainSet.BitOf of it
+    // is 0, so no pass mask opens it - the rail of a deck stops a swimmer as surely as anyone else, because it is
+    // a physical barrier rather than a kind of terrain. The tilemap never emits this.
+    public const byte VolumeRail = 255;
 }

@@ -9,7 +9,7 @@ public class BridgeEditor : Editor
         serializedObject.Update();
 
         var shapeProp = serializedObject.FindProperty("shape");
-        ManagedRefPicker.DrawTypeDropdown(shapeProp, typeof(GridArea), "Shape");
+        ManagedRefPicker.DrawTypeDropdown(shapeProp, typeof(BridgeShape), "Shape");
 
         EditorGUILayout.PropertyField(shapeProp, true);
         DrawPropertiesExcluding(serializedObject, "m_Script", "shape");

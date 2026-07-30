@@ -10,21 +10,24 @@ using Core;
 public class CollisionWorld
 {
     readonly SpatialHash<ICollisionBody> _hash;
-    TerrainGrid _terrain;
+    readonly TerrainQuery _query;
 
-    public CollisionWorld(TerrainGrid terrain)
+    // Terrain comes in through the query, not raw: the walls a body is pushed out of are the tilemap's faces with
+    // the bridges' decks cut out of them and the bridges' own rails added. Reading the tilemap directly here
+    // would shove anyone standing on a bridge back onto the bank.
+    public CollisionWorld(TerrainQuery query)
     {
-        _terrain = terrain;
+        _query = query;
+        var terrain = query != null ? query.Terrain : null;
         float cell = terrain != null ? Mathf.Max(0.5f, terrain.CellSize * 2f) : 2f;
         _hash = new SpatialHash<ICollisionBody>(b => b.Position, cell);
     }
 
-    // Swap the terrain when the map changes; registered bodies stay. Bodies that registered before a
-    // terrain existed kept the default pass-all mask, so re-apply the new terrain's mask to all of
-    // them here — otherwise a body that joined first walks through everything.
-    public void SetTerrain(TerrainGrid terrain)
+    // Bodies that registered before a terrain existed kept the default pass-all mask, so re-apply the new
+    // terrain's mask to all of them — otherwise a body that joined first walks through everything.
+    public void RefreshPassMasks()
     {
-        _terrain = terrain;
+        var terrain = _query != null ? _query.Terrain : null;
         if (terrain == null) return;
 
         int mask = terrain.DefaultPassMask;
@@ -164,8 +167,9 @@ public class CollisionWorld
         return true;
     }
 
-    // Faces of one cell at a time; the terrain generates them on demand, so there is no baked wall list to read.
-    readonly WallSeg[] _faces = new WallSeg[WallSeg.MaxPerCell];
+    // Faces of one cell at a time, generated on demand, so there is no baked wall list to read. Sized for the
+    // query's output rather than the tilemap's: a deck edge can split a face in two, and it adds rails of its own.
+    readonly WallSeg[] _faces = new WallSeg[TerrainQuery.MaxFacesPerCell];
 
     // Pushes each body out of the walkable boundary, skipping faces whose terrain the body may pass. Faces and
     // bodies share the terrain's local XZ plane.
@@ -179,10 +183,11 @@ public class CollisionWorld
     // a body wedged between two faces settles exactly where it used to.
     void ResolveTerrain()
     {
-        if (_terrain == null) return;
+        var terrain = _query != null ? _query.Terrain : null;
+        if (terrain == null) return;
 
-        var tf = _terrain.transform;
-        float cs = _terrain.CellSize;
+        var tf = terrain.transform;
+        float cs = terrain.CellSize;
 
         foreach (var body in _hash.Items)
         {
@@ -202,7 +207,7 @@ public class CollisionWorld
             for (int cy = cy0; cy <= cy1; cy++)
                 for (int cx = cx0; cx <= cx1; cx++)
                 {
-                    int n = _terrain.CellFaces(cx, cy, _faces, 0);
+                    int n = _query.CellFaces(cx, cy, _faces, 0);
                     for (int i = 0; i < n; i++)
                     {
                         var w = _faces[i];

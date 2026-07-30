@@ -97,8 +97,8 @@ public class SpawnZone : MonoBehaviour
         if (g == null) { Debug.LogError($"[{nameof(SpawnZone)}] '{name}' found no TerrainGrid on the map.", this); return; }
         if (area == null) { Debug.LogError($"[{nameof(SpawnZone)}] '{name}' has no area shape.", this); return; }
 
-        // Through GridArea.CollectCells, not Contains: a shape measured in tiles hands back its cells directly, and
-        // going via the point test would quietly give a different answer here than it gives a bridge deck.
+        // Through GridArea.CollectCells rather than Contains: a spawn lands ON a cell, so the cells the shape
+        // covers are the answer, not the points inside it.
         var inArea = new List<Vector2Int>();
         area.CollectCells(g, transform, inArea);
 
@@ -127,9 +127,7 @@ public class SpawnZone : MonoBehaviour
     {
         if (area == null) return;
         var g = ResolveGrid();
-        Gizmos.matrix = area.UsesRotation
-            ? transform.localToWorldMatrix
-            : Matrix4x4.Translate(transform.position);
+        Gizmos.matrix = transform.localToWorldMatrix;
         Gizmos.color = new Color(1f, 0.45f, 0.15f, 0.9f);
         area.DrawGizmo(g != null ? g.CellSize : 1f);
         Gizmos.matrix = Matrix4x4.identity;

@@ -36,8 +36,8 @@ public class TerrainGridEditor : Editor
     {
         DrawDefaultInspector();
 
-        // No "Bake Walkable" button any more: the collision boundary is generated from the cells and the decks on
-        // demand, so painting a tile or moving a bridge is live. Only the MESH is still baked.
+        // No "Bake Walkable" button any more: the collision boundary is generated from the cells on demand, so
+        // painting a tile is live. Only the MESH is still baked.
         EditorGUILayout.Space();
         using (new EditorGUI.DisabledScope(_renderer == null))
             if (GUILayout.Button("Rebuild Mesh (bake)", GUILayout.Height(24)))

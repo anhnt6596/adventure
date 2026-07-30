@@ -2,19 +2,17 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// A shape over the terrain. An abstraction so nothing that uses it hard-codes a shape - a spawn zone picks where
-// enemies may appear with one, a bridge picks which cells it decks with the same one, and a new shape is one
-// [Serializable] class that appears in the dropdown by itself.
+// A shape over the terrain, RESOLVED TO CELLS. An abstraction so nothing that uses it hard-codes a shape: a spawn
+// zone picks where enemies may appear with one, and a new shape is one [Serializable] class that appears in the
+// dropdown by itself.
 //
-// WHAT EVERY CONSUMER ACTUALLY WANTS IS CELLS, so that is the contract: CollectCells. Continuous shapes get it for
-// free - the default rasterises Contains over the grid, testing each cell's CENTRE - while a shape authored in
-// tiles overrides it and hands back its cells exactly, with no rasterisation to be surprised by. That distinction
-// is the whole reason the method exists rather than everyone calling Contains: a tile-measured span should give
-// you the tiles you asked for, not the tiles whose centres happened to land inside a rectangle.
+// Cells are the contract (CollectCells) because that is what its consumers want - a spawn zone picks a cell to put
+// something on. Free-form geometry that must NOT be rounded to cells is a different thing entirely and does not
+// belong here; see BridgeShape, which a bridge uses to stay analytic.
 //
-// Continuous shapes are tested in the owner's LOCAL space (y ignored, so they can sit at any height), which is
-// what makes rotation free: rotate the owner and the shape rotates with it, so there is no orientation convention
-// to remember and a diagonal bridge is just a rotated box.
+// Shapes are tested in the owner's LOCAL space (y ignored, so they can sit at any height), which is what makes
+// rotation free: rotate the owner and the shape rotates with it, so there is no orientation convention to
+// remember and a diagonal span is just a rotated box.
 //
 // [SerializeReference] on the owner keeps the chosen concrete type serialized. Renaming a CONCRETE class breaks
 // those references (the class name is what gets stored) - rename one and it needs [MovedFrom]. Renaming this
@@ -25,10 +23,6 @@ public abstract class GridArea
     // True if this local-space point is inside. Only the default CollectCells calls it, so a shape that
     // enumerates its own cells never has to answer it meaningfully.
     public abstract bool Contains(Vector3 local);
-
-    // False for a shape measured in whole cells: a rotated set of cells is not a cell rectangle, so the owner's
-    // rotation is ignored — and the gizmo has to be drawn unrotated too, or the outline lies about the cells.
-    public virtual bool UsesRotation => true;
 
     // The cells this area covers. Default: every cell whose centre falls inside.
     public virtual void CollectCells(TerrainGrid grid, Transform owner, List<Vector2Int> into)
@@ -44,50 +38,6 @@ public abstract class GridArea
     // Drawn in local space — the caller sets Gizmos.matrix to the owner's transform. cellSize is passed because a
     // shape may be measured in cells and cannot draw itself without it.
     public abstract void DrawGizmo(float cellSize);
-#endif
-}
-
-// A span measured in TILES: exactly size.x by size.y cells, no rasterisation involved. The natural way to author a
-// bridge deck, because the deck is a set of cells in the end - picking world units and then squinting at which
-// cell centres landed inside is double work, and it is where "the yellow cells look offset from the outline" comes
-// from.
-//
-// Anchored on the cell under the owner and grown from there, so an odd size centres exactly on it and an even one
-// leans one cell toward -x/-z. Rotation is IGNORED: a rotated set of whole cells is not a cell rectangle, and
-// pretending otherwise would quietly stop giving you the size you asked for. Diagonal spans want BoxArea (which
-// rotates) or LineArea.
-[Serializable]
-public class TileRectArea : GridArea
-{
-    public Vector2Int size = new Vector2Int(1, 4);   // cells across (grid X) and along (grid Z)
-
-    public override bool UsesRotation => false;
-
-    public override void CollectCells(TerrainGrid grid, Transform owner, List<Vector2Int> into)
-    {
-        if (grid == null || owner == null) return;
-
-        grid.WorldToCell(owner.position, out int cx, out int cy);   // coords are valid even off-map
-        int w = Mathf.Max(1, size.x), h = Mathf.Max(1, size.y);
-        int x0 = cx - (w - 1) / 2, y0 = cy - (h - 1) / 2;
-
-        for (int y = y0; y < y0 + h; y++)
-            for (int x = x0; x < x0 + w; x++)
-                into.Add(new Vector2Int(x, y));
-    }
-
-    // Never consulted: CollectCells is overridden, and a tile count cannot answer a continuous point test without
-    // knowing how big a cell is.
-    public override bool Contains(Vector3 local) => false;
-
-#if UNITY_EDITOR
-    public override void DrawGizmo(float cellSize)
-    {
-        int w = Mathf.Max(1, size.x), h = Mathf.Max(1, size.y);
-        // Drawn about the owner the same way the cells are anchored, so the outline sits where the tiles will.
-        var offset = new Vector3(((w - 1) % 2) * 0.5f * cellSize, 0f, ((h - 1) % 2) * 0.5f * cellSize);
-        Gizmos.DrawWireCube(offset, new Vector3(w * cellSize, 0f, h * cellSize));
-    }
 #endif
 }
 
@@ -131,8 +81,8 @@ public class BoxArea : GridArea
 #endif
 }
 
-// A run of segments with a width: the shape a bridge wants when the crossing bends, and the same way the river
-// itself is described. Points are local XZ; the area is everything within half the width of the polyline.
+// A run of segments with a width, the same way the river itself is described. Points are local XZ; the area is
+// everything within half the width of the polyline.
 [Serializable]
 public class LineArea : GridArea
 {

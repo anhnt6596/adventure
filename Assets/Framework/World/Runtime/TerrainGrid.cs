@@ -3,27 +3,29 @@ using UnityEngine;
 
 // Terrain is walkability, not buildability: a path around a house is walkable and unbuildable.
 //
-// NOTHING HERE IS BAKED. Walkability is answered by reading two maps live - the painted cells and the deck bitmap
-// that bridges stamp over them (see IDeck):
+// THIS IS THE TILEMAP, AND IT KNOWS ABOUT NOTHING ELSE. Walkability here is the painted cells and only them:
 //
-//     standable(cell) = deck[cell] || set.IsWalkable(cells[cell])
+//     standable(cell) = set.IsWalkable(cells[cell])
 //
-// and the collision boundary is generated one cell at a time, on demand, by CellFaces. There is no wall array to
-// bake, to serialize, to keep in step with the decks, or to discover was stale after shipping. A deck raising or
-// a tile being painted takes effect on the very next query. The walkable rule also has exactly one home, so the
-// collision, the queries and (next) the pathfinder cannot disagree about where a bridge is - not because they are
-// carefully synchronised, but because there is no second copy to drift from. The depth-mask migration in
-// Docs/TODO.md lands as one more term on that line (&& height == 0).
+// Bridges, gates and anything else that overrides walkability are NOT here and never touch this. They are
+// separate geometry combined with this one at the query layer - see TerrainQuery, which is what gameplay and
+// collision actually ask. Nothing in this file has heard of them, so painting, face generation and regions
+// behave exactly as they would on a map with no bridge on it.
+//
+// NOTHING HERE IS BAKED either: the collision boundary is generated one cell at a time, on demand, by CellFaces.
+// There is no wall array to bake, to serialize, or to discover was stale after shipping - a tile being painted
+// takes effect on the very next query. The depth-mask migration in Docs/TODO.md lands as one more term on the
+// line above (&& height == 0).
 //
 // Generating faces per body beats reading a baked list, and by more the bigger the map gets: the old bake made
 // one flat array of every boundary segment on the map and CollisionWorld scanned all of it for every body
 // (~900 segments on a 64x64 map, ~14000 on a 256x256 one). A body can only touch the cells it overlaps, so nine
 // cells is the real answer, whatever the map's size.
 //
-// REGIONS are the one thing still derived and cached: the connected components of the walkable set, which answer
-// "can this even be reached" in O(1) - the most expensive question to ask a pathfinder, and one a raised
-// drawbridge makes common. They are rebuilt when the walkable set changes and are never serialized. A second
-// region map is built with every deck ignored, purely so a bridge can be told whether it joins anything.
+// REGIONS are the one thing still derived and cached: the connected components of the painted walkable set, which
+// answer "can this even be reached" in O(1) - the most expensive question to ask a pathfinder. They are rebuilt
+// when the paint changes and are never serialized. Bridges join regions together, but they do it in TerrainQuery,
+// over the top of these; the numbers here are always the map without them.
 [ExecuteAlways]
 public class TerrainGrid : MonoBehaviour
 {
@@ -37,12 +39,9 @@ public class TerrainGrid : MonoBehaviour
     TerrainMap _map;
     bool[] _walkableById;
 
-    bool[] _deck;                 // per cell: a deck overrides the terrain here
-    int[] _region, _regionNoDeck; // per cell: connected component, -1 where nothing can stand
-    int _regionCount, _regionCountNoDeck;
+    int[] _region;                // per cell: connected component, -1 where nothing can stand
+    int _regionCount;
 
-    readonly List<IDeck> _decks = new List<IDeck>();
-    readonly List<Vector2Int> _deckBuffer = new List<Vector2Int>();
     readonly Stack<int> _flood = new Stack<int>();
     bool _dirty = true;
 
@@ -51,9 +50,8 @@ public class TerrainGrid : MonoBehaviour
     public int Height => height;
     public float CellSize => cellSize;
 
-    // Bumped whenever the walkable set changes. A pathfinder stamps its cached path with this and re-paths when it
-    // no longer matches - which is what keeps a drawbridge closing from leaving agents walking into ground that
-    // stopped existing under them.
+    // Bumped whenever the painted walkable set changes, so a cached path can tell it went stale. Bridges have
+    // their own version; TerrainQuery combines the two.
     public int WalkVersion { get; private set; }
 
     public TerrainMap Map
@@ -103,55 +101,13 @@ public class TerrainGrid : MonoBehaviour
         _dirty = true;
     }
 
-    // ---- decks -------------------------------------------------------------
-
-    public void AddDeck(IDeck deck)
-    {
-        if (deck == null || _decks.Contains(deck)) return;
-        _decks.Add(deck);
-        _dirty = true;
-    }
-
-    public void RemoveDeck(IDeck deck)
-    {
-        if (_decks.Remove(deck)) _dirty = true;
-    }
-
-    // A deck moved, resized, or raised itself.
-    public void MarkDecksDirty() => _dirty = true;
-
-    public int DeckCount => _decks.Count;
-
-    // Refreshed lazily, on the query paths, rather than from an Update: a frame that toggles three decks refreshes
-    // exactly once, at whatever reads the terrain first, and there is no update order to get right against the
-    // collision tick.
+    // Refreshed lazily, on the query paths, rather than from an Update: a frame that paints several times
+    // refreshes exactly once, at whatever reads the terrain first, and there is no update order to get right
+    // against the collision tick.
     void EnsureFresh()
     {
         if (!_dirty) return;
         _dirty = false;
-
-        var map = Map;
-        int n = width * height;
-
-        if (_deck == null || _deck.Length != n) _deck = new bool[n];
-        else System.Array.Clear(_deck, 0, n);
-
-        // The deck bitmap is the one cache left, and it is rasterised from the bridges rather than tested live:
-        // asking every bridge's shape per cell query would be O(decks) on the collision path, and the shapes live
-        // on the game side while this does not. It is refreshed from an explicit signal, never guessed at.
-        for (int i = 0; i < _decks.Count; i++)
-        {
-            var d = _decks[i];
-            if (d == null || !d.DeckActive) continue;
-
-            _deckBuffer.Clear();
-            d.CollectDeckCells(this, _deckBuffer);
-            for (int k = 0; k < _deckBuffer.Count; k++)
-            {
-                var c = _deckBuffer[k];
-                if (map.InBounds(c.x, c.y)) _deck[c.y * width + c.x] = true;
-            }
-        }
 
         RebuildRegions();
         WalkVersion++;
@@ -159,12 +115,11 @@ public class TerrainGrid : MonoBehaviour
 
     // ---- the walkable rule -------------------------------------------------
 
-    // The single definition, and the only place the two maps meet. Out of bounds is never standable.
+    // The single definition. Out of bounds is never standable.
     bool Standable(int x, int y)
     {
         if ((uint)x >= (uint)width || (uint)y >= (uint)height) return false;
-        int i = y * width + x;
-        return (_deck != null && _deck[i]) || _walkableById == null || _walkableById[cells[i]];
+        return _walkableById == null || _walkableById[cells[y * width + x]];
     }
 
     public bool IsWalkable(int x, int y)
@@ -173,21 +128,12 @@ public class TerrainGrid : MonoBehaviour
         return Standable(x, y);
     }
 
-    // A body's pass mask over terrain ids, so a swimmer or a buff opens water without the terrain changing. A deck
-    // is passable to everyone: the plank is there whatever you are.
+    // A body's pass mask over terrain ids, so a swimmer or a buff opens water without the terrain changing.
     public bool CanPass(int passMask, int x, int y)
     {
         EnsureFresh();
         if ((uint)x >= (uint)width || (uint)y >= (uint)height) return false;
-        int i = y * width + x;
-        if (_deck != null && _deck[i]) return true;
-        return (passMask & TerrainSet.BitOf(cells[i])) != 0;
-    }
-
-    public bool HasDeck(int x, int y)
-    {
-        EnsureFresh();
-        return (uint)x < (uint)width && (uint)y < (uint)height && _deck != null && _deck[y * width + x];
+        return (passMask & TerrainSet.BitOf(cells[y * width + x])) != 0;
     }
 
     public int DefaultPassMask => set != null ? set.BuildDefaultPassMask() : ~0;
@@ -195,9 +141,10 @@ public class TerrainGrid : MonoBehaviour
     // ---- collision faces ---------------------------------------------------
 
     // The walkable boundary of ONE cell, written into `into` from index `at`, returning the new count. A cell that
-    // can be stood on emits nothing - which is exactly why a bridge deck needs no code of its own: the deck cells
-    // fall silent and the water either side of them keeps emitting, fencing the deck in, while at the two ends
-    // deck meets land and neither side emits anything at all.
+    // can be stood on emits nothing.
+    //
+    // These are the TILEMAP's faces and nothing else's. A bridge does not silence them here - TerrainQuery drops
+    // the parts of them its deck covers, on the way out.
     //
     // `into` needs WallSeg.MaxPerCell free slots. Same geometry the whole-map bake used to produce; see WallSeg.
     public int CellFaces(int x, int y, WallSeg[] into, int at)
@@ -260,7 +207,6 @@ public class TerrainGrid : MonoBehaviour
     // ---- regions -----------------------------------------------------------
 
     public int RegionCount { get { EnsureFresh(); return _regionCount; } }
-    public int RegionCountWithoutDecks { get { EnsureFresh(); return _regionCountNoDeck; } }
 
     // -1 where nothing can stand. Two cells with the same id are connected by walking; different ids are not
     // reachable from each other at all, which a pathfinder can answer with before it expands a single node.
@@ -270,44 +216,24 @@ public class TerrainGrid : MonoBehaviour
         return (uint)x < (uint)width && (uint)y < (uint)height && _region != null ? _region[y * width + x] : -1;
     }
 
-    public bool SameRegion(int ax, int ay, int bx, int by)
-    {
-        int a = RegionOf(ax, ay);
-        return a >= 0 && a == RegionOf(bx, by);
-    }
-
-    // The regions the map would have with every deck ignored. Only a deck's own validation wants this: it is how a
-    // bridge is told whether it joins two shores or merely sticks out of one.
-    public int RegionOfWithoutDecks(int x, int y)
-    {
-        EnsureFresh();
-        return (uint)x < (uint)width && (uint)y < (uint)height && _regionNoDeck != null
-            ? _regionNoDeck[y * width + x] : -1;
-    }
-
     void RebuildRegions()
     {
         int n = width * height;
         if (_region == null || _region.Length != n) _region = new int[n];
-        if (_regionNoDeck == null || _regionNoDeck.Length != n) _regionNoDeck = new int[n];
 
-        _regionCount = Flood(_region, false);
-        // The same flood over the terrain alone. Not "the walkable set minus the deck cells": a deck laid over
-        // ground that was already walkable is not a barrier, and treating it as one would split a region that
-        // never split.
-        _regionCountNoDeck = Flood(_regionNoDeck, true);
+        _regionCount = Flood(_region);
     }
 
     // Four-neighbour on purpose: a convex corner is chamfered off, so a body physically cannot squeeze through a
     // diagonal gap. Counting diagonals as connected here would promise reachability the collision refuses.
-    int Flood(int[] region, bool ignoreDecks)
+    int Flood(int[] region)
     {
         for (int i = 0; i < region.Length; i++) region[i] = -1;
 
         int count = 0;
         for (int start = 0; start < region.Length; start++)
         {
-            if (region[start] >= 0 || !Open(start % width, start / width, ignoreDecks)) continue;
+            if (region[start] >= 0 || !Standable(start % width, start / width)) continue;
 
             region[start] = count;
             _flood.Push(start);
@@ -315,28 +241,21 @@ public class TerrainGrid : MonoBehaviour
             {
                 int i = _flood.Pop();
                 int x = i % width, y = i / width;
-                Step(region, x + 1, y, count, ignoreDecks);
-                Step(region, x - 1, y, count, ignoreDecks);
-                Step(region, x, y + 1, count, ignoreDecks);
-                Step(region, x, y - 1, count, ignoreDecks);
+                Step(region, x + 1, y, count);
+                Step(region, x - 1, y, count);
+                Step(region, x, y + 1, count);
+                Step(region, x, y - 1, count);
             }
             count++;
         }
         return count;
     }
 
-    bool Open(int x, int y, bool ignoreDecks)
-    {
-        if ((uint)x >= (uint)width || (uint)y >= (uint)height) return false;
-        if (ignoreDecks) return _walkableById == null || _walkableById[cells[y * width + x]];
-        return Standable(x, y);
-    }
-
-    void Step(int[] region, int x, int y, int id, bool ignoreDecks)
+    void Step(int[] region, int x, int y, int id)
     {
         if ((uint)x >= (uint)width || (uint)y >= (uint)height) return;
         int i = y * width + x;
-        if (region[i] >= 0 || !Open(x, y, ignoreDecks)) return;
+        if (region[i] >= 0 || !Standable(x, y)) return;
         region[i] = id;
         _flood.Push(i);
     }
