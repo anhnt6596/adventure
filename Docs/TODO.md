@@ -369,32 +369,80 @@ migration này được code thật.
 
 ## 🌤️ Environment (day/night + weather)
 
-- [ ] **Sương mù / vùng tối viền map — lối sang map khác.** (Mai làm.) Vì camera **luôn giữ player ở giữa**,
-  người chơi không bao giờ "thấy" được rìa map một cách tự nhiên — đi tới biên thì lòi ra khoảng trống ngoài
-  map. Giải: một **vùng tối ở rìa**, player đi vào cổng nằm sát vùng đó thì nhảy map; sang map mới thì hiện ra
-  **như vừa bước từ trong vùng tối đi ra**. Vùng tối vừa che khoảng trống vừa là chỉ dấu "đây là lối đi".
-  - **Hình dạng (dự kiến, chốt lúc làm):** offset **từ rìa map đi vào trong**, ví dụ **~2 ô chuyển dần**, còn
-    **toàn bộ phần ngoài map thì che kín**. Nguồn kích thước: `TerrainGrid.Width/Height/CellSize/CellToWorld`.
-  - **⚠️ Phải là WORLD-SPACE, không phải vignette theo màn hình.** Hai lý do, cái nào cũng đủ để loại:
-    - Cột mốc là **rìa map**, một thứ đứng yên trong thế giới. Bám màn hình thì nó **trượt theo camera** và
-      không bao giờ khớp với cái cổng — mà cổng thì đứng im.
-    - Camera **xoay được** (Q/E). Vignette ở mép màn hình sẽ đúng ở một hướng nhìn và sai ở mọi hướng còn lại.
-    - Cùng bài học đã ghi ở mục Water ("mask, UV/noise và đường bờ phải bám world-space để nước không trượt").
-  - **Hai shader sẵn có KHÔNG dùng lại được**, đừng mất công thử: `Unlit/Fog` là overlay **toàn màn hình**,
-    additive, đang phục vụ glare ngày/đêm (`LightManager` lái); `Unlit/DarknessMask` là overlay dựa trên light
-    texture của hệ chiếu sáng. Cả hai đều screen-space và đã có chủ. Cái này cần một mặt phẳng/khối **gắn vào map**.
-  - **Che ngoài map phải đủ xa.** Đứng sát biên thì camera nhìn vượt rìa khá nhiều (rig đang ~12 đơn vị, pitch
-    35°) — vùng che "bên ngoài" phải phủ tới hết tầm nhìn đó, không chỉ vài ô.
-  - **Cảm giác KHỐI** — mai quyết: làm phẳng (một lớp tối gradient) hay có chiều sâu (noise cuộn, parallax, mù
-    dày dần). Nếu chọn có khối thì cân nhắc dùng chung `CloudShade.hlsl` đang định làm ở mục Mây bay — cùng là
-    "một hàm world-space trả độ tối", làm một lần dùng hai chỗ.
+- [x] **Sương mù / vùng tối viền map.** ✅ `Unlit/BorderFog` (shader) + `BorderFog.mat` + `MapBorderFog` (script)
+  + một quad `BorderFog` trong `Main Camera.prefab`. Vì camera **luôn giữ player ở giữa**, người chơi không bao
+  giờ "thấy" rìa map từ xa — họ **đi vào** nó, và không có cái này thì khoảng trống ngoài map cứ thế lòi vào khung.
+  - **Hình học là quad màn hình, nhưng MASK tính trong WORLD-SPACE.** Quad cưỡi camera (`MaskFollowCamera`, y
+    khuôn 2 veil ngày/đêm), còn mỗi pixel thì **bắn tia của chính nó xuống mặt phẳng đất** rồi tính sương tại
+    toạ độ world đó. Vignette không phải bản rẻ hơn của cái này, nó là **hiệu ứng khác và sai** — vì cột mốc là
+    rìa map (đứng yên trong thế giới, y như cái cổng player phải tìm), và vì camera **xoay được** (Q/E).
+    Không đọc depth và **không cần**: sprite trong project đều `ZWrite Off` nên chẳng có depth mà đọc; giao
+    tia/mặt phẳng là công thức đóng. Tia nào không chúc xuống đất = đang nhìn ra ngoài thế giới → sương tối đa.
+  - **KHỐI GIẢ, nhưng đúng toán:** ba **tầng sương** xếp từ mặt đất lên, mỗi tầng lấy mẫu tại chỗ tia của pixel
+    **cắt đúng tầng đó**: `p_h = p_0 + rd.xz * (h / rd.y)` — chính xác, không xấp xỉ, tốn ~2 lệnh. Nhờ vậy các
+    tầng **thật sự ở độ cao khác nhau**: chúng trượt lên nhau khi camera đi/xoay (parallax là thứ bán được cảm
+    giác sâu), và mỗi tầng cuộn noise riêng nên bờ sương **sôi** chứ không đứng chết. Composite từ tầng thấp
+    lên: với một pixel thì tầng cao hơn được lấy mẫu **gần camera hơn**, tức nó ở phía trước → thấp→cao =
+    xa→gần.
+  - **Vì sao KHÔNG cần pass che đen phần ngoài map:** camera clear màu **đen**, mà ngoài rìa map thì **không vẽ
+    gì cả** → khoảng trống đã đen sẵn. Việc của sương ở ngoài đó là **làm cái bóng tường sương trên nền đen**,
+    không phải phủ kín. Nên `_FogTopColor` **sáng hơn** `_FogColor`: tầng trên vừa nhạt vừa tơi (`_TopWisp`),
+    và đó chính là thứ khiến nó đọc ra "một tường sương đứng đó" thay vì "thế giới bị cắt".
+  - **Nằm DƯỚI veil ngày/đêm — `Queue = Overlay-10`**: sau mọi sprite, **trước** `DarknessMask` (multiply) và
+    `Unlit/Fog` (additive glare). Sương là **một phần của THẾ GIỚI, không phải của cái ảnh**, nên tint ambient
+    phải rơi lên nó y như rơi lên mọi thứ khác. Nằm trên veil thì nó là thứ duy nhất trên màn hình **không đổi
+    theo giờ**: đêm cả cảnh ngả về ambient mà riêng viền map thì không → đọc ra như **một lỗ khoét trong ảnh**,
+    không phải sương đứng trong thế giới.
+    - **Giá phải trả, đã chấp nhận:** glare trên `Unlit/Fog` (additive, toàn màn hình, **hiện đang đen = tắt**,
+      xem mục SunnyWeather) khi bật lại sẽ rửa nhạt dải sương lúc trưa. Đó là tint trên một màu vốn đã tối, không
+      đổi hình dạng, nên viền vẫn còn đọc được là viền.
+    - Nói theo đúng chữ thì **sương KHÔNG còn "không ảnh hưởng ngày đêm"** nữa — không thể vừa nằm dưới veil vừa
+      miễn nhiễm với nó. Cái được giữ là: sương **không tự đọc** `EnvironmentState`/`DayNightConfig`, không có
+      nhánh code nào theo giờ; nó chỉ chịu đúng cái tint mà cả cảnh đang chịu.
+    - Ngưỡng cần nhớ: thứ vẽ sau sương là queue > 3990. Muốn thêm veil nào **trên** sương thì đặt ≥ 4000.
+    - **Đã thử để sương vào chung queue `Transparent` với sprite rồi bỏ** — không phải vì trông sai, mà vì nó
+      **không đổi gì cả**: project chỉ có một sorting layer, mọi sprite `sortingOrder 0`, transparency sort để
+      Default (cự ly tới camera) → quad cưỡi camera ở 4.9 đơn vị luôn thắng cự ly trước cả thế giới ở ~50, vẫn
+      vẽ cuối queue. Cùng một khung hình, chỉ khác là thứ tự **giành bằng hình học** thay vì bằng con số. Và nó
+      **không mua được** thứ đáng lẽ biện minh cho nó: sprite đứng **trước** tường sương vẫn không vẽ đè lên
+      được, vì quad trên camera không có vị trí trong thế giới để đem ra xếp hạng. Muốn thế thì sương phải thành
+      geometry thật ở rìa map — và lúc đó lại vấp chuyện sprite `ZWrite Off`, không có depth để xếp.
+  - **⚠️ Hệ quả đã biết của một veil không có depth:** pixel phần trên của sprite cao lấy mẫu mặt đất **phía sau
+    nó**, nên nhân vật đi vào vùng sương bị nuốt **từ đầu xuống**, không phải từ chân lên. Không có cách sửa khi
+    không có depth buffer để biết bề mặt thật nằm đâu; `_WallHeight` là núm quyết định sương với lên màn hình
+    bao xa, tức quyết định cái này lộ bao nhiêu.
+  - **Rect map = origin + 2 trục đơn vị + size**, không phải min/max → **map quay quanh Y vẫn đúng**, giá đúng
+    2 phép dot, bằng đúng một phép so AABB. `MapBorderFog` đo bằng `TransformVector` nên map bị scale cũng đúng.
+  - **Bề rộng dải tính bằng Ô (`_BandCells`), `_CellSize` thì ĐO từ grid** — không có field cellSize thứ hai để
+    lệch. Giữ đúng đơn vị mà map được author và gate được đặt.
+  - **Chia việc: material giữ toàn bộ phần NHÌN, script chỉ đẩy thứ nó đo được** (rect + trục + groundY +
+    cellSize, qua `MaterialPropertyBlock`). Nhờ vậy **tinh chỉnh trong play mode là giữ được số** — đó là cả lý
+    do của chiều chia này, chứ không phải mirror số của material thành field trong script.
+  - **Renderer được author TẮT**, chỉ script bật: chưa có map thì shader không có gì để đo và sẽ tối đen cả màn
+    — kể cả trong edit mode, nơi không ai đẩy rect vào.
+  - **Seam đã dùng:** `MapService.WireMapToScene` — đúng chỗ đang trỏ `CollisionSystem` vào terrain của map, chỉ
+    thêm một dòng. Mọi map (kể cả map đầu, `GameController.Start`) đều đi qua đó nên không có đường nào lọt.
+  - **Còn phải canh bằng mắt** (số trên material, đổi dropdown không đủ): `_BandCells 2` = **4 đơn vị** với
+    `cellSize 2`, mà tầm nhìn thật chỉ khoảng **9 đơn vị** (`fov 6°`, `distance 50`, `pitch 35°` →
+    `2·tan3°·50 / sin35° ≈ 9.1`) — tức dải rộng gần **nửa màn hình**. `_WallHeight 1.5` thì tường sương lấn vào
+    trong map `1.5·cos35°/sin35° ≈ 2.1` đơn vị. Cả `_Opacity`, `_WobbleCells`, `_NoiseScale` đều là
+    thứ chỉ nhìn mới chốt được.
+  - **Chỗ test trong `Map_1`:** đất vẽ tới sát grid border ở **+X** và **−Z**; phía **−X còn 8 đơn vị nước**
+    (cell 0–3 là Water id 0) nên đứng ở bờ tây chỉ thấy nửa ngoài của dải. Gate_0 ở `(18.7, 29.11)` → đi
+    xuống **−Z** khoảng 29 đơn vị là tới biên trên đất liền. Muốn thấy ngay thì kéo tạm `_BandCells` lên ~20.
+  - Chưa dùng chung `CloudShade.hlsl` (mục Mây bay) vì file đó **chưa tồn tại** — noise nằm inline trong shader,
+    cùng `Hash/Noise` với `Grass`/`Water`. Khi làm mây thật thì rút cả ba về một include, đừng dựng trước.
+
+- [ ] **Vùng tối viền map thành LỐI SANG MAP KHÁC.** Phần thị giác đã xong ở mục trên; còn lại là luồng đi.
+  Player đi vào cổng nằm sát vùng tối thì nhảy map; sang map mới thì hiện ra **như vừa bước từ trong vùng tối
+  đi ra**.
   - **Seam đã có, ráp vào chứ đừng dựng lại:** `Portal` (kích hoạt warp) · `Gate` (điểm đặt chân khi tới) ·
     `Map.GetGate(index)` · `MapService.WarpAsync` (đã chặn input suốt lúc swap qua `IInputGate`, và
     `PlaceAtGate` đã đặt player + `SnapToTarget` camera).
     - Muốn cảnh "bước ra từ vùng tối" thì **gate đến phải nằm TRONG vùng tối**, rồi player tự đi ra. Cân nhắc
       giữ input thêm một nhịp sau khi swap để cú bước ra đó đọc được, thay vì thả ngay.
-  - **Chưa chốt:** vùng tối này có chịu ảnh hưởng ngày/đêm & thời tiết không, hay luôn tối như nhau? Ban đêm
-    mà cả map đều tối thì viền mất tác dụng chỉ đường.
+    - Gate hiện tại đều nằm giữa map (`Map_1` Gate_0 `(18.7, 29.11)`, Gate_1 `(23.6, 21.45)`) → phải **dời gate
+      vào trong dải sương** mới có cảnh đó, và dời thì kiểm luôn cell đó có walkable không (bờ tây là nước).
 
 - [ ] **Weather system.** Cắm vào seam `--- Weather seam ---` trong `DayNightLighting.LateUpdate`:
   weather biến đổi `EnvironmentState` (ambient/fog/intensity) *sau* day/night rồi mới đẩy vào LightManager.

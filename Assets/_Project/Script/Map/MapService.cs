@@ -76,11 +76,13 @@ public class MapService : IMapService
         // TODO transition FX out
     }
 
-    // Point the collision world at the loaded map's terrain. The map's obstacle bodies register themselves
+    // Point the scene's world systems at the loaded map's terrain. The map's obstacle bodies register themselves
     // (CollisionBody.OnEnable), and SetTerrain re-applies the new pass mask to them — so no per-body wiring.
+    // The border fog needs the same grid for a different reason: its darkness is anchored to the map's edge.
     void WireMapToScene(GameObject map)
     {
         var terrain = map.GetComponentInChildren<TerrainGrid>(true);
+        MapBorderFog.Terrain = terrain;
         if (terrain != null) CollisionSystem.Instance?.SetTerrain(terrain);
         else Debug.LogWarning($"[MapService] map '{CurrentMapId}' has no TerrainGrid — tile collision disabled.", map);
     }
