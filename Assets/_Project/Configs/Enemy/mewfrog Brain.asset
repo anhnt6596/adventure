@@ -26,6 +26,8 @@ MonoBehaviour:
   forgetTime: 3
   recognizeTime: 1
   retaliateRadius: 4
+  activeFrom: 0
+  activeTo: 24
   references:
     version: 2
     RefIds:
@@ -45,3 +47,4 @@ MonoBehaviour:
         amble: 0.5
         restMin: 1.5
         restMax: 3.5
+        activeHoursOnly: 0
