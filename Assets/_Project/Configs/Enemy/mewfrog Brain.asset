@@ -20,9 +20,9 @@ MonoBehaviour:
     rid: 7311000000000000003
   attack:
     rid: 7311000000000000004
-  attackRange: 3
-  leashRadius: 8
-  reEngageRadius: 5
+  attackRange: 2.5
+  leashRadius: 6
+  reEngageRadius: 4
   forgetTime: 3
   recognizeTime: 1
   retaliateRadius: 4

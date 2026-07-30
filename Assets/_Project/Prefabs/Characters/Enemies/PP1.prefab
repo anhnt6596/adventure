@@ -133,7 +133,7 @@ MonoBehaviour:
   shape: 0
   radius: 0.2
   size: {x: 1, y: 1}
-  mass: 4
+  mass: 2
   knockbackDrag: 8
 --- !u!114 &233032119361070334
 MonoBehaviour:

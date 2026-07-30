@@ -17,7 +17,7 @@ MonoBehaviour:
   rest: 0
   clips:
   - action: 0
-    fps: 6
+    fps: 10
     loop: 1
     hitFrame: -1
     dirs:
@@ -42,7 +42,7 @@ MonoBehaviour:
       - {fileID: -1600927606, guid: e8bbfee550556504b869de9498def4f2, type: 3}
       - {fileID: 1667570295, guid: e8bbfee550556504b869de9498def4f2, type: 3}
   - action: 1
-    fps: 6
+    fps: 10
     loop: 1
     hitFrame: -1
     dirs:
@@ -75,7 +75,7 @@ MonoBehaviour:
       - {fileID: -1937457683, guid: f09feeb5ed328034891cb6fffbad6852, type: 3}
       - {fileID: 2140616779, guid: f09feeb5ed328034891cb6fffbad6852, type: 3}
   - action: 2
-    fps: 6
+    fps: 10
     loop: 0
     hitFrame: 4
     dirs:
