@@ -18,7 +18,10 @@ public class SpriteShadow : MonoBehaviour
 {
     [SerializeField] SpriteRenderer source;    // the art sprite to cast (auto-found in children if null)
     [SerializeField] Material material;         // GroundShadow material (auto-made from the shader if null)
-    [SerializeField] int orderOffset = -1;      // sorting order vs the source (non-merge mode only)
+    // Sorting order vs the source (non-merge mode only). Relative on purpose, unlike the reflection's: a shadow
+    // belongs to the thing casting it and should follow it. -1 puts it in the on-the-ground band
+    // (Core.WorldOrder), so it lands over a bridge deck and under anything standing.
+    [SerializeField] int orderOffset = -1;
     [SerializeField] Vector2 groundOffset;      // XZ nudge if the trunk isn't exactly over the root
     [SerializeField] float yawOffset;           // fine-tune the sun-facing yaw (degrees)
     [SerializeField] float scale = 1.05f;       // shadow size relative to the art

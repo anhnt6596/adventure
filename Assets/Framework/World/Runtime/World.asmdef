@@ -1,7 +1,9 @@
 {
     "name": "World",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Core"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

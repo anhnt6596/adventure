@@ -1,4 +1,5 @@
 using UnityEngine;
+using Core;
 
 // Fake water reflection for a billboard sprite — the cheap 2D trick, not a rendered mirror. A second
 // SpriteRenderer mirrors the art, faces the camera exactly like it, and hangs flipped below the caster's
@@ -14,8 +15,10 @@ public class WaterReflection : MonoBehaviour
 {
     [SerializeField] SpriteRenderer source;    // the art sprite to reflect (auto-found in children if null)
     [SerializeField] Material material;         // WaterReflection material (auto-made from the shader if null)
-    [SerializeField] int orderOffset = -10;      // under the ground layers (so the shore overhang hides its
-                                                // edge) but over the water — tune per your terrain sorting
+    // ABSOLUTE, not an offset from the source sprite. A reflection's place in the stack is a fact about the
+    // world - it belongs under the water surface - not a relation to the thing being reflected; an offset would
+    // follow a sprite that moved band and surface on top of the water it is supposed to be inside.
+    [SerializeField] int order = WorldOrder.Reflection;
     [SerializeField] float surfaceOffset;       // nudge the reflection up/down along world Y (waterline tweak)
     [SerializeField] float scale = 1f;          // overall size vs the caster (1 = same width as the sprite)
     [SerializeField, Range(0.2f, 1f)] float length = 0.7f;  // foreshorten: a real reflection is shorter than
@@ -57,7 +60,7 @@ public class WaterReflection : MonoBehaviour
         _reflection.sprite = source.sprite;
         _reflection.flipY = true;                    // the vertical mirror; ReflectionManager does the rest
         _reflection.sortingLayerID = source.sortingLayerID;
-        _reflection.sortingOrder = source.sortingOrder + orderOffset;
+        _reflection.sortingOrder = order;
         _lastSprite = source.sprite;
     }
 

@@ -1,7 +1,9 @@
 {
     "name": "Sprite3D",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Core"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

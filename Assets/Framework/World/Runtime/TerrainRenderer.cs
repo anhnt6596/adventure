@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Core;
 
 [ExecuteAlways]
 [RequireComponent(typeof(TerrainGrid))]
@@ -12,9 +13,15 @@ public class TerrainRenderer : MonoBehaviour
 
     [SerializeField] Material material;
     [SerializeField] Material waterMaterial;   // a Water-kind layer is a flat mesh with this shader
-    [Tooltip("Order of the topmost terrain layer; the ones below it count down. Keep it under " +
-             "anything that stands on the ground.")]
-    [SerializeField] int sortingOrder = -2;
+
+    [Tooltip("Order in layer for the TOPMOST tile layer; every layer under it steps one lower, so tiles never " +
+             "rise above this. The band between here and 0 is reserved for flat things that are not terrain — " +
+             "bridge decks, boats, roads. See Core.WorldOrder.")]
+    [SerializeField] int tileOrder = WorldOrder.TerrainTop;
+
+    [Tooltip("Order in layer for a Water-kind layer. Its own band, well under the tiles, so reflections have " +
+             "somewhere to live beneath it.")]
+    [SerializeField] int waterOrder = WorldOrder.Water;
 
     [Tooltip("Vertical gap between layers. Coplanar layers z-fight.")]
     [SerializeField] float layerHeight = 0.002f;
@@ -36,23 +43,52 @@ public class TerrainRenderer : MonoBehaviour
 
     void Awake() => _grid = GetComponent<TerrainGrid>();
 
-    // Baked meshes ride with the prefab, so the game (and reloads) skip the build entirely.
-    void OnEnable() { _grid = GetComponent<TerrainGrid>(); if (!baked) Build(true, false); }
-
-#if UNITY_EDITOR
-    // Layer and sorting order are copied onto the generated objects, so changing them here has to
-    // reach the ones already built.
-    void OnValidate()
+    // Baked meshes ride with the prefab, so the game (and reloads) skip the build entirely — but the ORDER is
+    // re-applied either way. Order is policy, not geometry: a map baked under an older layout would otherwise keep
+    // numbers nobody can find the source of any more, and restacking the world would mean rebaking every map.
+    void OnEnable()
     {
-        for (int i = 0; i < _layerObjects.Count; i++)
+        _grid = GetComponent<TerrainGrid>();
+        if (!baked) Build(true, false);
+        else ApplyOrders();
+    }
+
+    // Order in layer for one terrain layer. Tiles hang DOWN from tileOrder so the topmost is the highest and the
+    // band above it stays free; water sits in its own band entirely.
+    int OrderFor(TerrainSet set, int layer)
+    {
+        bool water = set.layers[layer].kind == TerrainKind.Water;
+        int top = -1;
+        for (int i = 0; i < set.Count; i++)
+            if ((set.layers[i].kind == TerrainKind.Water) == water) top = i;
+
+        return (water ? waterOrder : tileOrder) - (top - layer);
+    }
+
+    // Pushes the layer and the order onto whatever generated children exist, baked or live. Matched by the
+    // generated name rather than by a tracked list, because a domain reload empties the list and leaves the
+    // objects — which is exactly when an order change used to silently do nothing.
+    void ApplyOrders()
+    {
+        var set = _grid != null ? _grid.Set : null;
+        if (set == null) return;
+
+        for (int layer = 0; layer < set.Count; layer++)
         {
-            var go = _layerObjects[i];
-            if (go == null) continue;
-            go.layer = gameObject.layer;
-            var mr = go.GetComponent<MeshRenderer>();
-            if (mr != null) mr.sortingOrder = sortingOrder - (_layerObjects.Count - 1 - i);
+            string prefix = (set.layers[layer].kind == TerrainKind.Water ? WaterPrefix : LayerPrefix) + layer + "_";
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                var child = transform.GetChild(i);
+                if (!child.name.StartsWith(prefix)) continue;
+                child.gameObject.layer = gameObject.layer;
+                var mr = child.GetComponent<MeshRenderer>();
+                if (mr != null) mr.sortingOrder = OrderFor(set, layer);
+            }
         }
     }
+
+#if UNITY_EDITOR
+    void OnValidate() => ApplyOrders();
 #endif
 
     // Live rebuild (DontSave) - used while editing and, if nothing is baked, on load.
@@ -121,9 +157,9 @@ public class TerrainRenderer : MonoBehaviour
             mr.shadowCastingMode = ShadowCastingMode.Off;
 
             // The material writes no depth and the layers overlap (a terrain overhangs onto the ones
-            // below), so a distinct render queue per layer forces the draw order - a higher terrain
-            // always paints after, and over, everything under it. sortingOrder is a fallback.
-            mr.sortingOrder = sortingOrder - (set.Count - 1 - layer);
+            // below), so the distinct render queue per layer agrees with the order - a higher terrain
+            // always paints after, and over, everything under it. Order in layer is what decides.
+            mr.sortingOrder = OrderFor(set, layer);
 
             var mats = MaterialsForSubmeshes(layer);
             PersistGenerated(mesh, mats, go.name);   // asset when baking, throwaway when live
@@ -156,7 +192,7 @@ public class TerrainRenderer : MonoBehaviour
         var mr = go.AddComponent<MeshRenderer>();
         mr.sharedMaterial = waterMaterial;   // shared asset already; only the mesh needs persisting
         mr.shadowCastingMode = ShadowCastingMode.Off;
-        mr.sortingOrder = sortingOrder - (set.Count - 1 - layer);
+        mr.sortingOrder = OrderFor(set, layer);
 
         PersistGenerated(mesh, null, go.name);
         mf.sharedMesh = mesh;

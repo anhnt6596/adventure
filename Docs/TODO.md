@@ -744,6 +744,42 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
 
 ## 🧹 Tech debt / cleanup
 
+- [x] **Chia lại Order in Layer của thế giới.** ✅ `Core.WorldOrder` — **một bảng, một chỗ**, vì project chỉ có
+  **MỘT** sorting layer (`Default`) nên order-in-layer là toàn bộ ngân sách thứ tự.
+
+  | order | gì |
+  |---|---|
+  | **−300** | phản chiếu nước (`WaterReflection`) |
+  | **−200** | mặt nước (layer kind Water) |
+  | **−100 trở xuống** | tile terrain — layer trên cùng ở −100, mỗi layer dưới nó thấp hơn 1 |
+  | **−99 … −1** | **NẰM TRÊN mặt đất**: mặt cầu, tàu thuyền, đường, decal, bóng đổ |
+  | **0** | đứng trong thế giới: nhân vật, cây, prop — mọi thứ billboard |
+
+  - **Cái dải trống giữa tile và 0 mới là điểm của việc này.** Trước đó cả thế giới bị nhồi vào **−5..0**
+    (`-5` water, `-4/-3/-2` tile, `-2/-1` bóng, `0` sprite, `-10` reflection) — **không còn chỗ chèn**: thứ gì
+    nằm phẳng trên đất mà không phải terrain, đi *qua* chứ không đi *quanh*, đều không có ô nào để nhét vào.
+    100 bậc mỗi band không phải hào phóng, nó là thứ chặn lần sau phải đánh số lại cả dãy.
+  - `TerrainRenderer`: bỏ `sortingOrder`, thay bằng `tileOrder` (−100) + `waterOrder` (−200). Tile **treo xuống**
+    từ `tileOrder` nên layer trên cùng là cao nhất và dải trên nó luôn rảnh. Với `Terrain Set 1`:
+    Brick **−100** · Grass **−101** · Mud **−102** · Water **−200**.
+  - **`WaterReflection.order` thành TUYỆT ĐỐI (−300), không còn là offset theo sprite chủ.** Chỗ của phản chiếu
+    trong stack là **sự thật về thế giới** (nó ở dưới mặt nước), không phải quan hệ với vật được phản chiếu —
+    offset sẽ đi theo một sprite đổi band rồi nổi lên trên mặt nước mà nó lẽ ra phải nằm trong.
+  - **`SpriteShadow.orderOffset` GIỮ tương đối (−1)** — trái với reflection, và có lý: bóng thuộc về vật đổ ra nó
+    nên phải đi theo. −1 rơi vào dải trên-mặt-đất, tức bóng đổ **lên** mặt cầu và **dưới** mọi thứ đang đứng.
+  - **Map đã bake không cần bake lại để đổi order.** `TerrainRenderer.OnEnable` giờ gọi `ApplyOrders()` cả khi
+    `baked` — order là **chính sách, không phải hình học**. Kèm theo sửa một bug: `OnValidate` cũ lặp
+    `_layerObjects`, mà domain reload xoá list nhưng giữ object, nên đổi order trong inspector **âm thầm không có
+    tác dụng**; giờ match theo tên child (`Layer_{i}_` / `Water_{i}_`) nên luôn tới được.
+  - **Render queue KHÔNG phải núm ở đây.** Order-in-layer thắng nó — đó là lý do các layer terrain (queue
+    3000..3003) vẫn vẽ **dưới** sprite ở queue 3000. Queue chỉ phá thế hoà: 3 veil camera đều order 0 và chỉ tách
+    nhau bằng queue (`BorderFog` 3990 · `DarknessMask`/`Fog` 4000).
+  - **Hai thứ nằm ngoài thang này, đừng cố xếp vào:** **cỏ** (`Grass/Billboard` queue `AlphaTest` 2450 → pass
+    **opaque**, **ghi depth**, vẽ bằng `RenderMeshInstanced` nên **không có sortingOrder**) và **layer 7 `Light`**
+    (`spotlight`/`light` → `LightCamera` → RT `LightMap`, một vũ trụ thứ tự riêng).
+  - `World.asmdef` và `Sprite3D.asmdef` giờ ref `Core` để cùng đọc được bảng. Không tạo vòng: `Core` chỉ ref
+    UniTask + Newtonsoft.
+
 - [x] **`hitRadius` rời config → `[SerializeField]` trên `Damageable`.** ✅ Bán kính bị đánh là thuộc tính của
   **thân này**, không phải của loài: hai thứ dùng chung config vẫn có thể vẽ to nhỏ khác nhau, và số này phải
   khớp với **art** — thứ chỉ nhìn được trong prefab, cạnh gizmo. Gỡ khỏi `IDamageableConfig` + `EnemyConfig` +
