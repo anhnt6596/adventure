@@ -182,6 +182,126 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 
 ## 🌳 Content systems
 
+- [x] **`Map_3` — đảo, sông, cỏ, zone quái, sinh bằng script.** ✅ Một hòn đảo, **bốn bề là nước**, bờ cách rìa
+  grid **8 ô** (yêu cầu ≥5) nên còn dư đất cho lối sang map khác, và dải sương viền map nằm **hoàn toàn trên mặt
+  nước** — đúng cảm giác "thế giới tan vào sương mù ngoài khơi".
+  - **Nó là `Map_3`, KHÔNG phải `Map_1`.** Bản này là mẫu/đối chiếu; `Map_1` đã được **trả về nguyên trạng**
+    (`baked: 1`, `Map_1_Bake/`, 1 GrassField, 2 zone, 2 gate) và vẫn là map spawn vì
+    `GameController.StartMapId` hard-code `"Map_1"`. **`Map_3` hiện chưa có đường tới** — chưa portal nào trỏ vào
+    nó; muốn vào thì đổi `StartMapId` hoặc trỏ `Portal` của `Map_1` sang.
+  - **Sông 3 khúc CẮT ĐÔI đảo thật, không phải trang trí.** Kiểm bằng cách bỏ ford ra rồi đếm mảnh đất:
+    **833 + 219 ô** (hai mảnh). Cắm lại 2 **ford bằng mud** thì về **1080 ô liền mạch**. Nên muốn sang bờ bắc
+    là phải đi tìm chỗ cạn — đó là lý do con sông tồn tại. Chỗ đứng của spawn nằm ở **mảnh lớn**, cố ý.
+  - 3 hồ + 4 vũng nhỏ, **chọn chỗ bằng trường khoảng-cách-tới-nước** chứ không gõ toạ độ tay: chỗ sâu trong đất
+    nhất mới là chỗ một cái hồ đọc ra là hồ thay vì một khúc bờ biển lởm chởm, và nó tự chọn lại khi bờ hoặc
+    sông đổi. Viền hồ có harmonic giống bờ biển: bán kính trơn thì raster ra **hình thoi**, mà 7 hình thoi
+    giống nhau thì trông như sân golf.
+  - Mud là **bờ 1 ô** ở mọi chỗ đất giáp nước (4 hướng, không tính chéo — chéo không phải bờ, tính vào thì mud
+    gấp đôi). Không dùng **Brick**: gạch là dấu vết con người, tức là *nội dung*, để bạn tự đặt.
+  - 5 `Meadow_*` (`GrassField` 24×20, density 55) thay cho 1 field cũ; mask **tắt sạch ở ô không phải Grass**
+    nên không có cọng cỏ nào mọc trên bờ mud hay dưới nước, và có noise nên nó là đồng cỏ chứ không phải bãi
+    cỏ sân vườn. 4 zone quái: **mewfrog ×2 ở đồng trống**, **pp1 ×2 ở đất ẩm cạnh hồ/sông** — cũng đúng chỗ
+    người chơi phải đi qua khi tìm ford. Zone cách spawn ≥10 ô: zone `warm` đầy ngay lúc load, đặt trúng spawn
+    thì người chơi hiện ra *giữa ổ* thay vì đi tìm được nó.
+  - 9 cây + 4 đá cũ được **rải lại** (2 lùm + 1 bãi đá) — không phải việc được nhờ, nhưng để nguyên thì cả 13
+    cái nằm ngoài biển.
+  - **⚠️ Prefab được viết từ NGOÀI Unity, nên mọi thứ Unity thường bake đã bake bằng tay:** `cells`,
+    `walls` (port `WalkBake` 1:1 — kiểm chứng bằng cách so wall đầu tiên với output cũ của Unity, **trùng khít**),
+    mask của 5 field cỏ, và `cells` baked của 4 zone (mirror `SpawnZone.Bake` + `Spawnable`). Mesh terrain là
+    thứ **duy nhất** không bake — xem mục "Bake mesh terrain" ở phần Flat tile map.
+  - **Gate/Portal chỉ là tạm**: `Gate_0` (spawn) giữa đảo, `Gate_1` + `Portal_map2_0` ở bờ đông nam. Đặt sao cho
+    game chạy được ngay, không phải thiết kế lối đi — chỗ nào gate nằm trong sương, chỗ nào không, là việc sau.
+  - Script sinh map là **đồ dùng một lần**, cố ý **không** commit vào project. Từ giờ **editor là source of
+    truth**: vẽ lại bằng `TerrainGridEditor` + `GrassFieldEditor` + nút Bake của zone.
+
+- [x] **Cầu — phủ lên ô nước và ghi đè thành walkable.** ✅ `IDeck` + `TerrainGrid` (deck registry, walkable
+  per-ô, region map, version stamp) + `Bridge` + `GridArea`.
+  - **⚠️ Điều phải biết trước mọi thứ khác: thứ CHẶN di chuyển là `walls`, không phải `IsWalkable`.**
+    `CollisionWorld.ResolveTerrain` chỉ đẩy body ra khỏi `WallSeg` đã bake. `IsWalkable` chỉ có 2 chỗ gọi
+    (`WanderRoam`, `SpawnZone.Bake`), `CanPass` **trước đây không ai gọi**. Nên "ghi đè walkable" nghĩa là
+    **bake lại tường**, không phải sửa một hàm truy vấn.
+  - **Walkability rời khỏi terrain ID, thành PER-Ô.** `WalkBake` trước nhận `bool[]` **theo id** — bảng đó
+    không thể nói "riêng ô nước NÀY đứng được", mà đó đúng là định nghĩa của cầu. Giờ mọi thứ suy từ một mảng:
+    `passable[cell] = deck[cell] || set.IsWalkable(cells[cell])`. Wall bake, truy vấn walkable và (sắp tới)
+    pathfinding đọc **cùng một mảng** nên không thể lệch nhau về chỗ có cầu — không phải vì được đồng bộ cẩn
+    thận, mà vì **không còn nguồn thứ hai để lệch**. Migration depth-mask sau này là thêm đúng một số hạng
+    `&& height == 0` vào cùng dòng đó.
+  - **TAY CẦU TỰ SINH, không author.** Chỉ ô **bị chặn** mới phát face, và chỉ ở cạnh giáp ô walkable → nước hai
+    bên tự rào deck lại; còn hai đầu cầu, chỗ deck giáp đất, cả hai bên đều walkable nên **không phát gì** và bước
+    lên tự nhiên. Đo trên `Map_1` (giả lập bỏ 2 ford để sông cắt đôi đảo thật): **833 + 220 mảnh → 1060 một
+    mảnh**, **21 face tay cầu** do 4 ô láng giềng của deck phát, **0** face do ô deck phát. Không một dòng code
+    nào nói về tay cầu.
+  - **Terrain KHÔNG bị sửa** — 7/16 ô của cây cầu test vẫn là Water trong `cells`, nên `BuildWaterMesh` vẫn vẽ
+    sông dưới cầu và `uv1.x` (khoảng cách tới bờ) của water shader không xê dịch. Đây là lý do **loại** hướng
+    "paint một layer Bridge vào TerrainSet": một ô giữ **một** id, paint là xoá luôn ô nước → sông có lỗ dưới
+    cầu, và trường shore tưởng chỗ đó là đất nên mọc foam quanh cầu.
+  - **Shape: dùng lại `SpawnArea`, đổi tên thành `GridArea`.** Comment trong file đó đã dự đoán sẵn việc này.
+    Test trong **local space** nên **quay transform là quay shape** → hết chuyện "quy ước hướng", cầu chéo chỉ là
+    một box đã quay. Thêm `LineArea` (polyline + width) cho cầu uốn — cùng cách con sông được mô tả.
+    - Đổi tên **base** trừu tượng là an toàn: `[SerializeReference]` lưu tên **class cụ thể** (`CircleArea`/
+      `BoxArea`), đã kiểm trong YAML. Đổi tên class cụ thể mới cần `[MovedFrom]`.
+    - `SpawnZoneEditor` bỏ enum gõ tay (nó vốn đã **thiếu một shape**), cả nó lẫn `BridgeEditor` dùng
+      `ManagedRefPicker` — reflection TypeCache dùng chung với `EnemyBrainConfigEditor`. Thêm shape = 1 class.
+  - **KHÔNG BAKE GÌ CẢ — `WalkBake` và `walls` đã bị XOÁ.** Bake tồn tại chỉ để biến "lưới ô bị chặn" thành
+    "danh sách đoạn thẳng", mà `_terrain.Walls` có **đúng một** consumer là `CollisionWorld.ResolveTerrain`. Giờ
+    `TerrainGrid.CellFaces(x,y,...)` sinh face của **một ô** khi được hỏi, và collision chỉ hỏi **các ô body với
+    tới được**. Không có mảng nào để bake, serialize, canh đồng bộ với deck, hay phát hiện đã cũ sau khi ship.
+    - **Hình học TRÙNG KHÍT bake cũ** — đã verify trên `Map_1`: union face sinh sống qua mọi ô = **884 segment,
+      đúng thứ tự, đúng từng giá trị** như `WalkBake` từng bake. Kể cả chamfer góc lồi và bulge góc lõm. Nên
+      **cảm giác đi sát tường/bờ không đổi một ly** — đây là lý do chọn "sinh lại đúng face" thay vì "đẩy ra khỏi
+      rect ô", vốn sẽ mất chamfer.
+    - **Nhanh hơn, và không phụ thuộc kích thước map:** trước là `O(số body × MỌI segment của map)` —
+      `foreach body { for hết 884 }`. Giờ ≤ 9 ô × 12 face = **108** dù map to bao nhiêu. Map `256×256` từng có
+      ~14.000 segment mà mọi body đều quét hết.
+    - **Lật deck là tức thì**: không rebake, không debounce, không stamp, không cảnh báo asset cũ. Toàn bộ câu hỏi
+      "bake lúc nào" **không còn tồn tại**.
+    - Đi kèm: xoá `WalkBake.cs`, `TerrainGrid.walls`, `bakedDeckHash`, `BakeWalkable()`, mảng gộp `_passable`,
+      nút **"Bake Walkable"** trong `TerrainGridEditor`, và nhánh bake trong `FinishPaint`. `WallSeg` ở lại
+      (`WallSeg.cs`) vì nó vẫn là hình dạng của một face, chỉ khác là không ai lưu nó nữa. Dọn luôn dữ liệu
+      `walls` chết trong `Map_1` (884) và `Map_2` (284).
+    - Còn **đúng một cache** trên đường collision: **bitmap `deck`**, raster từ shape các cầu. Không test sống vì
+      như thế là `O(số cầu)` mỗi lần hỏi ô, và `GridArea` nằm ở game-side còn collision ở Framework. Khác
+      `_passable` ở chỗ: nó được làm mới bởi **một tín hiệu tường minh** (cầu đổi), không phải bởi thứ gì ngầm.
+    - `region` cũng là cache nhưng **không** nằm trên đường collision — chỉ pathfinding đọc, tính lười theo
+      `WalkVersion`.
+    - Refresh lazy trên đường truy vấn, **không** Update riêng — một frame lật 3 deck thì refresh **đúng một
+      lần**, không có thứ tự update nào phải canh với collision tick. Cầu di chuyển thì `Bridge.LateUpdate` so 4
+      giá trị TRS (transform không có callback đổi).
+    - Mesh terrain **vẫn bake** và không liên quan: nó phụ thuộc `cells`, mà cầu không sửa `cells`.
+    - Kéo theo: **bấm "Bake Spawn Cells" SAU khi đặt cầu.** `SpawnZone.Bake` đọc `IsWalkable` nên giờ nó thấy cả
+      deck; zone bake trước khi có cầu sẽ khác zone bake sau. Đây là bake **duy nhất** còn phải nhớ thứ tự.
+  - **Hook chừa sẵn cho pathfinding** (đã chốt là việc kế tiếp): `CanPass(mask,...)` giờ có số hạng deck nên
+    **thợ lội có graph riêng miễn phí**; `region` map (flood 4-hướng) trả lời "có tới được không" trong **O(1)** —
+    cái bẫy chi phí lớn nhất của A*, và cầu rút lên làm nó thành chuyện thường; `WalkVersion` bump mỗi lần tập
+    walkable đổi, để path cache tự vô hiệu. Flood 4-hướng **cố ý**: `WalkBake` chamfer góc lồi nên body không
+    lách được khe chéo, tính chéo là hứa một đường đi mà collision từ chối.
+  - **`SameRegion` còn dùng được cho một bug đang có:** `WanderRoam` chọn điểm chỉ theo `IsWalkable`, nên mewfrog
+    chọn được điểm bên kia sông rồi húc bờ mãi. **Chưa rewire** — không thuộc việc cầu.
+  - **Còn hở, cần bạn quyết:** body đang đứng trên deck lúc deck mất (drawbridge, cầu sập). Hiện `ResolveTerrain`
+    tự ứng biến: mỗi frame đẩy body về phía walkable → bị xô dạt về bờ, và **giữa sông rộng thì tường hai bên đẩy
+    ngược nhau nên có thể kẹt**. Cần luật gameplay (rơi xuống nước / dịch về bờ / trừ máu), không phải cảnh báo
+    lúc bake.
+  - **Cầu chéo nên rộng ≥2 ô**: bậc thang 1 ô thắt ở mọi góc, mà connectivity theo ô không biết bán kính body —
+    path hợp lệ mà đi không được.
+  - Chưa có art: `Bridge` chạy được **không cần art nào** (deck vô hình). Thả 1 GameObject + `Bridge` +
+    `BoxArea` lên map là đi thử được ngay. Mặt cầu khi có art nên là quad phẳng, `renderQueue` trên layer terrain
+    cao nhất; tay cầu/cột là billboard dưới node `Billboard` để ăn sẵn `FadeWhenBlocking`.
+  - **⚠️ LUẬT ART CỦA CẦU — chốt trước khi vẽ, đắt nếu phát hiện muộn.** Deck raster xuống ô (tâm ô trong shape),
+    nên art và vùng đi được lệch nhau tới **nửa ô = 1 đơn vị = 2× bán kính body**. Art chính là thứ nói cho người
+    chơi biết chỗ nào đi được, nên **chiều lệch quyết định nó là chuyện thường hay là bug**:
+    - art **trùm ra ngoài** ô đi được → an toàn, đọc ra "mép ván không đứng tới được".
+    - art **hụt vào trong** → người chơi đi trên không khí cạnh tấm ván. Hỏng.
+    → Vẽ mặt cầu **phủ hết ô đã deck (ô vàng trong gizmo), hơi trùm ra**. Không vẽ ván trước rồi nắn ô theo.
+    - Kéo theo: **art hẹp hơn 1 ô (2 đơn vị) là không dùng được** — rope bridge 1 đơn vị thì deck vẫn 1 ô rộng
+      gấp đôi nó. Muốn cầu mảnh thật thì phải giảm `cellSize`, **không** phải cho shape tự làm collision (xem
+      dưới).
+    - **Đã cân và BỎ hướng "dùng shape làm collision"**: deck không phải vật cản mà là *lỗ trong vật cản*, nên
+      phải clip face của ô theo shape + sinh viền shape rồi clip viền theo biên đất/nước — `GridArea` phải lớn từ
+      một hàm `Contains` thành primitive CSG 2D, mỗi shape tự làm. Nhưng giá thật không phải công sức: tầng logic
+      (`IsWalkable`, region, `SpawnZone.Bake`, `WanderRoam`, pathfinding) **vĩnh viễn nói bằng ô**, nên cầu sẽ có
+      hai bản lệch nhau nửa ô — người chơi đứng được ở mép deck mà pathfinding tin ô đó là nước. Đó là tính chất
+      cấu trúc, không phải bug để sửa.
+
 - [ ] **Dựng Plant1 + Plant2 thành quái, y khuôn PP1.** Art nằm sẵn ở `Assets/DraftArt/Predator plant/Plant1`
   và `Plant2`, cấu trúc thư mục **giống hệt** `Plant3` (đã thành PP1): `Attack/Death/Hurt/Idle/Run/Walk`.
   Làm được **hoàn toàn ngoài Unity** — đã kiểm, chốt bên dưới. Xong thì sửa AI để thành hai loài khác nhau.
@@ -295,6 +415,10 @@ migration này được code thật.
   sinh giá trị dương/raised walkable ground.
 - [ ] Sửa `TerrainGrid.IsWalkable`/`CanPass`: chỉ cho phép ô trong map có `height == 0`; bỏ việc
   quyết định walkable bằng terrain layer sau khi migration.
+  - **Việc này đã được trả trước một nửa khi làm cầu:** walkability không còn là bảng theo terrain id mà là
+    **một hàm đọc sống**, `TerrainGrid.Standable(x,y)` = `deck[ô] || set.IsWalkable(cells[ô])`. Migration chỉ là
+    thêm một số hạng vào **đúng một dòng đó**: `&& height == 0`. Không có mảng nào để dựng lại, không có bake nào
+    để mở lại — `WalkBake` đã bị xoá.
 - [ ] **Depth painter trong `TerrainGridEditor`.** Có ba tool riêng, không giấu Flatten trong modifier:
   - `Lower`: giảm depth theo step.
   - `Raise`: tăng depth theo step nhưng clamp tối đa về `0`.
@@ -334,6 +458,9 @@ migration này được code thật.
 - [ ] **Bake mesh terrain lúc BUILD game (product), không phải tầng asset.** Hiện `TerrainRenderer.Build()`
   procedural ở `OnEnable`, các `Layer_*` để `HideFlags.DontSave` nên **không lưu vào prefab** (chỉ `cells`
   + `walls` lưu). Dev cứ để procedural: asset nhỏ, sửa map khỏi re-bake, mesh dựng lại từ `cells` khi load.
+  - **`Map_3` đang đúng trạng thái đó**: `baked: 0`, không có `Layer_*`/`Water_*` trong prefab, không có thư mục
+    bake (nó là **cache dẫn xuất** — `PrepareBakeFolder` xoá sạch rồi tạo lại mỗi lần bake). Muốn bake thì mở
+    prefab rồi `TerrainRenderer > Rebuild Terrain Mesh`. `Map_1` và `Map_2` vẫn `baked: 1`, chưa đụng.
   - Chỉ bake khi **profiling load-time thật sự đáng kể** (map to / swap map liên tục qua jump-point). Đo
     `Build()` trước; mesh phẳng vài ms/lần thường là bỏ qua được.
   - Nếu cần: **`IPreprocessBuildWithReport`** bake mọi map thành Mesh asset + serialize `Layer_*` vào prefab
@@ -342,6 +469,9 @@ migration này được code thật.
   - `walls` (collision) đã bake & lưu sẵn — chỉ mesh *hình ảnh* mới cần lo.
 - [ ] **Runtime mutation — hiếm, tối ưu vừa đủ.** Game sau này có thể phá/hạ một vài tile hoặc lấp hố,
   nhưng thay đổi map xảy ra rất hiếm; chưa xây hệ terraforming liên tục.
+  - **Phần collision của mục này đã KHÔNG CÒN VIỆC** (từ lúc làm cầu): boundary sinh từ ô khi được hỏi, nên phá
+    một tile là sửa `cells` — collision đúng ngay tick sau, không rebake, không dirty chunk. Mọi thứ dưới đây giờ
+    chỉ còn nói về **mesh / water mask / grass**.
   - Khi cell đổi: cập nhật depth grid ngay, lấy bounds các cell vừa sửa rồi `Expand(1)` theo bốn hướng;
     mọi chunk giao vùng đó vào một `HashSet` dirty. Cách này tự kéo cả chunk cạnh/góc cần thiết vì cliff
     và corner phụ thuộc hàng xóm.
@@ -427,7 +557,7 @@ migration này được code thật.
     `2·tan3°·50 / sin35° ≈ 9.1`) — tức dải rộng gần **nửa màn hình**. `_WallHeight 1.5` thì tường sương lấn vào
     trong map `1.5·cos35°/sin35° ≈ 2.1` đơn vị. Cả `_Opacity`, `_WobbleCells`, `_NoiseScale` đều là
     thứ chỉ nhìn mới chốt được.
-  - **Chỗ test trong `Map_1`:** đất vẽ tới sát grid border ở **+X** và **−Z**; phía **−X còn 8 đơn vị nước**
+  - **Chỗ test trong `Map_3`:** đất vẽ tới sát grid border ở **+X** và **−Z**; phía **−X còn 8 đơn vị nước**
     (cell 0–3 là Water id 0) nên đứng ở bờ tây chỉ thấy nửa ngoài của dải. Gate_0 ở `(18.7, 29.11)` → đi
     xuống **−Z** khoảng 29 đơn vị là tới biên trên đất liền. Muốn thấy ngay thì kéo tạm `_BandCells` lên ~20.
   - Chưa dùng chung `CloudShade.hlsl` (mục Mây bay) vì file đó **chưa tồn tại** — noise nằm inline trong shader,
@@ -441,7 +571,8 @@ migration này được code thật.
     `PlaceAtGate` đã đặt player + `SnapToTarget` camera).
     - Muốn cảnh "bước ra từ vùng tối" thì **gate đến phải nằm TRONG vùng tối**, rồi player tự đi ra. Cân nhắc
       giữ input thêm một nhịp sau khi swap để cú bước ra đó đọc được, thay vì thả ngay.
-    - Gate hiện tại đều nằm giữa map (`Map_1` Gate_0 `(18.7, 29.11)`, Gate_1 `(23.6, 21.45)`) → phải **dời gate
+    - Gate hiện tại đều nằm giữa map (`Map_1` Gate_0 `(18.7, 29.11)`, Gate_1 `(23.6, 21.45)`; `Map_3` cũng
+      vậy) → phải **dời gate
       vào trong dải sương** mới có cảnh đó, và dời thì kiểm luôn cell đó có walkable không (bờ tây là nước).
 
 - [ ] **Weather system.** Cắm vào seam `--- Weather seam ---` trong `DayNightLighting.LateUpdate`:
@@ -591,6 +722,8 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
 - [ ] **BUG: đổi map thì quái map cũ không chết, số quái nhân đôi.** Đi sang map khác → quái của map cũ vẫn
   đứng đó, mà zone của map mới **vẫn chạy `warm`** nên đẻ thêm một lứa đầy → gấp đôi. Quay đi quay lại vài lần
   là ngập.
+  - **Nặng hơn ở `Map_3`:** map đó có **4 zone** (mewfrog ×2 cap 4, pp1 ×2 cap 3) = **14 con mỗi
+    lượt load, không phải 10**. Đi qua đi lại 3 lần là 42 con quái mồ côi vẫn nằm trong `CombatWorld`.
   - **Nguyên nhân — quái không thuộc về map.** `EnemySpawner.cs:44` gọi
     `Object.Instantiate(ident.gameObject, position, rotation)` — **không truyền parent**, nên con quái nằm ở
     **gốc scene** chứ không phải dưới map. `MapService.WarpAsync` huỷ `old` (GameObject của map) thì zone chết

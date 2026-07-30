@@ -4,19 +4,12 @@ using UnityEngine;
 [CustomEditor(typeof(SpawnZone))]
 public class SpawnZoneEditor : Editor
 {
-    enum Shape { Circle, Box }
-
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
 
-        // Shape switcher for the [SerializeReference] area: swap the concrete type in place. Unity has no
-        // built-in picker for a managed reference, so this drives it.
         var areaProp = serializedObject.FindProperty("area");
-        bool isBox = areaProp.managedReferenceValue is BoxArea;
-        var picked = (Shape)EditorGUILayout.EnumPopup("Shape", isBox ? Shape.Box : Shape.Circle);
-        if ((picked == Shape.Box) != isBox)
-            areaProp.managedReferenceValue = picked == Shape.Box ? new BoxArea() : (SpawnArea)new CircleArea();
+        ManagedRefPicker.DrawTypeDropdown(areaProp, typeof(GridArea), "Shape");
 
         EditorGUILayout.PropertyField(areaProp, true);                       // the shape's own fields
         DrawPropertiesExcluding(serializedObject, "m_Script", "area");       // grid, clearance, spawning config

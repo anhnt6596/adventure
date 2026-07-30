@@ -36,20 +36,16 @@ public class TerrainGridEditor : Editor
     {
         DrawDefaultInspector();
 
+        // No "Bake Walkable" button any more: the collision boundary is generated from the cells and the decks on
+        // demand, so painting a tile or moving a bridge is live. Only the MESH is still baked.
         EditorGUILayout.Space();
-        using (new EditorGUILayout.HorizontalScope())
-        {
-            using (new EditorGUI.DisabledScope(_renderer == null))
-                if (GUILayout.Button("Rebuild Mesh (bake)", GUILayout.Height(24)))
-                {
-                    _grid.MarkDirty();
-                    _renderer.Bake();
-                    SceneView.RepaintAll();
-                }
-
-            if (GUILayout.Button("Bake Walkable", GUILayout.Height(24)))
-                BakeWalkable();
-        }
+        using (new EditorGUI.DisabledScope(_renderer == null))
+            if (GUILayout.Button("Rebuild Mesh (bake)", GUILayout.Height(24)))
+            {
+                _grid.MarkDirty();
+                _renderer.Bake();
+                SceneView.RepaintAll();
+            }
         if (_renderer == null)
             EditorGUILayout.HelpBox("No TerrainRenderer on this object — nothing to rebuild.", MessageType.None);
 
@@ -131,24 +127,15 @@ public class TerrainGridEditor : Editor
         _grid.MarkDirty();
         EditorUtility.SetDirty(_grid);
         if (_renderer != null) _renderer.Build();
-        BakeWalkable();
         SceneView.RepaintAll();
     }
 
-    void BakeWalkable()
-    {
-        Undo.RecordObject(_grid, "Bake Walkable");
-        _grid.BakeWalkable();
-        EditorUtility.SetDirty(_grid);
-        SceneView.RepaintAll();
-    }
-
-    // Painting stopped: now do the deferred heavy work - rebuild the water mesh and bake the walkable
-    // boundary, both skipped during the drag to keep it smooth.
+    // Painting stopped: rebuild the water mesh, which is the one thing skipped during the drag to keep it smooth.
+    // Walkability needs nothing here — it is read from the cells, and the cells are already painted.
     void FinishPaint()
     {
         if (_renderer != null) _renderer.Build(true);
-        BakeWalkable();
+        SceneView.RepaintAll();
     }
 
     void OnSceneGUI()

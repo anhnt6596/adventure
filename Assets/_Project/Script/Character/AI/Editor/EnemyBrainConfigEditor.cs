@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,8 +10,6 @@ using UnityEngine;
 [CustomEditor(typeof(EnemyBrainConfig))]
 public class EnemyBrainConfigEditor : Editor
 {
-    static readonly Dictionary<Type, Type[]> _impls = new Dictionary<Type, Type[]>();
-
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
@@ -75,19 +71,7 @@ public class EnemyBrainConfigEditor : Editor
         EditorGUI.indentLevel--;
     }
 
-    // Every concrete [Serializable] class implementing the slot's interface. TypeCache is Unity's prebuilt index,
-    // so this is cheap; the result is cached per interface for the domain's lifetime anyway.
-    static Type[] Implementations(Type iface)
-    {
-        if (_impls.TryGetValue(iface, out var cached)) return cached;
-
-        var found = TypeCache.GetTypesDerivedFrom(iface)
-            .Where(t => t.IsClass && !t.IsAbstract && Attribute.IsDefined(t, typeof(SerializableAttribute))
-                        && t.GetConstructor(Type.EmptyTypes) != null)
-            .OrderBy(t => t.Name)
-            .ToArray();
-
-        _impls[iface] = found;
-        return found;
-    }
+    // The reflection that finds the choices is shared with the other [SerializeReference] slots in the project
+    // (shapes on spawn zones and bridges) — same rule, one place: ManagedRefPicker.Implementations.
+    static Type[] Implementations(Type iface) => ManagedRefPicker.Implementations(iface);
 }

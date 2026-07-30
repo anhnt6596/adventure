@@ -9,7 +9,7 @@ using VContainer;
 [DisallowMultipleComponent]
 public class SpawnZone : MonoBehaviour
 {
-    [SerializeReference] SpawnArea area = new CircleArea();
+    [SerializeReference] GridArea area = new CircleArea();
 
     [Header("Grid")]
     [SerializeField] TerrainGrid grid;                 // auto-found from the map if left empty
@@ -22,7 +22,7 @@ public class SpawnZone : MonoBehaviour
 
     [SerializeField, HideInInspector] Vector2Int[] cells;   // baked: walkable cells inside the area
 
-    public SpawnArea Area => area;
+    public GridArea Area => area;
     public IReadOnlyList<Vector2Int> Cells => cells;
     public int CellCount => cells != null ? cells.Length : 0;
 
@@ -97,14 +97,14 @@ public class SpawnZone : MonoBehaviour
         if (g == null) { Debug.LogError($"[{nameof(SpawnZone)}] '{name}' found no TerrainGrid on the map.", this); return; }
         if (area == null) { Debug.LogError($"[{nameof(SpawnZone)}] '{name}' has no area shape.", this); return; }
 
+        // Through GridArea.CollectCells, not Contains: a shape measured in tiles hands back its cells directly, and
+        // going via the point test would quietly give a different answer here than it gives a bridge deck.
+        var inArea = new List<Vector2Int>();
+        area.CollectCells(g, transform, inArea);
+
         var found = new List<Vector2Int>();
-        for (int y = 0; y < g.Height; y++)
-            for (int x = 0; x < g.Width; x++)
-            {
-                if (!Spawnable(g, x, y)) continue;
-                var local = transform.InverseTransformPoint(g.CellToWorld(x, y));
-                if (area.Contains(local)) found.Add(new Vector2Int(x, y));
-            }
+        foreach (var c in inArea)
+            if (Spawnable(g, c.x, c.y)) found.Add(c);   // IsWalkable is false off-map, so this bounds-checks too
 
         UnityEditor.Undo.RecordObject(this, "Bake Spawn Cells");
         cells = found.ToArray();
@@ -126,9 +126,12 @@ public class SpawnZone : MonoBehaviour
     void OnDrawGizmos()
     {
         if (area == null) return;
-        Gizmos.matrix = transform.localToWorldMatrix;
+        var g = ResolveGrid();
+        Gizmos.matrix = area.UsesRotation
+            ? transform.localToWorldMatrix
+            : Matrix4x4.Translate(transform.position);
         Gizmos.color = new Color(1f, 0.45f, 0.15f, 0.9f);
-        area.DrawGizmo();
+        area.DrawGizmo(g != null ? g.CellSize : 1f);
         Gizmos.matrix = Matrix4x4.identity;
     }
 

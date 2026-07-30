@@ -3,7 +3,7 @@ using UnityEngine;
 using Core;
 
 // Circles against circles and against unwalkable terrain cells. Two rules make it behave:
-//   1. Terrain resolves LAST, so walls always win and nothing is ever pushed inside one. A body
+//   1. Terrain resolves LAST, so terrain always wins and nothing is ever pushed inside it. A body
 //      squeezed against a wall ends up overlapping another body - ugly for a frame, never stuck.
 //   2. When a resolve is impossible, overlap is allowed. Locking the player in place is worse than
 //      any visual glitch, and the death penalty makes a stuck player a lost run.
@@ -164,14 +164,25 @@ public class CollisionWorld
         return true;
     }
 
-    // Pushes each body out of the baked walkable boundary (one-sided wall segments), skipping walls whose
-    // terrain the body may pass. Walls and bodies share the terrain's local XZ plane.
+    // Faces of one cell at a time; the terrain generates them on demand, so there is no baked wall list to read.
+    readonly WallSeg[] _faces = new WallSeg[WallSeg.MaxPerCell];
+
+    // Pushes each body out of the walkable boundary, skipping faces whose terrain the body may pass. Faces and
+    // bodies share the terrain's local XZ plane.
+    //
+    // Only the cells a body can actually reach are visited, and each blocked one generates the same inset and
+    // chamfered faces the old whole-map bake produced — identical geometry, nothing stored. That also drops the
+    // per-tick work from "every boundary segment on the map, per body" to about nine cells per body, and stops it
+    // growing with the map: a 256x256 map had some 14000 segments and every body scanned all of them.
+    //
+    // Cells are visited row-major and pushes accumulate as they are found, the same order the baked array had, so
+    // a body wedged between two faces settles exactly where it used to.
     void ResolveTerrain()
     {
-        var walls = _terrain != null ? _terrain.Walls : null;
-        if (walls == null || walls.Length == 0) return;
+        if (_terrain == null) return;
 
         var tf = _terrain.transform;
+        float cs = _terrain.CellSize;
 
         foreach (var body in _hash.Items)
         {
@@ -183,31 +194,37 @@ public class CollisionWorld
             Vector3 local = tf.InverseTransformPoint(body.Position);
             Vector2 c = new Vector2(local.x, local.z);
 
-            for (int i = 0; i < walls.Length; i++)
-            {
-                var w = walls[i];
-                if ((pass & TerrainSet.BitOf(w.terrain)) != 0) continue;   // this body passes that terrain
+            // A cell of margin past the body's reach: the pushes move it as they are applied, and this keeps a
+            // face it slid into inside the same pass. Step's second iteration mops up whatever is left.
+            int cx0 = Mathf.FloorToInt((c.x - r) / cs) - 1, cx1 = Mathf.FloorToInt((c.x + r) / cs) + 1;
+            int cy0 = Mathf.FloorToInt((c.y - r) / cs) - 1, cy1 = Mathf.FloorToInt((c.y + r) / cs) + 1;
 
-                // Broad reject before the closest-point test.
-                if (c.x < Mathf.Min(w.a.x, w.b.x) - r || c.x > Mathf.Max(w.a.x, w.b.x) + r ||
-                    c.y < Mathf.Min(w.a.y, w.b.y) - r || c.y > Mathf.Max(w.a.y, w.b.y) + r) continue;
-
-                Vector2 ab = w.b - w.a;
-                float len2 = Vector2.Dot(ab, ab);
-                float t = len2 > 1e-8f ? Mathf.Clamp01(Vector2.Dot(c - w.a, ab) / len2) : 0f;
-                Vector2 d = c - (w.a + t * ab);
-                float d2 = Vector2.Dot(d, d);
-                if (d2 >= r * r) continue;
-
-                // Push along the contact normal so the body slides instead of sticking; if it sits
-                // exactly on the segment, push out to the walkable side.
-                if (d2 > 1e-8f)
+            for (int cy = cy0; cy <= cy1; cy++)
+                for (int cx = cx0; cx <= cx1; cx++)
                 {
-                    float dist = Mathf.Sqrt(d2);
-                    c += d * ((r - dist) / dist);
+                    int n = _terrain.CellFaces(cx, cy, _faces, 0);
+                    for (int i = 0; i < n; i++)
+                    {
+                        var w = _faces[i];
+                        if ((pass & TerrainSet.BitOf(w.terrain)) != 0) continue;   // this body passes that terrain
+
+                        Vector2 ab = w.b - w.a;
+                        float len2 = Vector2.Dot(ab, ab);
+                        float t = len2 > 1e-8f ? Mathf.Clamp01(Vector2.Dot(c - w.a, ab) / len2) : 0f;
+                        Vector2 d = c - (w.a + t * ab);
+                        float d2 = Vector2.Dot(d, d);
+                        if (d2 >= r * r) continue;
+
+                        // Push along the contact normal so the body slides instead of sticking; if it sits
+                        // exactly on the segment, push out to the walkable side.
+                        if (d2 > 1e-8f)
+                        {
+                            float dist = Mathf.Sqrt(d2);
+                            c += d * ((r - dist) / dist);
+                        }
+                        else c += w.normal * r;
+                    }
                 }
-                else c += w.normal * r;
-            }
 
             local.x = c.x;
             local.z = c.y;
