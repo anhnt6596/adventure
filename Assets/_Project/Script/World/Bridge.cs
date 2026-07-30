@@ -20,6 +20,10 @@ using UnityEngine;
 // which.
 [ExecuteAlways]
 [DisallowMultipleComponent]
+// Before CollisionSystem (-100), so a deck that moved this frame is settled by the time the collision step reads
+// it. The other way round the step ran first and everyone standing on a moving bridge lagged a frame behind it,
+// which on a fast platform is a body sliding off the back of its own deck.
+[DefaultExecutionOrder(-200)]
 public class Bridge : MonoBehaviour, IWalkVolume
 {
     [SerializeReference] BridgeShape shape = new DeckRect();
@@ -71,15 +75,14 @@ public class Bridge : MonoBehaviour, IWalkVolume
         if (_outline.Length < need) _outline = new WallSeg[need];
 
         int n = shape.Outline(_outline, 0);
-        var tf = transform;
         for (int i = 0; i < n && at < into.Length; i++)
         {
             var e = _outline[i];
             into[at++] = new WorldEdge
             {
-                a = tf.TransformPoint(new Vector3(e.a.x, 0f, e.a.y)),
-                b = tf.TransformPoint(new Vector3(e.b.x, 0f, e.b.y)),
-                inward = tf.TransformDirection(new Vector3(e.normal.x, 0f, e.normal.y)),
+                a = _l2w.MultiplyPoint3x4(new Vector3(e.a.x, 0f, e.a.y)),
+                b = _l2w.MultiplyPoint3x4(new Vector3(e.b.x, 0f, e.b.y)),
+                inward = _l2w.MultiplyVector(new Vector3(e.normal.x, 0f, e.normal.y)),
             };
         }
         return at;
@@ -90,12 +93,11 @@ public class Bridge : MonoBehaviour, IWalkVolume
         get
         {
             var r = shape != null ? shape.LocalBounds : new Rect();
-            var tf = transform;
 
-            Vector3 c0 = tf.TransformPoint(new Vector3(r.xMin, 0f, r.yMin));
-            Vector3 c1 = tf.TransformPoint(new Vector3(r.xMax, 0f, r.yMin));
-            Vector3 c2 = tf.TransformPoint(new Vector3(r.xMax, 0f, r.yMax));
-            Vector3 c3 = tf.TransformPoint(new Vector3(r.xMin, 0f, r.yMax));
+            Vector3 c0 = _l2w.MultiplyPoint3x4(new Vector3(r.xMin, 0f, r.yMin));
+            Vector3 c1 = _l2w.MultiplyPoint3x4(new Vector3(r.xMax, 0f, r.yMin));
+            Vector3 c2 = _l2w.MultiplyPoint3x4(new Vector3(r.xMax, 0f, r.yMax));
+            Vector3 c3 = _l2w.MultiplyPoint3x4(new Vector3(r.xMin, 0f, r.yMax));
 
             var b = new Bounds(c0, Vector3.zero);
             b.Encapsulate(c1);
@@ -105,9 +107,12 @@ public class Bridge : MonoBehaviour, IWalkVolume
         }
     }
 
+    // The cached inverse, not a live InverseTransformPoint. Contains is asked once per cell while the reachability
+    // index rebuilds and once per point while bodies move, and Overlap converts a segment per query - a native
+    // transform call at each was the largest single cost on the composed path.
     Vector2 ToLocal(Vector3 world)
     {
-        Vector3 p = transform.InverseTransformPoint(world);
+        Vector3 p = _w2l.MultiplyPoint3x4(world);
         return new Vector2(p.x, p.z);
     }
 
@@ -116,9 +121,17 @@ public class Bridge : MonoBehaviour, IWalkVolume
     int _version = 1;
     WallSeg[] _outline = new WallSeg[4];    // the shape's outline in local space, before it goes out as world edges
 
+    // Refreshed in the same breath as the version bump, so what Contains answers and the outline TerrainQuery
+    // cached off the back of that bump always describe the same bridge in the same place. A live transform read
+    // here would be the one part of the deck that could disagree with the rest of it.
+    Matrix4x4 _l2w = Matrix4x4.identity;
+    Matrix4x4 _w2l = Matrix4x4.identity;
+
     Vector3 _lastPos;
     Quaternion _lastRot;
     Vector3 _lastScale;
+
+    void Awake() => CacheTransform();
 
     void OnEnable()
     {
@@ -133,7 +146,13 @@ public class Bridge : MonoBehaviour, IWalkVolume
         _version++;
     }
 
-    void OnValidate() => _version++;
+    // Also re-snaps the matrices: OnValidate can be the first thing that runs on a freshly added component, and
+    // the editor's validation asks a bridge where it is without waiting for it to be enabled.
+    void OnValidate()
+    {
+        CacheTransform();
+        _version++;
+    }
 
     // Moving a bridge moves its geometry, and nothing tells us that happened — a transform has no change
     // callback. Three comparisons per bridge per frame is cheaper than any bookkeeping, and it covers dragging
@@ -152,6 +171,8 @@ public class Bridge : MonoBehaviour, IWalkVolume
         _lastPos = t.position;
         _lastRot = t.rotation;
         _lastScale = t.lossyScale;
+        _l2w = t.localToWorldMatrix;
+        _w2l = t.worldToLocalMatrix;
     }
 
 #if UNITY_EDITOR

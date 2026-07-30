@@ -273,6 +273,63 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
   - **Bug đang có, chưa thuộc việc cầu:** `WanderRoam` chọn điểm chỉ theo `IsWalkable` nên mewfrog chọn được điểm
     bên kia sông rồi húc bờ mãi. Chỗ sửa giờ là `CollisionSystem.Reachable`. **Chưa rewire.**
 
+- [ ] **Cầu phải XÂY — slot trả góp, 8 gỗ.** Cầu không có sẵn trên map: chỗ đó là một **điểm xây**. Người chơi bỏ
+  gỗ vào **dần dần** (không cần đủ 8 một lúc); trả đủ **8 gỗ** thì visual của cầu hiện ra và `lowered = true`.
+  - **Seam có sẵn hết, gần như không phải đụng gì bên dưới.** `Bridge.Lowered` là một bool public, set là bump
+    version, có hiệu lực ở **truy vấn kế tiếp** — không rebuild, không bake, không rewire. Còn visual thì
+    `lowered` **cố ý không đụng tới** (xem comment ở đầu `Bridge.cs`), nên "hiện art" là bật `GameObject` của art,
+    một việc tách hẳn. Hai thứ độc lập là **đúng ý muốn**: xây xong bật cả hai, nhưng lúc debug bật riêng được.
+  - **Một chiều nên an toàn hơn drawbridge.** Mục "còn hở" của cầu ở trên (body đang đứng trên deck lúc deck biến
+    mất → giữa sông rộng có thể kẹt) **không áp dụng**: xây chỉ *thêm* chỗ đi được, không bao giờ lấy đi. Chỉ khi
+    nào làm cầu **sập / tháo** thì mới phải chốt luật kia trước.
+  - **Reachability tự đúng, không phải nối dây.** Chưa xây → `VolumeActive` false → không union region →
+    `TerrainQuery.Reachable` trả false qua sông ngay từ đầu. AI và pathfinding tự biết chưa sang được, và đúng cái
+    tick người chơi trả nốt đồng gỗ thứ 8 là chúng biết sang được. Không có bước "báo cho ai đó".
+  - **⚠️ Phải PERSIST số gỗ đã trả.** `paid` là state runtime của một object nằm trong map prefab, mà map được
+    `MapService` instantiate lại mỗi lần vào — để trong component thì đi map khác rồi quay lại là mất sạch,
+    người chơi trả 7 gỗ xong về số 0. **Chốt: một `slotId` string author trong inspector + một `ISavable` giữ
+    đúng `slotId → paid`.** Khuôn chép: `InventorySystem` (`SaveKey`, `Save/Load(SaveBag)`, một file).
+    - **Id duy nhất TOÀN GAME, không phải duy nhất trong map** — nên bảng là **phẳng**, không có tầng `mapId`:
+      ```
+      world.json   "bridge_map1_north": 3   "bridge_map3_ford": 8
+      ```
+      Đây không chỉ là gọn hơn. Nó **xoá luôn ba cái bẫy thời điểm của `MapService`**, vì không chỗ nào còn phải
+      hỏi `CurrentMapId`: (1) `CurrentMapId` được set **sau** `Instantiate` (`MapService.cs:60-61`) nên `Awake`
+      đọc ra id map **cũ**; (2) map cũ bị destroy **sau** khi map mới đã vào (`:68-71`) nên `OnDisable` chạy lúc
+      `CurrentMapId` đã là map mới → ghi nhầm bucket; (3) cả hai đều vô hình khi đọc code lưu. Slot chỉ biết id
+      của chính nó là hết cửa.
+    - **Lưu `paid` thôi; "đã xây" là SUY RA** (`paid >= required`). Lưu cả hai thì chúng mâu thuẫn được, và mâu
+      thuẫn đó vô hình cho tới lúc không còn vô hình. Cái giá phải chịu: nâng giá một cầu **đã xây** từ 8 lên 12
+      thì save cũ đọc ra "chưa xây" — nhưng đó **đúng là** content migration, giấu sau một cờ `built` chỉ là
+      giấu việc vừa đổi giá dưới chân một save đang sống.
+    - **Ghi ngay lúc trả, KHÔNG ghi lúc disable/destroy.** Alt-F4 sau khi bỏ 7 gỗ vào thì 7 gỗ đó phải còn.
+      `InventorySystem` đã đúng vậy (`Changed` → `_save.Save`).
+    - **Vắng mặt = 0 = chưa trả**, không bao giờ là "không biết". Cẩn thận `SaveBag.Child()` là *create-on-ask*
+      — đường đọc mà dùng nó thì slot chưa ai đụng vẫn ghi entry rỗng. Cần thêm `TryChild` (đúng cặp với `Child`
+      như `TryGet` đã đúng cặp với `Get`). Và **đừng dọn key mồ côi**: xoá một cầu rồi cắm lại thì tiến trình cũ
+      nên quay về.
+    - **Editor phải bắt `slotId` rỗng và trùng.** Id trùng = hai cầu chung một ví và một cái mở miễn phí — đúng
+      hạng bug mà `RegionsJoined()` đang canh: nhìn thì hoàn toàn bình thường cho tới lúc đi tới.
+    - **Prefab là mặc định lúc author, không phải state:** `Bridge.lowered` mặc định `true` trong class, nên cầu
+      cần xây thì trong prefab phải để **`false`**. Save chỉ đè lên lúc spawn, không bao giờ ghi ngược vào
+      prefab (`Bridge` có `[ExecuteAlways]` + `OnValidate` — nghịch trong play mode rất dễ dirty asset).
+    - Set `Bridge.Lowered` ở `Awake` hay `Start` đều kịp: nó chỉ bump version, `TerrainQuery` đọc ở truy vấn kế,
+      mà bước collision đầu tiên nằm ở `LateUpdate`.
+    - **Làm cái này là giải luôn mục "Rương" ở dưới** — nó đang chờ đúng cơ chế "persist object trên map (chưa
+      có)" này. Nên đừng đẻ ra `BridgePaymentState`; làm một kho state per-object dùng chung, mỗi object một
+      `SaveBag` con (cầu ghi `paid`, rương ghi `opened`) để rương tới không phải đổi format file.
+  - **Trả góp không cần code riêng.** `Inventory.Remove(def, amount)` trả về **số thật sự lấy được**, nên
+    `paid += inv.Remove(wood, required - paid)` là toàn bộ logic: không phải kiểm tra "có đủ 8 không" trước, có
+    bao nhiêu ăn bấy nhiêu, và không bao giờ trừ quá phần còn thiếu.
+  - Giá và loại tài nguyên nằm trong **inspector của chính điểm xây** (`ResourceDef` + `int`), không hard-code —
+    mỗi cây cầu một giá, và cầu ở map sau đắt hơn thì không phải sửa code.
+  - **Chưa chốt, cần bạn quyết:**
+    - **Tương tác kiểu gì?** Đứng gần + bấm phím, tự trút khi đi ngang, hay mở một popup UI?
+    - **Trả rồi có rút lại được không?** Nếu không thì UI phải nói trước khi trừ, không phải sau.
+    - **Hiển thị `3/8` ở đâu?** World-space trên đầu điểm xây, hay chỉ trong popup lúc tương tác.
+    - **Art lúc chưa xong:** khung cầu dở dang theo % đã trả (tốn art, nhưng tiến độ tự nhìn thấy), hay một cái
+      cọc/biển rồi cầu bụp hiện ra lúc đủ (rẻ)?
+
 - [ ] **Dựng Plant1 + Plant2 thành quái, y khuôn PP1.** Art nằm sẵn ở `Assets/DraftArt/Predator plant/Plant1`
   và `Plant2`, cấu trúc thư mục **giống hệt** `Plant3` (đã thành PP1): `Attack/Death/Hurt/Idle/Run/Walk`.
   Làm được **hoàn toàn ngoài Unity** — đã kiểm, chốt bên dưới. Xong thì sửa AI để thành hai loài khác nhau.

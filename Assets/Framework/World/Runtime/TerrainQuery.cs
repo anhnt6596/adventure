@@ -51,6 +51,21 @@ public class TerrainQuery
 
     Cached[] _cache = new Cached[4];
     Matrix4x4 _cacheSpace;         // the terrain transform the cache was built against
+    Matrix4x4 _cacheSpaceInv;      // and its inverse, so converting a point costs a multiply and not a native call
+
+    // The union of every active volume's bounds. Almost every cell on the map has no bridge anywhere near it, and
+    // this answers that for all of them with ONE Rect test instead of one per volume. CellFaces runs some nine
+    // cells per body per iteration - the per-volume scan was a cost the whole map paid for geometry covering a few
+    // dozen cells of it.
+    Rect _unionBounds;
+    bool _anyVolume;
+
+    // The terrain's own transform is asked for at most once per frame. Everything else EnsureCache does on a quiet
+    // frame is an int compare per volume, but localToWorldMatrix is a native call and this sits in the collision
+    // hot path. A map that MOVES is one being dragged in the editor or slid in a cutscene, where a frame of lag is
+    // invisible; a volume moving or a drawbridge flipping is still picked up on the very next query, because that
+    // is a version compare and it is never skipped.
+    int _spaceFrame = -1;
 
     public TerrainQuery(TerrainGrid terrain) => _terrain = terrain;
 
@@ -78,18 +93,34 @@ public class TerrainQuery
     void Invalidate()
     {
         _indexVersion = -1;
+        _spaceFrame = -1;
+        _anyVolume = false;
         for (int i = 0; i < _cache.Length; i++) _cache[i].valid = false;
     }
 
-    // Refreshes any volume whose geometry moved, and everything if the map itself did. When nothing changed this
-    // is one matrix compare plus one int compare per volume.
+    // Refreshes any volume whose geometry moved, and everything if the map itself did. On a quiet frame this is
+    // one int compare per volume and nothing else.
     void EnsureCache()
     {
         if (_terrain == null) return;
 
-        var space = _terrain.transform.localToWorldMatrix;
-        bool spaceMoved = space != _cacheSpace;
-        if (spaceMoved) _cacheSpace = space;
+        bool spaceMoved = false;
+#if UNITY_EDITOR
+        bool timed = Application.isPlaying;   // edit mode has no dependable frame clock, so always look
+#else
+        const bool timed = true;
+#endif
+        if (!timed || Time.frameCount != _spaceFrame)
+        {
+            _spaceFrame = Time.frameCount;
+            var space = _terrain.transform.localToWorldMatrix;
+            if (space != _cacheSpace)
+            {
+                _cacheSpace = space;
+                _cacheSpaceInv = space.inverse;
+                spaceMoved = true;
+            }
+        }
 
         if (_cache.Length < _volumes.Count)
         {
@@ -98,59 +129,76 @@ public class TerrainQuery
             _cache = grown;
         }
 
-        var tf = _terrain.transform;
+        _anyVolume = false;
 
         for (int i = 0; i < _volumes.Count; i++)
         {
             var v = _volumes[i];
             if (v == null || !v.VolumeActive) { _cache[i].valid = false; continue; }
-            if (_cache[i].valid && !spaceMoved && _cache[i].version == v.VolumeVersion) continue;
 
-            // Bounds: the world AABB's four XZ corners brought into terrain space, then boxed again. Conservative
-            // when the map is rotated, which is all a broadphase needs.
-            var wb = v.WorldBounds;
-            Vector2 b0 = ToLocal(tf, new Vector3(wb.min.x, 0f, wb.min.z));
-            Vector2 b1 = ToLocal(tf, new Vector3(wb.max.x, 0f, wb.min.z));
-            Vector2 b2 = ToLocal(tf, new Vector3(wb.max.x, 0f, wb.max.z));
-            Vector2 b3 = ToLocal(tf, new Vector3(wb.min.x, 0f, wb.max.z));
+            if (!_cache[i].valid || spaceMoved || _cache[i].version != v.VolumeVersion)
+                Rebuild(i, v);
 
-            float x0 = Mathf.Min(Mathf.Min(b0.x, b1.x), Mathf.Min(b2.x, b3.x));
-            float x1 = Mathf.Max(Mathf.Max(b0.x, b1.x), Mathf.Max(b2.x, b3.x));
-            float y0 = Mathf.Min(Mathf.Min(b0.y, b1.y), Mathf.Min(b2.y, b3.y));
-            float y1 = Mathf.Max(Mathf.Max(b0.y, b1.y), Mathf.Max(b2.y, b3.y));
-            _cache[i].bounds = new Rect(x0, y0, x1 - x0, y1 - y0);
-
-            int need = Mathf.Max(1, v.MaxOutlineEdges);
-            if (_worldEdges.Length < need) _worldEdges = new WorldEdge[need];
-            if (_cache[i].outline == null || _cache[i].outline.Length < need) _cache[i].outline = new WallSeg[need];
-
-            int n = v.Outline(_worldEdges, 0);
-            for (int e = 0; e < n; e++)
+            // The broadphase union, accumulated here so it can never disagree with what it summarises.
+            if (!_anyVolume) { _unionBounds = _cache[i].bounds; _anyVolume = true; }
+            else
             {
-                var we = _worldEdges[e];
-                Vector3 inward = tf.InverseTransformDirection(we.inward);
-                _cache[i].outline[e] = new WallSeg
-                {
-                    a = ToLocal(tf, we.a),
-                    b = ToLocal(tf, we.b),
-                    normal = new Vector2(inward.x, inward.z).normalized,
-                    terrain = WallSeg.VolumeRail,
-                };
+                var b = _cache[i].bounds;
+                _unionBounds = Rect.MinMaxRect(Mathf.Min(_unionBounds.xMin, b.xMin), Mathf.Min(_unionBounds.yMin, b.yMin),
+                                               Mathf.Max(_unionBounds.xMax, b.xMax), Mathf.Max(_unionBounds.yMax, b.yMax));
             }
-            _cache[i].outlineCount = n;
-            _cache[i].version = v.VolumeVersion;
-            _cache[i].valid = true;
         }
     }
 
-    static Vector2 ToLocal(Transform tf, Vector3 world)
+    void Rebuild(int i, IWalkVolume v)
     {
-        Vector3 p = tf.InverseTransformPoint(world);
+        // Bounds: the world AABB's four XZ corners brought into terrain space, then boxed again. Conservative
+        // when the map is rotated, which is all a broadphase needs.
+        var wb = v.WorldBounds;
+        Vector2 b0 = ToLocal(new Vector3(wb.min.x, 0f, wb.min.z));
+        Vector2 b1 = ToLocal(new Vector3(wb.max.x, 0f, wb.min.z));
+        Vector2 b2 = ToLocal(new Vector3(wb.max.x, 0f, wb.max.z));
+        Vector2 b3 = ToLocal(new Vector3(wb.min.x, 0f, wb.max.z));
+
+        float x0 = Mathf.Min(Mathf.Min(b0.x, b1.x), Mathf.Min(b2.x, b3.x));
+        float x1 = Mathf.Max(Mathf.Max(b0.x, b1.x), Mathf.Max(b2.x, b3.x));
+        float y0 = Mathf.Min(Mathf.Min(b0.y, b1.y), Mathf.Min(b2.y, b3.y));
+        float y1 = Mathf.Max(Mathf.Max(b0.y, b1.y), Mathf.Max(b2.y, b3.y));
+        _cache[i].bounds = new Rect(x0, y0, x1 - x0, y1 - y0);
+
+        int need = Mathf.Max(1, v.MaxOutlineEdges);
+        if (_worldEdges.Length < need) _worldEdges = new WorldEdge[need];
+        if (_cache[i].outline == null || _cache[i].outline.Length < need) _cache[i].outline = new WallSeg[need];
+
+        int n = v.Outline(_worldEdges, 0);
+        for (int e = 0; e < n; e++)
+        {
+            var we = _worldEdges[e];
+            Vector3 inward = _cacheSpaceInv.MultiplyVector(we.inward);
+            _cache[i].outline[e] = new WallSeg
+            {
+                a = ToLocal(we.a),
+                b = ToLocal(we.b),
+                normal = new Vector2(inward.x, inward.z).normalized,
+                terrain = WallSeg.VolumeRail,
+            };
+        }
+        _cache[i].outlineCount = n;
+        _cache[i].version = v.VolumeVersion;
+        _cache[i].valid = true;
+    }
+
+    // The cached matrices, not Transform.InverseTransformPoint: a segment is converted per volume per query and
+    // the native call was the largest single cost in the composed path. Valid from the first EnsureCache onward,
+    // which every public entry point runs before it converts anything.
+    Vector2 ToLocal(Vector3 world)
+    {
+        Vector3 p = _cacheSpaceInv.MultiplyPoint3x4(world);
         return new Vector2(p.x, p.z);
     }
 
     Vector3 ToWorld(Vector2 local)
-        => _terrain.transform.TransformPoint(new Vector3(local.x, 0f, local.y));
+        => _cacheSpace.MultiplyPoint3x4(new Vector3(local.x, 0f, local.y));
 
     // Changes whenever anything a query depends on moves: the paint, or any volume. A cached path stamps itself
     // with this and re-paths when it no longer matches.
@@ -173,7 +221,11 @@ public class TerrainQuery
         if (_terrain == null) return false;
         EnsureCache();
 
-        Vector2 local = ToLocal(_terrain.transform, world);
+        if (!_anyVolume) return false;
+
+        Vector2 local = ToLocal(world);
+        if (!_unionBounds.Contains(local)) return false;
+
         for (int i = 0; i < _volumes.Count; i++)
         {
             if (!_cache[i].valid || !_cache[i].bounds.Contains(local)) continue;
@@ -214,11 +266,12 @@ public class TerrainQuery
         float cs = _terrain.CellSize;
         var cell = new Rect(cx * cs, cy * cs, cs, cs);
 
-        // Almost every cell on the map has no bridge anywhere near it, and this is the collision hot path: one
-        // cached AABB test per volume decides whether any of the work below can possibly do anything.
+        // Almost every cell on the map has no bridge anywhere near it, and this is the collision hot path. The
+        // union answers that for the whole map in one test; only a cell inside it pays the per-volume scan.
         bool near = false;
-        for (int i = 0; i < _volumes.Count && !near; i++)
-            near = _cache[i].valid && _cache[i].bounds.Overlaps(cell);
+        if (_anyVolume && _unionBounds.Overlaps(cell))
+            for (int i = 0; i < _volumes.Count && !near; i++)
+                near = _cache[i].valid && _cache[i].bounds.Overlaps(cell);
 
         // The tilemap's own faces, with the parts a deck covers cut out. The tilemap is not consulted about this
         // and does not change - the cut happens here, on a copy, per query.
@@ -244,8 +297,24 @@ public class TerrainQuery
                 if (ClipToRect(_cache[v].outline[i], cell, out WallSeg piece))
                     at = ClipAndEmit(piece, v, into, at);
         }
+        WarnIfFull(at, into, cx, cy);
         return at;
     }
+
+    // Emit drops a face when the buffer is full, and a dropped face is a hole in a wall you can walk through -
+    // silent everywhere except at the one spot someone eventually falls into the river. Only a cell with several
+    // decks crossing it can get near MaxFacesPerCell, so this stays quiet on every real map; if it ever speaks,
+    // raise the constant. Once per session, because it would otherwise fire every tick of every body.
+    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    void WarnIfFull(int at, WallSeg[] into, int cx, int cy)
+    {
+        if (_warnedFull || into == null || at < into.Length) return;
+        _warnedFull = true;
+        Debug.LogWarning($"TerrainQuery: cell ({cx},{cy}) filled all {into.Length} face slots, so faces may have " +
+                         $"been dropped - raise TerrainQuery.MaxFacesPerCell.");
+    }
+
+    bool _warnedFull;
 
     float[] _ranges = new float[64];
 
@@ -274,9 +343,15 @@ public class TerrainQuery
         return at;
     }
 
+    // Copies rather than just reallocating: the only caller that grows mid-fill is TerrainRanges sizing for both
+    // halves at once, but a shape that grew the buffer from inside Overlap would otherwise drop what was already
+    // there and lose a stretch of wall with nothing to show for it.
     void EnsureRangeRoom(int need)
     {
-        if (_ranges.Length < need) _ranges = new float[Mathf.NextPowerOfTwo(need)];
+        if (_ranges.Length >= need) return;
+        var grown = new float[Mathf.NextPowerOfTwo(need)];
+        System.Array.Copy(_ranges, grown, _ranges.Length);
+        _ranges = grown;
     }
 
     // The stretches of the segment that some source OTHER than `owner` already makes walkable, merged into
@@ -405,15 +480,20 @@ public class TerrainQuery
     }
 
     // Sort by start, then coalesce anything touching or overlapping.
+    //
+    // Insertion sort on purpose: the ranges arrive from a DDA that already walks the segment in order, so all
+    // that is ever out of place is the handful InsetSkin adds within one cell. That makes this a linear pass on
+    // real input, where the selection sort it replaced was quadratic on every input.
     static int Merge(float[] r, int end)
     {
-        for (int i = 0; i < end; i += 2)
-            for (int j = i + 2; j < end; j += 2)
-                if (r[j] < r[i])
-                {
-                    (r[i], r[j]) = (r[j], r[i]);
-                    (r[i + 1], r[j + 1]) = (r[j + 1], r[i + 1]);
-                }
+        for (int i = 2; i < end; i += 2)
+        {
+            float k0 = r[i], k1 = r[i + 1];
+            int j = i - 2;
+            while (j >= 0 && r[j] > k0) { r[j + 2] = r[j]; r[j + 3] = r[j + 1]; j -= 2; }
+            r[j + 2] = k0;
+            r[j + 3] = k1;
+        }
 
         int w = 0;
         for (int i = 0; i < end; i += 2)
@@ -469,8 +549,8 @@ public class TerrainQuery
     public bool IntersectsWall(Vector3 worldA, Vector3 worldB, int passMask = -1)
     {
         if (_terrain == null) return false;
-        var tf = _terrain.transform;
-        return SweepHitsWall(ToLocal(tf, worldA), ToLocal(tf, worldB), 0f,
+        EnsureCache();
+        return SweepHitsWall(ToLocal(worldA), ToLocal(worldB), 0f,
                              passMask < 0 ? _terrain.DefaultPassMask : passMask);
     }
 
@@ -485,8 +565,8 @@ public class TerrainQuery
         if (passMask < 0) passMask = _terrain.DefaultPassMask;
         if (!CanPass(passMask, to)) return false;
 
-        var tf = _terrain.transform;
-        return !SweepHitsWall(ToLocal(tf, from), ToLocal(tf, to), radius, passMask);
+        EnsureCache();
+        return !SweepHitsWall(ToLocal(from), ToLocal(to), radius, passMask);
     }
 
     // The composed faces of every cell the line crosses. Amanatides-Woo, so the cost is the number of cells
@@ -514,10 +594,20 @@ public class TerrainQuery
 
         int steps = Mathf.Abs(ex - x) + Mathf.Abs(ey - y) + 1;
 
+        // A DDA moves one axis at a time, so the pad box around this cell and the one around the last overlap
+        // everywhere but a single column or row. Rescanning the whole box each step composed the same cell's faces
+        // 2*pad+1 times over - and a composed CellFaces is not cheap. Only what the step newly uncovered is
+        // visited; the rest was already tested, and this is an any-hit query so the order never mattered.
+        int opened = 0;   // 0 = the first cell, so the whole box. 1 = the column stepX opened, 2 = the row stepY did.
+
         for (int s = 0; s < steps; s++)
         {
-            for (int py = -pad; py <= pad; py++)
-                for (int px = -pad; px <= pad; px++)
+            int px0 = -pad, px1 = pad, py0 = -pad, py1 = pad;
+            if (opened == 1) px0 = px1 = stepX > 0 ? pad : -pad;
+            else if (opened == 2) py0 = py1 = stepY > 0 ? pad : -pad;
+
+            for (int py = py0; py <= py1; py++)
+                for (int px = px0; px <= px1; px++)
                 {
                     int n = CellFaces(x + px, y + py, _queryFaces, 0);
                     for (int i = 0; i < n; i++)
@@ -532,8 +622,8 @@ public class TerrainQuery
                 }
 
             if (x == ex && y == ey) break;
-            if (tMaxX < tMaxY) { x += stepX; tMaxX += tDeltaX; }
-            else { y += stepY; tMaxY += tDeltaY; }
+            if (tMaxX < tMaxY) { x += stepX; tMaxX += tDeltaX; opened = 1; }
+            else { y += stepY; tMaxY += tDeltaY; opened = 2; }
         }
         return false;
     }
@@ -584,6 +674,15 @@ public class TerrainQuery
     void EnsureIndex()
     {
         if (_terrain == null) return;
+
+        // BEFORE the version check, not after, and not left to whoever asked first. The index is built out of the
+        // cache, so a stale cache does not merely delay it - it bakes the wrong answer in: every volume reads as
+        // invalid, gets skipped, joins nothing, and then the stamp below says the index is current, so refreshing
+        // the cache later never rebuilds it. A bridge you can walk across that Reachable says is unreachable, for
+        // good. (It is also what sizes _cache, which is why five volumes and a Reachable call used to be an
+        // IndexOutOfRange rather than a wrong answer.)
+        EnsureCache();
+
         int v = WalkVersion;
         if (v == _indexVersion) return;
         _indexVersion = v;
@@ -665,11 +764,11 @@ public class TerrainQuery
     public int RegionsJoined(IWalkVolume volume)
     {
         if (_terrain == null || volume == null) return 0;
+        EnsureCache();   // for the space matrices, which ToLocal reads
 
-        var tf = _terrain.transform;
         var wb = volume.WorldBounds;
-        Vector2 b0 = ToLocal(tf, new Vector3(wb.min.x, 0f, wb.min.z)), b1 = ToLocal(tf, new Vector3(wb.max.x, 0f, wb.min.z));
-        Vector2 b2 = ToLocal(tf, new Vector3(wb.max.x, 0f, wb.max.z)), b3 = ToLocal(tf, new Vector3(wb.min.x, 0f, wb.max.z));
+        Vector2 b0 = ToLocal(new Vector3(wb.min.x, 0f, wb.min.z)), b1 = ToLocal(new Vector3(wb.max.x, 0f, wb.min.z));
+        Vector2 b2 = ToLocal(new Vector3(wb.max.x, 0f, wb.max.z)), b3 = ToLocal(new Vector3(wb.min.x, 0f, wb.max.z));
 
         float lx0 = Mathf.Min(Mathf.Min(b0.x, b1.x), Mathf.Min(b2.x, b3.x));
         float lx1 = Mathf.Max(Mathf.Max(b0.x, b1.x), Mathf.Max(b2.x, b3.x));
@@ -704,8 +803,9 @@ public class TerrainQuery
         _terrain.WorldToCell(world, out int x, out int y);
         int r = _terrain.RegionOf(x, y);
         if (r >= 0) return Find(r);
+        if (!_anyVolume) return -1;
 
-        Vector2 local = ToLocal(_terrain.transform, world);
+        Vector2 local = ToLocal(world);
         for (int i = 0; i < _volumes.Count; i++)
         {
             if (!_cache[i].valid || !_cache[i].bounds.Contains(local)) continue;
