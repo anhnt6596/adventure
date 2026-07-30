@@ -330,6 +330,33 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
     - **Art lúc chưa xong:** khung cầu dở dang theo % đã trả (tốn art, nhưng tiến độ tự nhìn thấy), hay một cái
       cọc/biển rồi cầu bụp hiện ra lúc đủ (rẻ)?
 
+- [ ] **Mặt cầu ra khối: dựng cạnh thành QUAD THẬT thay vì bake vào texture. → THỬ MAI.** Bản đang chạy là
+  `ViewDir8` (`Sprite3D/Runtime/Scripts`): quad nằm phẳng trên đất, 3 sprite `bridgeN`/`bridgeE`/`bridgeNE` + lật,
+  bề dày vẽ sẵn trong ảnh. Chạy được, nhưng lúc đổi sprite giữa cú lượn camera thì **giật một cái**.
+  - **Ý tưởng: hai cái dải tối đó CHÍNH LÀ mặt bên của khối.** Thay vì vẽ vào texture, dựng chúng thành quad
+    đứng thật ở mép deck.
+  - **Điểm ăn tiền không phải "mượt hơn", mà là KHÔNG CÒN CÚ CẮT NÀO ĐỂ MÀ LÀM MƯỢT.** Khi camera quay, quad
+    cạnh tự co theo phối cảnh, và thời điểm cần tắt nó đi đúng là lúc nó nhìn nghiêng — **bề rộng chiếu bằng 0**.
+    Tắt một mặt lúc nó đang vô hình thì không có gì để thấy. Đây là lý do nên thử, chứ không phải vì nó "3D hơn".
+  - **Giải luôn cái sọc:** 4 tile hiện tại mỗi cái tự vẽ dải dày riêng nên thân cầu sẽ ra 4 vệt lặp. Cách này là
+    **một** mặt trên cho cả deck + 4 cạnh quanh chu vi = 5 quad, một viền liền.
+  - **Giá phải trả:** cần một texture dải gỗ cho mặt bên (crop từ chính dải dưới của `bridgeN`), và deck phải
+    thành một mảnh thay vì 4 tile xếp chồng.
+  - **Ba cái bẫy đã thấy trước:**
+    - **Material sprite (`Sprites/Default`) KHÔNG cull mặt sau** — nó hai mặt. Nên các cạnh xa sẽ **không tự
+      biến mất**, phải tắt bằng góc cam (chính là cái toggle miễn phí ở trên) hoặc đổi sang material có
+      `Cull Back`. Đừng trông vào backface culling.
+    - **Chiều cao khối phải canh lại bằng mắt.** Dải dưới của `bridgeN` cao 29px; quad đứng nhìn ở pitch 45° chỉ
+      chiếu ra khoảng 0.7 chiều cao thật, nên h thật phải lớn hơn cái nhìn thấy. Cỡ **0.2 unit** là chỗ bắt đầu,
+      không phải con số đúng.
+    - **Thứ tự vẽ phải chủ động.** Cạnh gần đứng lên nhưng vẫn thuộc dải `WorldOrder` nằm-trên-đất (−99..−1) và
+      phải vẽ **đè** mặt trên của deck. Cho hai thứ cùng order rồi trông chờ depth là hoà — mà hoà thì Unity tự
+      quyết, và nó sẽ đổi ý giữa các góc cam.
+  - **`ViewDir8` không bỏ đi** — nó vẫn đúng cho thứ thật sự phẳng: đường, decal, vệt bùn. Chỉ mặt cầu mới đổi.
+  - **Nếu quad nhìn tệ, đường lui rẻ hơn:** tách mặt ván ra khỏi dải cạnh thành 2 renderer. Mặt ván nằm **đúng
+    cùng một ô pixel ở cả 3 sprite** (đo rồi: `x[62..186] y[66..189]`), nên nó có thể đứng yên tuyệt đối và chỉ
+    còn dải tối mỏng là đổi. Cùng một cú chuyển, nhưng thứ đang nhảy nhỏ hơn nhiều.
+
 - [ ] **Dựng Plant1 + Plant2 thành quái, y khuôn PP1.** Art nằm sẵn ở `Assets/DraftArt/Predator plant/Plant1`
   và `Plant2`, cấu trúc thư mục **giống hệt** `Plant3` (đã thành PP1): `Attack/Death/Hurt/Idle/Run/Walk`.
   Làm được **hoàn toàn ngoài Unity** — đã kiểm, chốt bên dưới. Xong thì sửa AI để thành hai loài khác nhau.
@@ -770,6 +797,31 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
   editor/test (gate bằng `#if UNITY_EDITOR` hoặc cờ debug). Chưa làm.
 
 ## 🧹 Tech debt / cleanup
+
+- [ ] **`ViewDir8` / `ViewDir2` cần manager + culling khi map to.** Chưa làm, **cố ý**: hiện mỗi map có đúng một
+  cây cầu. Nhưng đây là loại component sẽ nhân lên rất nhanh — mặt cầu, cầu tàu, đường, bục, decal, mọi thứ nằm
+  phẳng trên đất mà muốn ra khối đều dùng nó — nên ghi lại trước khi quên hình dạng của việc.
+  - **Tiền không nằm ở lúc đứng yên.** Cả hai đã early-out sẵn (`CameraViewDir.TransformChanged` + so rotation),
+    nên frame camera đứng im gần như miễn phí. **Toàn bộ chi phí dồn vào đúng frame người chơi bấm Q/E** — mà
+    đó lại là frame tệ nhất để tốn, vì cú lượn 45° đang làm cả màn hình động. Đo thì phải đo **frame xoay**, đo
+    frame nhàn sẽ ra kết luận sai là "không có gì".
+  - **Gộp vào một manager, y như `BillboardManager`.** Nó tồn tại trong chính module này vì đúng lý do đó ("One
+    LateUpdate for ALL billboards instead of N MonoBehaviour.LateUpdate calls") — `ViewDir*` chỉ là chưa được
+    hưởng. Cái đắt là N lần callback của Unity, không phải thân hàm.
+  - **Hai native call mỗi instance, cả hai đều hoisted được:**
+    - `CameraViewDir.Transform.eulerAngles.y` — manager lấy **một lần**, phát cho tất cả.
+    - `transform.up` (để ra `slabYaw`) — chỉ đổi khi **chính object xoay**, mà mặt cầu/con đường thì gần như
+      không bao giờ xoay. Cache lúc enable + tại đúng chỗ so rotation đã có sẵn. Sau đó việc mỗi instance làm
+      mỗi frame chỉ còn vài phép float và may ra một lần ghi sprite.
+  - **Cull theo TRÊN MÀN HÌNH, không theo khoảng cách.** `SpriteRenderer.isVisible` là miễn phí (renderer đã tự
+    tính culling rồi) và đúng là tín hiệu cần: sprite của mặt cầu ngoài khung hình thì sai cũng không ai thấy.
+    Sửa lười lại bằng `OnBecameVisible`, nhờ vậy bất biến vẫn giữ nguyên — **đúng khi đang nhìn thấy**.
+    - ⚠️ `isVisible` tính cả camera của Scene view, nên nó **nói dối trong editor**. Đừng debug bằng nó.
+  - **Nếu vẫn gợn thì rải ra nhiều frame** (mỗi frame một lát). An toàn **riêng ở đây** vì cú lượn camera mất
+    khoảng chục frame (`snapSpeed 8`), nên một mặt cầu trễ một hai frame giữa lúc đang xoay là không nhìn ra.
+    Đừng bê mẹo này sang thứ phải đúng ngay trong một frame.
+  - **Ngưỡng để bắt tay vào:** khi một map có đủ sprite mặt đất để frame Q/E hiện lên trong profiler. Không phải
+    bây giờ.
 
 - [x] **Chia lại Order in Layer của thế giới.** ✅ `Core.WorldOrder` — **một bảng, một chỗ**, vì project chỉ có
   **MỘT** sorting layer (`Default`) nên order-in-layer là toàn bộ ngân sách thứ tự.
