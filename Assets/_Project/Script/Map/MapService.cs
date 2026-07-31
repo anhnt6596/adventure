@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 using VContainer;
 using VContainer.Unity;
 
@@ -47,8 +49,13 @@ public class MapService : IMapService
         // blank gap between "old destroyed" and "new shown".
         var old = _current;
 
+        // Phase timings: a map swap is a visible stall, so each step reports its own cost rather than
+        // one total that says "slow" without saying where.
+        var watch = Stopwatch.StartNew();
+
         var req = Resources.LoadAsync<GameObject>($"Maps/{mapId}");
         await req;
+        long loadMs = watch.ElapsedMilliseconds;
 
         if (req.asset is not GameObject prefab)
         {
@@ -59,9 +66,11 @@ public class MapService : IMapService
         // Instantiate + inject the whole hierarchy, so Portals get IMapService and zones join the field.
         _current = _container.Instantiate(prefab);
         CurrentMapId = mapId;
+        long instantiateMs = watch.ElapsedMilliseconds - loadMs;
 
         WireMapToScene(_current);
         PlaceAtGate(_current, gateIndex);
+        long wireMs = watch.ElapsedMilliseconds - loadMs - instantiateMs;
 
         // Only now remove the old map — same synchronous frame the new one is ready, so it's never blank.
         if (old != null)
@@ -69,6 +78,11 @@ public class MapService : IMapService
             old.SetActive(false);   // unregister its collision bodies before destroy
             Object.Destroy(old);
         }
+        long destroyMs = watch.ElapsedMilliseconds - loadMs - instantiateMs - wireMs;
+
+        Debug.Log($"[MapService] '{mapId}' loaded in {watch.ElapsedMilliseconds}ms " +
+                  $"(Resources.LoadAsync {loadMs}ms, Instantiate+inject {instantiateMs}ms, " +
+                  $"wire+place {wireMs}ms, destroy old {destroyMs}ms).");
 
         // Freeing the old map's assets is deferred (small 2D maps + cut transition). If memory grows:
         //   await Resources.UnloadUnusedAssets();   // full sweep — hide it behind the transition FX
