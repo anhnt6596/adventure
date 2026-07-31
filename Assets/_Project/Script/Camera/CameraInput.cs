@@ -23,13 +23,8 @@ public class CameraInput : MonoBehaviour
 
     void Awake()
     {
-        // TEMP: camera rotation is off while we decide whether to lock the camera for good. Everything a
-        // rotating camera costs is still in the project (ViewDir8 on props, the per-change billboard pass,
-        // camera-relative sprite remapping, and a multiplied art bill), so this is the switch to feel the
-        // locked version through before deleting any of it. Uncomment to get Q/E back.
-        //
-        // _bindings[Key.Q] = new RotateYawCommand(-snapStep);
-        // _bindings[Key.E] = new RotateYawCommand(snapStep);
+        _bindings[Key.Q] = new RotateYawCommand(-snapStep);
+        _bindings[Key.E] = new RotateYawCommand(snapStep);
     }
 
     void Update()
