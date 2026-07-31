@@ -1,5 +1,58 @@
 # Decisions
 
+## 2026-07-31 — Water carries detail only as far as the shore reads; past that it is flat
+
+The water surface is subdivided 4×4 per cell **only near land**. Past `waterFlatBeyond` (world units,
+on `TerrainRenderer`) a cell is one quad. The rule behind it: **mesh detail is bought to carry a value
+the shader can still show, and not one step further.**
+
+The only thing subdivision carries is `shore` — baked distance to land, in `TEXCOORD1`. Every term that
+reads it has a reach, and the longest one is the whole budget:
+
+| term | parameter | dead past |
+| --- | --- | --- |
+| `depth` | `_DepthRange` | **6 → now 4** |
+| `wash` | `_FoamWidth` + `_FoamWobble` | 3.43 |
+| `crest` | `_CrestWidth` + `_FoamWobble` | 1.63 |
+| `rim` | `_EdgeWidth` | 1.55 |
+
+Beyond the longest reach every sub-vertex reads the same, and a value interpolated between two of them
+lands beyond it as well — so a cell out there has no gradient to lose. `_DepthRange` moved 6 → 4 to meet
+`waterFlatBeyond` at 4; the deep colour now arrives a little sooner, which was the price of the cut.
+
+**What this bought.** 159168 → 13812 vertices, 79584 → 25953 triangles, 10573 → 847 KB. Of 2487 water
+cells, 652 stay subdivided, 1577 became single quads, 258 sit on the seam.
+
+**The seam is the part with teeth.** A flat cell beside a subdivided one meets four short edges with one
+long one — a T-junction the rasteriser can crack into a hairline. Flat cells split only the sides that
+actually face a subdivided neighbour and fan from the middle; land and the map edge have no geometry to
+disagree with, so they stay whole.
+
+**What this costs, honestly.** The mesh is now coupled to a material parameter, and the failure is
+silent: raise `_DepthRange` above `waterFlatBeyond` and open water freezes part way up the depth ramp,
+reading lighter than the material asks — no error, no warning, just slightly wrong water until someone
+rebakes. The tooltip says so; nothing enforces it.
+
+**What this rejects.** Greedy rectangle merging — measured, and the answer was no. At the `LandDist`
+radius-12 cap only 121 of 2487 cells (4.9%) qualified as identical, worth 5%. At a 2-cell threshold
+greedy beats per-cell by about 25%, which does not pay for merging plus seam-stitching against
+arbitrary rectangle boundaries. Also rejected: lowering `sub` globally, which spends the shoreline —
+the one place the detail is actually seen — to save vertices in open water.
+
+**What would turn this into a smell:** a new shader term reading `shore` with a reach longer than
+`waterFlatBeyond`, or reading it through anything non-monotonic. The guarantee here is only that
+*"every value past the threshold looks the same"*; a term that peaks out in the deep breaks it, and
+breaks it invisibly.
+
+**Consequence still open — the land layers.** The same argument applies to Mud and Grass, now the
+heaviest meshes at 2555 of 3482 KB: their centre tile repeats and only the rim pieces are unique, so
+interiors could merge into rectangles with tiling UVs. What blocks it today is packing, not art — all
+four autotile pieces share one PNG (`spriteMode: 2`) with `wrapMode: 1` (Clamp), so a UV past 1 samples
+the neighbouring piece rather than repeating. Either split the full piece into its own Repeat texture,
+or wrap sub-rect-side in the shader; both cost one more draw call per layer, since `TrianglesFor(tex)`
+groups submeshes by texture. **Measure the payoff before building it** — halving the bake folder did not
+move `Resources.LoadAsync` at all, so the gain here is memory and vertex throughput, not load time.
+
 ## 2026-07-31 — Nothing carries food; the stomach is the budget, and it drives HP
 
 There is no supply bag and no carried ration count. Food is eaten where it is found. The character has a
