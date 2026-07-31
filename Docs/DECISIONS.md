@@ -1,5 +1,44 @@
 # Decisions
 
+## 2026-07-31 — A death costs the walk back and nothing else
+
+*Answers the consequence left open in the hunger decision below — and answers it the other way. See
+`STORY.md` for the fiction this comes out of.*
+
+Dying takes **no gold, no items, and nothing off the stomach**. The character is pulled back to a stone
+platform and sent out again with a full belly. What a death costs is **the leg it happened on**: the
+stretch from the last platform out toward the next one, walked a second time.
+
+**What a "trip" means now.** Stone platforms stand far apart across the world; chanting at one memorises
+it, and any two memorised platforms connect. Teleporting deletes the walk over ground already finished —
+it does not delete the journey, because there is no way home from the middle of a leg. So the unit the
+stomach was always sizing is **the leg**: last platform to next platform. That is the trip.
+
+**Why the range penalty did not go where the hunger decision expected.** That entry assumed the bite had
+to move somewhere material once the supply bag was gone, and nominated fullness. But respawning hungry
+buys nothing here: the player is standing at a platform beside a food source, so a hungry respawn is a
+short delay wearing the costume of a penalty. Meanwhile the leg itself is already long, already
+dangerous, and already the thing the player wanted. Taking it away is the real cost; taking gold on top
+is a second, smaller cost that only adds bookkeeping.
+
+**Why nothing material, and this is the same argument as the uncapped backpack.** A death that eats loot
+makes *finding something* conditional on surviving the way home — which is the exact failure a loot cap
+was rejected for. Finding a thing has to be good news at the moment it is found, or exploration is being
+taxed for exploring.
+
+**What this costs, honestly.** Death is soft. There is no dread in it, and no moment where a player
+weighs turning back against pressing on for one more room, because the only currency at risk is time.
+Anyone tuning for tension has one dial and it is leg length.
+
+**What this rejects:** gold lost on death, items lost on death, respawning hungry, and the whole
+apparatus that a committed material penalty needs — atomic penalty-plus-save, death writing a save so
+quitting cannot undo it, and the anti-spiral rule that a death must never leave a player unable to
+leave home. With nothing to commit, none of it has anything to protect.
+
+**What would turn this into a smell:** putting a material loss back in one place — a hardcore zone, a
+harder difficulty, a punishing endgame. Then there are two death rules, the player has to learn which
+room they are standing in, and every rule above has to be rebuilt for the exception.
+
 ## 2026-07-31 — Water carries detail only as far as the shore reads; past that it is flat
 
 The water surface is subdivided 4×4 per cell **only near land**. Past `waterFlatBeyond` (world units,
@@ -58,6 +97,9 @@ move `Resources.LoadAsync` at all, so the gain here is memory and vertex through
 There is no supply bag and no carried ration count. Food is eaten where it is found. The character has a
 second vital beside HP — **fullness**, the stomach — and that is the whole food budget for a trip.
 
+*"A trip" was written here before the word had a precise meaning. It is one **leg** — from the last
+memorised stone platform out to the next one. See the death entry above.*
+
 *Supersedes, on the same day, a first cut in which the supply bag kept a capacity while the backpack lost
 its own. That version was correct about the backpack and wrong about the shape of the rest.*
 
@@ -88,9 +130,10 @@ is now stomach size plus what you find on the way.
 knowledge — the exact thing hunger existed to make valuable. The earlier design let a well-stocked player
 ignore the map; this one does not.
 
-**Consequence still open:** the death penalty used to bite by destroying the supply bag ("supplies buy
-distance"). With no bag, death costs only gold unless **respawning stops refilling fullness**. That is where
-the range penalty has to move, and DESIGN.md still says the old thing.
+**Consequence, now closed — and closed the other way.** This entry expected the range penalty to move onto
+fullness, with respawning leaving the player hungry. It does not: see *A death costs the walk back and
+nothing else* above. Respawning refills, and what a death takes is the leg. `DESIGN.md` still says the old
+thing in both directions and has not been rewritten yet.
 
 **What would turn this into a smell:** letting food be stockpiled somewhere after all — a home larder, a
 crafting ingredient. Then there are two food rules again. Food stays a thing you eat where you find it.
@@ -530,6 +573,11 @@ to restore. The death drop survives that because it's modelled as player data, n
 
 *(2026-07-17: no death drop any more — nothing outside home survives at all except buildings. Why
 death saves is unchanged: it commits the gold and supply loss.)*
+
+*(2026-08-01: both halves of this have moved. There is **one** home, not several — see `STORY.md` —
+and there is no death penalty left to commit, so "why death also saves" has nothing under it: see* A
+death costs the walk back and nothing else *above. Checkpoints are now **stone platforms**, of which
+home is one. What should write, and when, is open and deliberately not decided here.)*
 
 **Requirement:** applying the penalty and writing the save must be **atomic** — a crash between
 "gear moved to drop" and "save written" is the only path to duplicated or lost items.

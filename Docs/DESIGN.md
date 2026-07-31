@@ -36,10 +36,10 @@ safe map is *inefficient by construction*. The optimal play is always to push. T
 still — the maths is identical, the experience is the opposite. Keep it that way: **the day a safe
 map out-farms the frontier, the drop table is broken.**
 
-**And it settles the death penalty:** the ratchet is why death can afford to spare your gear. Ground
-you have cleared stays cleared, so a death costs the *trip*, not the climb — you lose the gold and
-the supplies that trip was buying and you walk back out. The penalty bites at the frontier, where
-tension belongs, and costs nothing on ground already made ordinary.
+**And it settles the death penalty:** the ratchet is why death can afford to spare everything. Ground
+you have cleared stays cleared, so a death costs the *leg*, not the climb — you walk the frontier
+stretch again and nothing is taken off you. The penalty bites at the frontier, where tension belongs,
+and costs nothing on ground already made ordinary. See `DECISIONS.md` (2026-07-31).
 If players avoid the frontier instead of respecting it, it's tuned too high.
 
 ## Look
@@ -336,10 +336,18 @@ authoring 7 stat blocks per item.
 
 **Only identical items merge** — same definition, same rung. Nothing cross-definition.
 
-## Homes & checkpoints
+## Home & stone platforms
 
-There are **several homes**, unlocked over time. They are the game's checkpoints: the only place
-you can save, swap character, and the place you respawn to.
+There is **one home** — the house in the forest where the fallen agree to meet. It is the only place a
+character can be swapped.
+
+**Stone platforms are the checkpoint network.** They stand far apart; chanting at one memorises it, and
+any two memorised platforms connect. The home platform is one of them, and it is where a defeated
+character is pulled back to. Reaching a *new* platform is what banks a stretch of exploration.
+
+Each far world behind the well or the cave has **its own platform at its entrance**, running its own
+teleport network with no link to the one outside. That platform revives and refills, but does not swap
+characters — whoever went through the door plays that world start to finish. See `STORY.md`.
 
 ## Day & night
 
@@ -360,12 +368,12 @@ night = the veil closes in and the player carries a **small vision radius**.
 Home is a checkpoint, but not a menu. **It's a place, and it's explored too**: go inside, upstairs,
 poke around for items, take short walks nearby.
 
-At home the player is safe: **hunger doesn't drain**, and the table always serves a free meal —
-an NPC fills you up. That warmth is deliberate: home should be somewhere you *want* to come back to.
-The frontier is scarier when there's something to come back for.
+At home the player is safe: **hunger doesn't drain**, and the **apple tree in the yard** always feeds
+you — apples are free and there for the taking. That warmth is deliberate: home should be somewhere you
+*want* to come back to. The frontier is scarier when there's something to come back for.
 
 **Crawling home starving:** if you reach home at zero fullness (already bleeding out), you're put
-**straight at the table**. No stumbling to find it, no dying two steps inside the door. Making it
+**straight at the tree**. No stumbling to find it, no dying two steps inside the door. Making it
 back *is* the win — the game shouldn't take it away on a technicality.
 
 ### The rule that unifies everything
@@ -376,7 +384,6 @@ Every irreversible choice happens at home; the field is where you live with it.
 | --- | --- |
 | swap **character** | — |
 | change **gear** | — |
-| stock **supplies** | — |
 | **hunger refills free** | hunger drains |
 | **saves** | no save (except on death) |
 
@@ -389,13 +396,15 @@ swapping mid-combat, no migrating mid-run, no saving mid-transition.
 ## Hunger — the expedition budget
 
 Food drains over time in the field. Starve and you lose health continuously until you die.
-Respawning does **not** refill hunger — see Death, below. It is the only thing a death costs besides
-gold, now that nothing carries food.
+Respawning **does** refill it — a death costs the leg walked, never the stomach. See Death, below.
 
-**Hunger is not a nagging timer — it's the budget for a trip.** The loop it creates:
+**Hunger is not a nagging timer — it's the budget for a leg.** A leg is one stretch from the last
+memorised stone platform out to the next one; that is what "a trip" means everywhere in this document.
+The loop it creates:
 
-> stock up at home → head out → probe, get lost, **learn the route** → supplies run low → head
-> home → next time go further, with better gear *and* better knowledge.
+> fill up at the tree → head out → probe, get lost, **learn the route** → the stomach runs low → reach
+> the next platform, or die and walk the stretch again → next time go further, with better gear *and*
+> better knowledge.
 
 **Why it earns its place** (it's the second axis of the ratchet): the frontier extends because you
 are **stronger** (kill faster = less food per distance), because you can **carry more**, because
@@ -432,7 +441,8 @@ here"*, never *"stop and eat"*.
   keeps an inventory screen out of the game entirely.
 - **Range is now route knowledge.** You cannot stock up, so how far you get is how well you know
   where the food is. That is the thing hunger existed to make valuable in the first place.
-- **Death does not refill it.** With no bag to destroy, this is the only place a death can cost range.
+- **Death refills it.** The range penalty does *not* live here — a death costs the leg it happened on
+  and nothing material. A hungry respawn beside a food source was only a delay in a penalty's costume.
   See the Death section.
 
 ### Gear costs hunger
@@ -477,9 +487,12 @@ belonged to the map. Same pattern, reused — both are "my footprint in the worl
 - **Steam:** buy up front.
 - **Mobile:** free **demo**; buy once to continue. Mobile isn't the revenue play — it's reach:
   let people try it and get hooked first.
-- **Ads (mobile, sparingly):** rewarded, never forced. The one that fits: **watch an ad on death to
-  keep your gold**. It's a choice offered at a bad moment, not a tax — and it doesn't distort any
-  behaviour the game wants (unlike an ad on saving, which would tax going home).
+- **Ads (mobile, sparingly):** rewarded, never forced. **Open — the one placement that fitted is gone.**
+  It was *"watch an ad on death to keep your gold"*, and a death no longer takes gold. Nothing is taken
+  at all now, so there is nothing a player would sit through an ad to get back. That is the death rule
+  working as intended and a real cost to this section: either find a placement that doesn't distort what
+  the game wants (an ad on saving taxes going home; an ad on rolls inflates the gacha), or drop rewarded
+  ads and let the buy-once carry mobile.
 - **Daily roll:** one free gacha roll on a new day, both platforms. Mobile may offer extra rolls for
   watching an ad. Small enough to be **noise** — a "welcome back" moment, not an income source.
 - Mobile may be **tuned easier** than Steam (touch is worse, sessions are shorter). Keep that in
@@ -497,33 +510,32 @@ hundreds. That keeps it noise. If a daily ever becomes worth *waiting* for, it s
 
 ## Death
 
-Dying respawns the player at the **nearest home they have saved at**. The penalty:
+Dying pulls the character back to **a stone platform** — the home one, or the entrance platform of the
+far world they were in — and sends them out again fed. The penalty:
 
-- **All carried gold is destroyed** — not dropped. There is nothing to run back for; it's gone.
-- **Fullness is NOT refilled** — you respawn as hungry as you died. There is no bag to destroy, so this
-  is where the range penalty lives now.
-- **Gear is kept.** Nothing drops. There is no corpse and no run back for it.
-- **Death writes a save.** The penalty is committed on the spot, so it can't be undone by quitting.
+- **No gold is taken.**
+- **No items are taken.** Gear is kept, nothing drops, there is no corpse and no run back for it.
+- **Fullness is refilled.** At home, revival lands at 50% and the free apples make up the rest; a far
+  platform simply returns you full.
+- **What it costs is the leg** — the stretch from the last memorised platform out toward the next one,
+  walked a second time. That is the whole penalty.
 
-**Nothing is recoverable, deliberately:** death is a **cost, not a delay**. A pile waiting on the
-map turns dying into a chore — walk back, pick up, resume — which is backtracking, and backtracking
-is the one thing the pillar refuses. Destroying gold and food charges the price immediately and
-points the player outward again.
+See `DECISIONS.md` (2026-07-31) for the argument. In short: a death that eats loot makes *finding
+something* conditional on surviving the way home, which is the same failure a loot cap was rejected for;
+and a hungry respawn standing beside a food source is a delay wearing a penalty's costume. The leg is
+already long, already dangerous, and already the thing the player wanted — taking it back is enough.
+
+**Nothing is recoverable** — trivially, because nothing is taken. No pile waiting on the map, no walk
+back to collect it, no backtracking, which is the one thing the pillar refuses.
 
 **Why gear survives:** losing gear far out is what makes players *turtle*. It punishes the exact
 behaviour the game is built to reward, and it punishes it hardest at the frontier, where the game
 wants you. Gear is also the slowest thing to re-earn, so losing it doesn't sting — it deletes hours.
-Keeping it means a death costs **range and gold**, never progress.
 
-**Why fullness too:** it puts the penalty in the currency the pillar actually runs on. Gold buys
-rolls; **fullness buys distance**. Respawning hungry means the next trip is a short one until you
-eat your way back up — the frontier pushes back in and you have to work your way out again. Death
-costs you *range*, which is the thing the whole game is about.
-
-**Watch — the spiral:** a death must never leave a player *unable to leave home* — only unable to go
-**far**. If food cannot be reached and eaten close to home, death stopped being a cost and became a
-wall. **Food near home is the floor holding this rule up**; don't let the drop tables push it all out
-to the frontier.
+**Watch — the softness.** This is a gentle death on purpose, and the price of that is **leg length is
+now the only tension dial in the game**. Platforms too close together and dying means nothing; too far
+apart and one death erases an evening. The old spiral worry — a death leaving a player unable to leave
+home — cannot happen any more, because you always leave full.
 
 ## Saving
 
@@ -532,13 +544,17 @@ to the frontier.
 Consequences (intended):
 - No mid-run autosave, no per-map state to persist, no save during a jump.
 - Quitting mid-run loses the run's progress — leaving home is a commitment.
-- Death can't be dodged by quitting; the penalty is already written.
 - It removes a whole class of problems: partial world state, save-during-transition, and
   reconciling a map mid-change.
 
-**Must be atomic:** applying the penalty (gold and supplies wiped) and writing the save are one
-operation — a crash between them would refund the trip. Nothing moves between containers any more,
-so the old duplicate/delete-an-item hazard is gone with the drop.
+**Open — two of the reasons under this have gone.** Death used to write a save so the penalty could not
+be dodged by quitting, and that write had to be *atomic* with wiping gold and supplies or a crash would
+refund the trip. There is no penalty to commit any more, so neither requirement stands on its own:
+whether death writes at all is now a question of position and convenience, not of fairness.
+
+**Also open:** `STORY.md` makes **stone platforms** the checkpoints, not home alone. The two triggers
+above predate that, and memorising a platform is exactly the kind of structural moment that wants a
+write.
 
 ## Progression
 

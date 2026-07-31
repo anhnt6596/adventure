@@ -185,18 +185,21 @@ pets, hand a new pet a level scaled to how far the player has come, or **let pet
 the house already has characters cultivating in the yard, and a pet ticking up beside them needs no new
 idea, only the one that is there.
 
-## Where this contradicts `DECISIONS.md`
+## What this changed elsewhere
 
-Not yet applied to the decisions log.
+**`DECISIONS.md` — done.** Three things followed from the telling and are now recorded there:
 
-1. **The open consequence about death and fullness is answered, and answered the other way.** The
-   hunger decision says death costs only gold *unless respawning stops refilling fullness*, and put the
-   range penalty there. Here respawn does refill — 50%, then apples to 100% — and death bites through
-   the lost leg instead. The decision needs rewriting to say so.
-2. **Death does not cost gold either.** The same sentence assumes a gold penalty as the remaining bite.
-   The story leaves the penalty as travel and nothing else, so that half of the sentence goes too. If
-   gold loss is still wanted it has to be re-argued, not inherited.
-2. **The stomach is a leg budget, not a trip budget.** With teleport, "a trip" now means the frontier
-   stretch between platforms. The hunger decision was written before that word had this meaning.
-3. **Food as a crafting ingredient was avoided, not encountered.** The smell the decision names is real
-   and was nearly walked into via pet upgrades; the resolution is naming and art, recorded above.
+1. **Death costs neither fullness nor gold**, only the leg walked again. The hunger decision had left
+   this open and had expected the answer to be a hungry respawn; it is written up as its own entry,
+   *A death costs the walk back and nothing else*.
+2. **"A trip" means one leg** — last memorised platform to the next. The hunger decision used the word
+   before it had that meaning, and now says so.
+3. **Food as a crafting ingredient was avoided, not encountered.** The smell that decision names is
+   real and pet upgrades nearly walked into it; the resolution is naming and art, recorded above.
+
+**`DESIGN.md` — not done, and it is wrong in more places than the decisions log was.** Its Death
+section still respawns the player at "the nearest home they have saved at", still takes gold, still
+says fullness is *not* refilled and calls that where the range penalty lives, and still builds the
+machinery a committed penalty needs — death writing a save, the penalty being atomic with it, the
+anti-spiral rule. The ratchet paragraph near the top says a death costs "the gold and the supplies
+that trip was buying". None of that survives.
