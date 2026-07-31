@@ -18,6 +18,7 @@ public class GameScope : LifetimeScope
         // CombatWorld, like CollisionSystem, is a static singleton (CombatWorld.Instance) — hittables
         // self-register and attacks query it, so it isn't in DI.
         builder.Register<InventorySystem>(Lifetime.Singleton);
+        builder.Register<PayGateSystem>(Lifetime.Singleton);   // remembers which pay gates are already bought
         builder.Register<IMapService, MapService>(Lifetime.Singleton);
 
         // AsSelf too: IPlayer is deliberately read-only, so switching character (cheat panel now, character
