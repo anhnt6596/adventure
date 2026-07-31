@@ -26,6 +26,12 @@ public class TerrainRenderer : MonoBehaviour
     [Tooltip("Vertical gap between layers. Coplanar layers z-fight.")]
     [SerializeField] float layerHeight = 0.002f;
 
+    [Tooltip("World distance from land past which open water is one flat colour, so the mesh stops subdividing " +
+             "there and spends one quad per cell instead of sixteen. Keep this at or above the water material's " +
+             "_DepthRange — set it shorter and the depth ramp is cut off part way, leaving open water lighter " +
+             "than the material asks for.")]
+    [SerializeField, Min(0f)] float waterFlatBeyond = 4f;
+
     [SerializeField, HideInInspector] bool baked;   // Rebuild Mesh saved the meshes; the game skips Build
 
     TerrainGrid _grid;
@@ -208,55 +214,118 @@ public class TerrainRenderer : MonoBehaviour
 
         // Shore distance is to the real water/land cell boundary (distance to the nearest land cell). A
         // 1-quad-per-cell mesh interpolates across the corner creases and the rim cuts them diagonally, so
-        // subdivide; distances are exact per sub-vertex, cached since neighbouring sub-quads share them.
+        // subdivide; distances are exact per sub-vertex.
         const int sub = 4;
         float ss = cs / sub;
-        var shoreCache = new Dictionary<int, float>();
         int stride = w * sub + 8;
-        float Shore(int fi, int fj)
-        {
-            int key = fj * stride + fi;
-            if (!shoreCache.TryGetValue(key, out float d))
-                shoreCache[key] = d = LandDist(map, layer, (float)fi / sub, (float)fj / sub, 12) * cs;
-            return d;
-        }
 
         _verts.Clear();
-        _uvs.Clear();
         var uv1 = new List<Vector2>();            // x = world distance to shore
         var tris = new List<int>();
+
+        // Sub-quads share their corners: the quad next door (and the cell next door) addresses the same grid
+        // point, so it is emitted once and indexed. Nothing here is per-quad — the water shader reads POSITION
+        // and TEXCOORD1 only, and shore is a continuous function of position — so no corner has two values to
+        // carry and nothing forces a split. Sharing also replaces the old shore cache: a grid point that
+        // already has a vertex already has its LandDist, which is the expensive part.
+        var vertexAt = new Dictionary<int, int>();
+        int Corner(int fi, int fj)
+        {
+            int key = fj * stride + fi;
+            if (vertexAt.TryGetValue(key, out int v)) return v;
+
+            v = _verts.Count;
+            _verts.Add(new Vector3(fi * ss, 0f, fj * ss));
+            uv1.Add(new Vector2(LandDist(map, layer, (float)fi / sub, (float)fj / sub, 12) * cs, 0));
+            vertexAt[key] = v;
+            return v;
+        }
+
+        // Subdivision buys nothing once the shore distance is past the point where the shader still varies with
+        // it: out there every sub-vertex reads the same, and a value interpolated between two of them is past it
+        // as well, so a flat cell has no gradient to lose. Those cells spend one quad instead of sixteen. The
+        // test is the distance from the WHOLE cell, not from a sample point — one corner being far out is no use
+        // if the opposite corner still has coastline to describe.
+        float flatCells = waterFlatBeyond / cs;
+        int scan = Mathf.CeilToInt(flatCells) + 1;
+        var flat = new bool[w * h];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                flat[y * w + x] = map.Get(x, y) == layer
+                               && CellLandDist(map, layer, x, y, scan) >= flatCells;
+
+        bool Subdivided(int x, int y) => map.InBounds(x, y) && map.Get(x, y) == layer && !flat[y * w + x];
+
+        var ring = new List<int>(4 * sub);
 
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
                 if (map.Get(x, y) != layer) continue;   // water shows only where it's the top terrain
 
-                for (int sj = 0; sj < sub; sj++)
-                    for (int si = 0; si < sub; si++)
-                    {
-                        int fi = x * sub + si, fj = y * sub + sj;
-                        float x0 = fi * ss, x1 = x0 + ss, z0 = fj * ss, z1 = z0 + ss;
-                        int v = _verts.Count;
-                        _verts.Add(new Vector3(x0, 0f, z0));
-                        _verts.Add(new Vector3(x1, 0f, z0));
-                        _verts.Add(new Vector3(x0, 0f, z1));
-                        _verts.Add(new Vector3(x1, 0f, z1));
-                        _uvs.Add(new Vector2(0, 0)); _uvs.Add(new Vector2(1, 0));
-                        _uvs.Add(new Vector2(0, 1)); _uvs.Add(new Vector2(1, 1));
-                        uv1.Add(new Vector2(Shore(fi, fj), 0));
-                        uv1.Add(new Vector2(Shore(fi + 1, fj), 0));
-                        uv1.Add(new Vector2(Shore(fi, fj + 1), 0));
-                        uv1.Add(new Vector2(Shore(fi + 1, fj + 1), 0));
-                        tris.Add(v); tris.Add(v + 2); tris.Add(v + 1);
-                        tris.Add(v + 1); tris.Add(v + 2); tris.Add(v + 3);
-                    }
+                int i0 = x * sub, j0 = y * sub, i1 = i0 + sub, j1 = j0 + sub;
+
+                if (!flat[y * w + x])
+                {
+                    for (int sj = 0; sj < sub; sj++)
+                        for (int si = 0; si < sub; si++)
+                        {
+                            int fi = i0 + si, fj = j0 + sj;
+                            int bl = Corner(fi, fj), br = Corner(fi + 1, fj);
+                            int tl = Corner(fi, fj + 1), tr = Corner(fi + 1, fj + 1);
+                            tris.Add(bl); tris.Add(tl); tris.Add(br);
+                            tris.Add(br); tris.Add(tl); tris.Add(tr);
+                        }
+                    continue;
+                }
+
+                // A flat cell has to meet a subdivided neighbour vertex for vertex: one long edge against four
+                // short ones is a T-junction, and the rasteriser can crack it open into a hairline of whatever
+                // is underneath. Only the sides that actually face a subdivided cell are split — land and the
+                // map edge have no geometry to disagree with.
+                bool west = Subdivided(x - 1, y), east = Subdivided(x + 1, y);
+                bool south = Subdivided(x, y - 1), north = Subdivided(x, y + 1);
+
+                if (!west && !east && !south && !north)
+                {
+                    int bl = Corner(i0, j0), br = Corner(i1, j0);
+                    int tl = Corner(i0, j1), tr = Corner(i1, j1);
+                    tris.Add(bl); tris.Add(tl); tris.Add(br);
+                    tris.Add(br); tris.Add(tl); tris.Add(tr);
+                    continue;
+                }
+
+                // Walk the perimeter the same way round as the quad split above — up the west side, east along
+                // the north, down the east side, west along the south — then fan it from the middle. Every point
+                // is on the sub-grid, so a split side lands on exactly the vertices the neighbour already made.
+                ring.Clear();
+                for (int j = j0; j < j1; j += west ? 1 : sub) ring.Add(Corner(i0, j));
+                for (int i = i0; i < i1; i += north ? 1 : sub) ring.Add(Corner(i, j1));
+                for (int j = j1; j > j0; j -= east ? 1 : sub) ring.Add(Corner(i1, j));
+                for (int i = i1; i > i0; i -= south ? 1 : sub) ring.Add(Corner(i, j0));
+
+                int mid = Corner(i0 + sub / 2, j0 + sub / 2);
+                for (int k = 0; k < ring.Count; k++)
+                {
+                    tris.Add(mid);
+                    tris.Add(ring[k]);
+                    tris.Add(ring[(k + 1) % ring.Count]);
+                }
             }
 
         if (_verts.Count == 0) return null;
 
-        var mesh = new Mesh { name = $"Water_Layer_{layer}", indexFormat = IndexFormat.UInt32 };
+        // No UV0: the water shader never reads TEXCOORD0, so writing one would be a channel of dead weight
+        // per vertex — and a per-quad UV0 is the only thing that would force the corners apart again.
+        // 16-bit indices while the corners fit in them: sharing them dropped this mesh well under the limit,
+        // and with the vertex data now halved the index buffer is the biggest thing left in the asset. Chosen
+        // from the real count, not assumed, so a map large enough to need 32-bit still gets it.
+        var mesh = new Mesh
+        {
+            name = $"Water_Layer_{layer}",
+            indexFormat = _verts.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16,
+        };
         mesh.SetVertices(_verts);
-        mesh.SetUVs(0, _uvs);
         mesh.SetUVs(1, uv1);
         mesh.SetTriangles(tris, 0);
         mesh.RecalculateBounds();
@@ -276,6 +345,25 @@ public class TerrainRenderer : MonoBehaviour
                 if (!map.InBounds(x, y) || map.Get(x, y) == waterLayer) continue;   // land only
                 float ddx = Mathf.Max(0f, Mathf.Max(x - px, px - (x + 1)));
                 float ddz = Mathf.Max(0f, Mathf.Max(y - pz, pz - (y + 1)));
+                float d = Mathf.Sqrt(ddx * ddx + ddz * ddz);
+                if (d < best) best = d;
+            }
+        return best;
+    }
+
+    // The same distance, but for a whole cell rather than a point: the smallest LandDist any point inside cell
+    // (cx,cy) could have, measured square to square. Deciding a cell needs no subdivision rests on its NEAREST
+    // corner to land, so this has to be the minimum over the cell - sampling the centre would call a cell flat
+    // while a corner of it still sits in the shallows.
+    static float CellLandDist(TerrainMap map, int waterLayer, int cx, int cy, int radius)
+    {
+        float best = radius;
+        for (int y = cy - radius; y <= cy + radius; y++)
+            for (int x = cx - radius; x <= cx + radius; x++)
+            {
+                if (!map.InBounds(x, y) || map.Get(x, y) == waterLayer) continue;   // land only
+                float ddx = Mathf.Max(0f, Mathf.Abs(x - cx) - 1f);
+                float ddz = Mathf.Max(0f, Mathf.Abs(y - cy) - 1f);
                 float d = Mathf.Sqrt(ddx * ddx + ddz * ddz);
                 if (d < best) best = d;
             }
@@ -326,7 +414,13 @@ public class TerrainRenderer : MonoBehaviour
 
         if (_verts.Count == 0) return null;
 
-        var mesh = new Mesh { name = $"Terrain_Layer_{layer}", indexFormat = IndexFormat.UInt32 };
+        // 16-bit indices unless the tiles actually overflow them — the submeshes all index this one vertex
+        // list, so its count is what decides. Same rule as the water mesh.
+        var mesh = new Mesh
+        {
+            name = $"Terrain_Layer_{layer}",
+            indexFormat = _verts.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16,
+        };
         mesh.SetVertices(_verts);
         mesh.SetUVs(0, _uvs);
         mesh.subMeshCount = _trisPerTexture.Count;
