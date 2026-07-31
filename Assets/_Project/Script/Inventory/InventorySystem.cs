@@ -5,6 +5,9 @@ using Core.Save;
 // Owns every Inventory, keyed by id, and persists them all under ONE save file — so a second inventory
 // (NPC, home storage) is just another id, no save-key collision. Resources are stored by ResourceDef.Id
 // and resolved back to defs via ConfigRegistry on load.
+//
+// There is no food store here. Food is eaten where it is found and never carried, so what it fills is the
+// character's Hunger, not an inventory. See Docs/DECISIONS.md.
 public class InventorySystem : ISavable
 {
     readonly Dictionary<string, Inventory> _inventories = new Dictionary<string, Inventory>();
@@ -22,12 +25,13 @@ public class InventorySystem : ISavable
         _save.Register(this);   // loads _saved
     }
 
-    // The store for `id`, created on first ask with its capacity config and any saved counts applied.
-    public Inventory GetOrCreate(string id, IInventoryConfig config)
+    // The resource store for `id`, created on first ask with any saved counts applied. It takes no config:
+    // an Inventory has no capacity to configure (see Inventory).
+    public Inventory GetOrCreate(string id)
     {
         if (_inventories.TryGetValue(id, out var inv)) return inv;
 
-        inv = new Inventory(id, config);
+        inv = new Inventory(id);
         if (_saved.TryGetValue(id, out var byResId))
             inv.Restore(Resolve(byResId));           // apply saved counts (fires Changed, but no sub yet)
         inv.Changed += () => _save.Save(SaveKey);    // subscribe AFTER restore so it doesn't self-save

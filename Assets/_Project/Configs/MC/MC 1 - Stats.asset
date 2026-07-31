@@ -19,5 +19,9 @@ MonoBehaviour:
   attackCooldown: 0.2
   mass: 1
   pickupRadius: 0.3
-  backpackCapacity: 20
   maxHp: 200
+  maxHunger: 50
+  hungerDrain: 0.35
+  wellFed: 0.75
+  wellFedHeal: 1.5
+  starveDamage: 2

@@ -12,19 +12,24 @@ public class Picker : MonoBehaviour, IPickupReceiver
 
     ICharacterStats _stats;
     Inventory _inventory;
+    Hunger _hunger;
 
     public Inventory Inventory => _inventory;
 
+    // Food is eaten where it lies rather than stored, so the "store" a food payload delivers into is the
+    // stomach. Found on the character, not injected — it is a component of this body.
+    public Hunger Hunger => _hunger != null ? _hunger : _hunger = GetComponentInParent<Hunger>();
+
     [Inject]
-    public void Construct(ICharacterStats stats, IInventoryConfig inventoryConfig, InventorySystem inventories)
+    public void Construct(ICharacterStats stats, InventorySystem inventories)
     {
         _stats = stats;
-        _inventory = inventories.GetOrCreate(inventoryId, inventoryConfig);
+        _inventory = inventories.GetOrCreate(inventoryId);
     }
 
     void Start()
     {
-        if (_stats == null || _inventory == null)   // needs ICharacterStats + IInventoryConfig + InventorySystem
+        if (_stats == null || _inventory == null)   // needs ICharacterStats + InventorySystem
             Debug.LogError($"[{nameof(Picker)}] not injected — add this GameObject to GameScope's Auto Inject list.", this);
     }
 
@@ -45,7 +50,7 @@ public class Picker : MonoBehaviour, IPickupReceiver
             Vector3 d = pk.Position - p;
             d.y = 0f;
             if (d.x * d.x + d.z * d.z <= r2)
-                pk.CollectTo(this, transform, pickHeight);   // pk gates on its payload; full backpack → stays
+                pk.CollectTo(this, transform, pickHeight);   // pk gates on its payload; a full stomach → stays
         }
     }
 

@@ -20,4 +20,8 @@ MonoBehaviour:
   attackSpeed: 1
   attackCooldown: 0.8
   mass: 0.5
+  drops:
+  - prefab: {fileID: 9176653165436844561, guid: 7b4e0b56a48e8ab41a0be1f47405ea9a, type: 3}
+    min: 1
+    max: 1
   brain: {fileID: 11400000, guid: 2f8d5b6c3e7a4091b2c5d8e1f4a7b0c3, type: 2}

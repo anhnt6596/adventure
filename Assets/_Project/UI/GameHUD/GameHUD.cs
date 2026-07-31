@@ -23,6 +23,10 @@ public class GameHUD : UIView
     VisualElement _healthRoot, _healthFill;
     Label _healthText;
 
+    Hunger _hunger;
+    VisualElement _hungerRoot, _hungerFill, _hungerMark, _hungerIcon;
+    Label _hungerText;
+
     readonly Dictionary<ResourceDef, int> _displayed = new();          // lags the inventory; catches up on land
     readonly Dictionary<ResourceDef, VisualElement> _rowIcon = new();  // fly target per resource
 
@@ -36,8 +40,9 @@ public class GameHUD : UIView
     class Fly
     {
         public Image icon;
-        public ResourceDef def;
-        public int amount;
+        public PickupSlot slot;
+        public ResourceDef def;   // Bag only
+        public int amount;        // Bag only
         public Vector2 from;
         public float startSize;
         public float elapsed;
@@ -52,6 +57,11 @@ public class GameHUD : UIView
         _healthRoot = root.Q<VisualElement>("health");
         _healthFill = root.Q<VisualElement>("health-fill");
         _healthText = root.Q<Label>("health-text");
+        _hungerRoot = root.Q<VisualElement>("hunger");
+        _hungerFill = root.Q<VisualElement>("hunger-fill");
+        _hungerMark = root.Q<VisualElement>("hunger-mark");
+        _hungerIcon = root.Q<VisualElement>("hunger-icon");
+        _hungerText = root.Q<Label>("hunger-text");
         root.Q<Button>("capacity-button")?.RegisterCallback<ClickEvent>(_ => Toggle());
         WarmFlyPool(20);
     }
@@ -63,6 +73,31 @@ public class GameHUD : UIView
         SnapToActual();   // pre-existing items appear without a fly
         Sub();
         Refresh();
+    }
+
+    // The stomach, bound exactly like the HP bar because it is the same kind of thing: a vital with a
+    // ceiling. Nothing here can be opened or managed - food is eaten where it is found.
+    public void SetHunger(Hunger hunger)
+    {
+        if (_hunger != null) _hunger.Changed -= RefreshHunger;
+        _hunger = hunger;
+        if (_hunger != null) _hunger.Changed += RefreshHunger;
+        RefreshHunger();
+    }
+
+    void RefreshHunger()
+    {
+        float max = _hunger != null ? _hunger.Max : 0f;
+        float value = _hunger != null ? Mathf.Max(0f, _hunger.Value) : 0f;
+
+        if (_hungerRoot != null) _hungerRoot.style.display = max > 0f ? DisplayStyle.Flex : DisplayStyle.None;
+        if (_hungerFill != null) _hungerFill.style.width = Length.Percent(max > 0f ? Mathf.Clamp01(value / max) * 100f : 0f);
+        if (_hungerText != null) _hungerText.text = $"{Mathf.CeilToInt(value)}/{Mathf.CeilToInt(max)}";
+
+        // The well-fed line comes from the config, so a retune moves the mark with it rather than leaving the
+        // bar quietly lying about where healing starts.
+        if (_hungerMark != null && _hunger != null)
+            _hungerMark.style.left = Length.Percent(Mathf.Clamp01(_hunger.WellFedFraction) * 100f);
     }
 
     // The player's HP bar. Bound the same way as the inventory (pushed from GameScope), refreshed off the
@@ -84,12 +119,13 @@ public class GameHUD : UIView
         if (_healthText != null) _healthText.text = $"{Mathf.CeilToInt(hp)}/{Mathf.CeilToInt(max)}";
     }
 
-    public override void OnShow() { Sub(); Refresh(); RefreshHealth(); }
+    public override void OnShow() { Sub(); Refresh(); RefreshHealth(); RefreshHunger(); }
     public override void OnHide() { Unsub(); }
 
     void Sub()
     {
         if (_inv != null) { _inv.Changed -= Reconcile; _inv.Changed += Reconcile; }
+        if (_hunger != null) { _hunger.Changed -= RefreshHunger; _hunger.Changed += RefreshHunger; }
         if (_health != null) { _health.HealthChanged -= RefreshHealth; _health.HealthChanged += RefreshHealth; }
         PickupFly.Requested -= OnPickup; PickupFly.Requested += OnPickup;
     }
@@ -97,6 +133,7 @@ public class GameHUD : UIView
     void Unsub()
     {
         if (_inv != null) _inv.Changed -= Reconcile;
+        if (_hunger != null) _hunger.Changed -= RefreshHunger;
         if (_health != null) _health.HealthChanged -= RefreshHealth;
         PickupFly.Requested -= OnPickup;
     }
@@ -135,10 +172,13 @@ public class GameHUD : UIView
     const float EndSize = 86f;    // matches the .item-icon size the fly shrinks into
     const float FlyDur = 0.45f;
 
-    void OnPickup(Vector3 worldPos, ResourceDef def, int amount, float worldHeight)
+    void OnPickup(PickupFlyRequest req)
     {
         var cam = Camera.main;
-        if (_flyLayer == null || Root.panel == null || cam == null) { Land(def, amount); return; }
+        if (_flyLayer == null || Root.panel == null || cam == null) { Land(req); return; }
+
+        Vector3 worldPos = req.worldPos;
+        float worldHeight = req.worldHeight;
 
         // Measure along the camera's up (screen-vertical), not world up: a tilted camera foreshortens world
         // Y, which under-read the piece's real on-screen height.
@@ -147,10 +187,14 @@ public class GameHUD : UIView
         float startSize = Mathf.Clamp(Mathf.Abs(from.y - fromTop.y), EndSize, 1024f);   // on-screen size of the piece
 
         var icon = RentFlyIcon();
-        icon.sprite = def.icon;
+        icon.sprite = req.icon;
         Place(icon, from, startSize);
 
-        _active.Add(new Fly { icon = icon, def = def, amount = amount, from = from, startSize = startSize });
+        _active.Add(new Fly
+        {
+            icon = icon, slot = req.slot, def = req.def, amount = req.amount,
+            from = from, startSize = startSize,
+        });
         if (_flyTicker == null) _flyTicker = Root.schedule.Execute(StepFlies).Every(16);
         else _flyTicker.Resume();
     }
@@ -166,12 +210,12 @@ public class GameHUD : UIView
             float posE = 1f - (1f - t) * (1f - t);              // ease-out: leaves fast, settles into the slot
             float sizeE = t * t;                                // ease-in: holds scene size, shrinks late
             float size = Mathf.Lerp(f.startSize, EndSize, sizeE);
-            Place(f.icon, Vector2.Lerp(f.from, TargetFor(f.def), posE), size);
+            Place(f.icon, Vector2.Lerp(f.from, TargetFor(f), posE), size);
             if (t >= 1f)
             {
                 ReturnFlyIcon(f.icon);
                 _active.RemoveAt(i);
-                Land(f.def, f.amount);
+                Land(f);
             }
         }
         if (_active.Count == 0) _flyTicker.Pause();
@@ -205,16 +249,29 @@ public class GameHUD : UIView
         _flyPool.Push(icon);
     }
 
-    void Land(ResourceDef def, int amount)
+    // The icon arrived. A resource ticks its shown count up here - the store was credited when it was
+    // picked up, so this only ever catches the display up. Food has nothing to tick: the stomach filled at
+    // pickup and its bar is bound straight to it, so all that is left is the bounce.
+    void Land(Fly f) => Land(f.slot, f.def, f.amount);
+
+    void Land(PickupFlyRequest req) => Land(req.slot, req.def, req.amount);
+
+    void Land(PickupSlot slot, ResourceDef def, int amount)
     {
-        _displayed[def] = (_displayed.TryGetValue(def, out var n) ? n : 0) + amount;
-        Refresh();
-        Bounce();
+        if (slot == PickupSlot.Bag && def != null)
+        {
+            _displayed[def] = (_displayed.TryGetValue(def, out var n) ? n : 0) + amount;
+            Refresh();
+        }
+        Bounce(slot);
     }
 
-    Vector2 TargetFor(ResourceDef def)
+    Vector2 TargetFor(Fly f)
     {
-        if (_expanded && _rowIcon.TryGetValue(def, out var icon) && icon.panel != null)
+        if (f.slot == PickupSlot.Stomach)
+            return _hungerIcon != null ? _hungerIcon.worldBound.center : Vector2.zero;
+
+        if (_expanded && f.def != null && _rowIcon.TryGetValue(f.def, out var icon) && icon.panel != null)
             return icon.worldBound.center;
         return _bag != null ? _bag.worldBound.center : Vector2.zero;
     }
@@ -227,18 +284,21 @@ public class GameHUD : UIView
         icon.style.top = center.y - size * 0.5f;
     }
 
-    void Bounce()
+    void Bounce(PickupSlot slot)
     {
-        if (_bag == null) return;
-        _bag.style.scale = new StyleScale(new Scale(new Vector3(1.25f, 1.25f, 1f)));
-        _bag.schedule.Execute(() => _bag.style.scale = new StyleScale(new Scale(Vector3.one))).StartingIn(90);
+        var target = slot == PickupSlot.Stomach ? _hungerIcon : _bag;
+        if (target == null) return;
+        target.style.scale = new StyleScale(new Scale(new Vector3(1.25f, 1.25f, 1f)));
+        target.schedule.Execute(() => target.style.scale = new StyleScale(new Scale(Vector3.one))).StartingIn(90);
     }
 
     void Refresh()
     {
         int total = 0;
         foreach (var v in _displayed.Values) total += v;
-        if (_capacity != null) _capacity.text = $"{total}/{(_inv?.Capacity ?? 0)}";
+        // A bare count, not `carried/cap`: the backpack has no cap any more, and the difference in form is
+        // what tells the player the supply chip above is a different kind of thing rather than an odd rule.
+        if (_capacity != null) _capacity.text = total.ToString();
 
         if (_list == null) return;
         _list.Clear();

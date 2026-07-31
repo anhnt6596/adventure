@@ -100,7 +100,7 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         _scope = _container.CreateScope(b =>
         {
             b.RegisterInstance<ICharacterStats>(stats);
-            b.RegisterInstance<IInventoryConfig>(cfg);
+            b.RegisterInstance<IHungerConfig>(cfg);
             b.RegisterInstance<IDamageableConfig>(cfg);   // MC's HP — MCController exposes it to its Damageable
         });
 

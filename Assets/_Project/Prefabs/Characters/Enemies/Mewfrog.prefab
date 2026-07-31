@@ -125,7 +125,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Sprite3D::WaterReflection
   source: {fileID: 8142573892274122599}
   material: {fileID: 2100000, guid: 4edb47f4eb2ea514a94a501d686e150c, type: 2}
-  orderOffset: -10
+  order: -300
   surfaceOffset: 0
   scale: 1.05
   length: 1
@@ -145,6 +145,8 @@ GameObject:
   - component: {fileID: 6143232455295501188}
   - component: {fileID: 7690705269640586978}
   - component: {fileID: 5538935722000754509}
+  - component: {fileID: 905355796874017787}
+  - component: {fileID: 8570089574709778018}
   m_Layer: 0
   m_Name: Mewfrog
   m_TagString: Untagged
@@ -197,7 +199,7 @@ MonoBehaviour:
   shape: 0
   radius: 0.25
   size: {x: 1, y: 1}
-  mass: 0.5
+  mass: 0.68
   knockbackDrag: 8
 --- !u!114 &233032119361070334
 MonoBehaviour:
@@ -271,6 +273,30 @@ MonoBehaviour:
   animatorSource: {fileID: 639855831500468208}
   muzzle: {fileID: 194829221086538142}
   flamePrefab: {fileID: 2475285664741214988, guid: d229363f7430b724b820ffda4755e083, type: 3}
+--- !u!114 &905355796874017787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0da7e644266248148bb0be17d91eb860, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Dropable
+--- !u!114 &8570089574709778018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c5b8d79f01cb7d4c89d7ff56dbfbddd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DropOnDeath
 --- !u!1 &8299895054748087226
 GameObject:
   m_ObjectHideFlags: 0

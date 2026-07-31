@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Config/Enemy")]
-public class EnemyConfig : Config, IDamageableConfig
+public class EnemyConfig : Config, IDamageableConfig, IDeathDropableConfig
 {
     // Which side this KIND is on — one team per kind, not one team for "enemies". That is what lets a predator
     // hunt a critter and two monsters maul each other; a shared enemy team made every one of them allies by
@@ -31,6 +31,12 @@ public class EnemyConfig : Config, IDamageableConfig
     // What's left is the BODY: what the unit IS. How it THINKS is a whole asset of its own — behaviours, their
     // tuning, and the FSM's distances/timers all live in the brain. Nothing about AI here but the pointer, so
     // two kinds can share one mind, or carry identical stats and think nothing alike.
+    // What the corpse provides. Same field and same struct a PropConfig uses, so a frog dropping meat and an
+    // oak dropping logs are one code path — Dropable reads IDeathDropableConfig off the unit and never learns
+    // whether it killed scenery or something that was hunting it.
+    [Header("Drops — what it provides on death")]
+    public DeathDrop[] drops;
+
     [Header("AI")]
     public EnemyBrainConfig brain;
 
@@ -39,4 +45,5 @@ public class EnemyConfig : Config, IDamageableConfig
     // the unit's team when there is one (an enemy always has one), so this value rarely wins.
     public float MaxHp => hp;
     public int Team => team;
+    public DeathDrop[] Drops => drops;   // IDeathDropableConfig
 }

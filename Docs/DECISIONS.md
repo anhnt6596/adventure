@@ -1,5 +1,50 @@
 # Decisions
 
+## 2026-07-31 — Nothing carries food; the stomach is the budget, and it drives HP
+
+There is no supply bag and no carried ration count. Food is eaten where it is found. The character has a
+second vital beside HP — **fullness**, the stomach — and that is the whole food budget for a trip.
+
+*Supersedes, on the same day, a first cut in which the supply bag kept a capacity while the backpack lost
+its own. That version was correct about the backpack and wrong about the shape of the rest.*
+
+**The backpack is uncapped**, and that part stands. The pillar is exploration and the tie-breaker is *"does
+this make exploring better"*. A cap on loot fails it twice: finding something becomes bad news ("what do I
+throw away"), and it becomes a second reason to end a trip, competing with the one the design is built on.
+
+**Why the stomach and not a bag.** A capacity on something you *carry* invites "why is only food limited";
+a capacity on a *stomach* invites nothing, because a stomach obviously has a size. HP and fullness are then
+the same kind of readout — two bars, one body — and the asymmetry with loot stops being visible at all.
+
+**What it does, and this is what makes it a stat rather than a timer:**
+
+| fullness | effect |
+| --- | --- |
+| above the well-fed line (0.75) | HP regenerates |
+| in between | nothing — where most of a trip is spent |
+| empty | HP drains |
+
+The middle band is the design. Fullness must drain slowly enough that the bar only ever says *"this trip
+ends here"* — the player should rarely look at it.
+
+**What this costs, honestly.** Three things the earlier design leaned on are gone: stocking up before a trip,
+the supply bag as a gear slot that bought reach, and food production having a point beyond the moment. Range
+is now stomach size plus what you find on the way.
+
+**And what it buys instead, which is why it wins:** range becomes *knowing where the food is*. That is route
+knowledge — the exact thing hunger existed to make valuable. The earlier design let a well-stocked player
+ignore the map; this one does not.
+
+**Consequence still open:** the death penalty used to bite by destroying the supply bag ("supplies buy
+distance"). With no bag, death costs only gold unless **respawning stops refilling fullness**. That is where
+the range penalty has to move, and DESIGN.md still says the old thing.
+
+**What would turn this into a smell:** letting food be stockpiled somewhere after all — a home larder, a
+crafting ingredient. Then there are two food rules again. Food stays a thing you eat where you find it.
+
+**What this rejects:** carried rations, a supply-bag gear slot, per-type stacks and slots, weight,
+encumbrance, and dropping items to make room. No inventory screen exists in this design at all.
+
 ## 2026-07-20 — Terrain stays flat; height is a blocked-cell mask
 
 *Supersedes the unimplemented multi-height terrain direction formerly recorded in `TODO.md`.*

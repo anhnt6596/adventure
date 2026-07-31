@@ -85,8 +85,10 @@ public class GameUI : MonoBehaviour
         if (hud == null) return;
 
         var mc = _player?.Current;
-        hud.SetInventory(mc != null ? mc.GetComponentInChildren<Picker>()?.Inventory : null);
+        var picker = mc != null ? mc.GetComponentInChildren<Picker>() : null;
+        hud.SetInventory(picker?.Inventory);
         hud.SetHealth(mc != null ? mc.GetComponentInChildren<Damageable>() : null);
+        hud.SetHunger(mc != null ? mc.GetComponentInChildren<Hunger>() : null);
     }
 
     // Dev drawer on the left edge: the tab opens a vertical panel that will hold the cheat tools (empty for

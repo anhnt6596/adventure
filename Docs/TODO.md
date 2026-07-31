@@ -48,18 +48,27 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
     - Quái **cùng loài** không bắn trúng nhau (cùng phe → `CombatWorld` lọc). Khác loài thì có. Đúng ý chứ?
     - PP1 giờ săn được mewfrog rồi, nhưng mewfrog **chưa biết chạy** — xem `SkittishRoam` ngay dưới.
 
-- [ ] **Mewfrog roaming biết né.** Đang đi dạo (`WanderRoam`) mà có sinh vật **khác loài** lọt vào bán kính nhỏ
-  thì bỏ chạy ra xa, thay vì cứ lững thững đi tiếp. Đây là hành vi lúc **chưa aggro** — khác với `leashRadius`
-  (bỏ đuổi) và khác `PassiveAggro` (chỉ đánh trả khi bị đánh).
-  - Seam đã có và giờ rẻ hẳn: viết `SkittishRoam : IIdleBehavior` (`[Serializable]`, `fleeRadius` + hệ số
-    hysteresis là field của **chính nó**) — quét `ctx.FindHostile(radius)` mỗi tick, có thì đi ngược hướng nó,
-    không thì roam như cũ. Xong thì nó **tự hiện trong dropdown** slot Idle của `mewfrog Brain`; không sửa
-    `EnemyConfig`, không sửa `EnemyAI`, không đăng ký ở đâu.
-  - ~~**Cần chốt trước:** "khác loài" định nghĩa thế nào?~~ **Đã có lời giải: khác PHE.** Quy ước phe mới
-    (đầu file) cho mỗi loài quái một team riêng, nên `FindHostile` tự nhiên trả về đúng "sinh vật khác loài".
-    Phụ thuộc: phải làm mục "CHIA LẠI PHE" trước, và phải lọc được phe tài nguyên (10000) ra khỏi kết quả.
-  - Bán kính né nên **nhỏ hơn** `aggroRadius`, và cần hysteresis (chạy tới khi ra ngoài `radius × k`) —
-    không thì lại strobe đúng như vụ Chase/Attack vừa rồi.
+- [x] **Mewfrog roaming biết né.** ✅ Đang đi dạo mà có sinh vật **khác phe** lọt vào bán kính nhỏ thì bỏ chạy,
+  thay vì lững thững đi tiếp. Hành vi lúc **chưa aggro** — khác `leashRadius` (bỏ đuổi) và khác `PassiveAggro`
+  (chỉ đánh trả). `FindHostile` trả đúng "khác phe, không phải cảnh vật" nên không cần thêm gì.
+  - **Thuộc `IIdleBehavior`** — không phải `IAggro` (nó trả *target*, mà có target là FSM sang `Chase`, con ếch
+    sẽ **lao tới** chứ không chạy đi), cũng không phải state thứ 5 (FSM cố ý một hub quyết định duy nhất là Idle;
+    bỏ chạy là thứ làm *thay cho* combat, không phải một nhánh của nó).
+  - **KHÔNG tách `SkittishRoam` như kế hoạch cũ ghi ở đây — nằm luôn trong `WanderRoam`.** Bỏ chạy phải huỷ
+    **đích đang đi** và **timer nghỉ**, mà cả hai là state riêng của `WanderRoam`. Tách wrapper thì hết hoảng con
+    vật quay lại đi tiếp tới điểm nó chọn *trước khi* sợ — với bán kính nhỏ thì thường là chính chỗ mối nguy đang
+    đứng. Muốn vá thì `IIdleBehavior` phải mọc thêm `Interrupt()`, tức ba behaviour kia gánh một khái niệm chúng
+    không dùng. `fleeRadius = 0` là tắt, con nào không cần không trả giá gì.
+  - **KHÔNG phải hoảng chạy — là nhường chỗ.** Đi đúng tốc độ `amble` như lúc dạo; thứ duy nhất đổi là **chọn đi
+    đâu**. Chạy nhanh hơn thì đọc ra "con mồi bỏ chạy khỏi thú săn", còn cái muốn ở đây là "không thích bị đứng
+    sát". Vì thế **không có** field tốc độ riêng: giá trị đúng duy nhất luôn là `amble`.
+  - **Không cần hysteresis** như ghi chú cũ lo. Chống strobe bằng đúng cái mẹo `WanderRoam` vốn đã dùng để đi dạo:
+    **chốt một điểm đến rồi đi tới đó**. Không có đường nào "đẩy ra mỗi frame khi còn trong bán kính".
+  - Ba số, mỗi số một việc: `personalSpace` (mewfrog 2.5) là thứ giữ cho việc này **hiếm**; `settleTime` 0.5s là
+    **nhanh có chủ đích** — cứ đi tới là nó cứ dạt ra, dài hơn thì nó nhường một lần rồi đứng chịu trận, đọc ra
+    như hỏng chứ không như điềm tĩnh; `ScanInterval` 0.25s (const, không phải knob) chỉ để con vật đứng giữa đồng
+    trống khỏi quét `CombatWorld` (rebuild cả spatial hash) **mỗi frame**, vì `settleTime` chỉ bắt đầu tính sau
+    khi đã thực sự có ai lại gần.
 - [x] **PP1 (Predator plant): cây phục kích có giờ hoạt động.** ✅ Làm hoàn toàn bằng behaviour mới + sửa asset,
   **không đụng FSM khung** — đúng lời hứa của nấc 2. Đặc trưng con này: **thức 6h–10h**.
   - **Idle** = `WanderRoam` với `activeHoursOnly` (field mới) + `rest 20–45s`, `radius 1`: ngoài giờ đứng chết,
@@ -270,8 +279,9 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
     kẹt**. Cần luật gameplay (rơi xuống nước / dịch về bờ / trừ máu).
   - `SpawnZone.Bake` **cố ý chỉ đọc tilemap** — không spawn quái trên mặt cầu. Khác bản trước (bản đó thấy cả
     deck vì deck nằm trong `IsWalkable`), và không còn ràng buộc "bake zone sau khi đặt cầu".
-  - **Bug đang có, chưa thuộc việc cầu:** `WanderRoam` chọn điểm chỉ theo `IsWalkable` nên mewfrog chọn được điểm
-    bên kia sông rồi húc bờ mãi. Chỗ sửa giờ là `CollisionSystem.Reachable`. **Chưa rewire.**
+  - ~~**Bug đang có:** `WanderRoam` chọn điểm chỉ theo `IsWalkable` nên mewfrog chọn được điểm bên kia sông rồi
+    húc bờ mãi.~~ ✅ **Đã sửa:** `WanderRoam.Standable` giờ đòi cả `IsWalkable` **và** `Reachable`. Vì `Reachable`
+    tính cả cầu nên bờ bên kia thành điểm đến hợp lệ ngay khi cầu mở, và mất đi ngay khi cầu rút.
 
 - [ ] **Cầu phải XÂY — slot trả góp, 8 gỗ.** Cầu không có sẵn trên map: chỗ đó là một **điểm xây**. Người chơi bỏ
   gỗ vào **dần dần** (không cần đủ 8 một lúc); trả đủ **8 gỗ** thì visual của cầu hiện ra và `lowered = true`.

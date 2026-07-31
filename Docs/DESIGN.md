@@ -389,7 +389,8 @@ swapping mid-combat, no migrating mid-run, no saving mid-transition.
 ## Hunger — the expedition budget
 
 Food drains over time in the field. Starve and you lose health continuously until you die.
-Respawning refills hunger.
+Respawning does **not** refill hunger — see Death, below. It is the only thing a death costs besides
+gold, now that nothing carries food.
 
 **Hunger is not a nagging timer — it's the budget for a trip.** The loop it creates:
 
@@ -410,20 +411,29 @@ knowing the way is worth nothing.
 
 The player should **rarely look at the hunger bar** while exploring.
 
-### Supplies vs fullness — keep them separate
+### Fullness is the whole of it — nothing carries food
 
-Two different things, easy to accidentally merge in code:
+There is no supply bag. **Food is eaten where it is found**, and the only place it goes is the
+stomach. See `DECISIONS.md` (2026-07-31).
 
-| | What it is | Where it comes from |
-| --- | --- | --- |
-| **Fullness** (the bar) | your current state | **free at home** (the table) |
-| **Supply bag** | food you *carry* | **must be earned** — farmed, found, produced |
+**Fullness is a vital, beside HP**, and it drives HP at both ends:
 
-The table refills the bar; it does **not** fill the bag. That's what keeps food production
-meaningful and makes "stock up before a trip" a real act instead of a free top-up.
+| fullness | effect |
+| --- | --- |
+| above the well-fed line (0.75) | HP **regenerates** |
+| in between | nothing — where most of a trip is spent |
+| empty | HP **drains** |
 
-- The **supply bag is a gear item** with capacity — **upgrade it to extend your range**. One gear
-  slot means *reach* rather than *power*.
+That middle band is the design. Drain slowly enough that the bar only ever says *"this trip ends
+here"*, never *"stop and eat"*.
+
+- **The stomach is the only ceiling in the game.** The resource backpack is uncapped, so a limit
+  always means *"this is how far you can go"* and never *"decide what to throw away"* — which is what
+  keeps an inventory screen out of the game entirely.
+- **Range is now route knowledge.** You cannot stock up, so how far you get is how well you know
+  where the food is. That is the thing hunger existed to make valuable in the first place.
+- **Death does not refill it.** With no bag to destroy, this is the only place a death can cost range.
+  See the Death section.
 
 ### Gear costs hunger
 
@@ -490,7 +500,8 @@ hundreds. That keeps it noise. If a daily ever becomes worth *waiting* for, it s
 Dying respawns the player at the **nearest home they have saved at**. The penalty:
 
 - **All carried gold is destroyed** — not dropped. There is nothing to run back for; it's gone.
-- **The whole supply bag is destroyed** — every unit of food you were carrying, gone with it.
+- **Fullness is NOT refilled** — you respawn as hungry as you died. There is no bag to destroy, so this
+  is where the range penalty lives now.
 - **Gear is kept.** Nothing drops. There is no corpse and no run back for it.
 - **Death writes a save.** The penalty is committed on the spot, so it can't be undone by quitting.
 
@@ -504,15 +515,15 @@ behaviour the game is built to reward, and it punishes it hardest at the frontie
 wants you. Gear is also the slowest thing to re-earn, so losing it doesn't sting — it deletes hours.
 Keeping it means a death costs **range and gold**, never progress.
 
-**Why the food too:** it puts the penalty in the currency the pillar actually runs on. Gold buys
-rolls; **supplies buy distance**. Wiping the bag means the next trip is a short one until you
-re-earn it — the frontier pushes back in and you have to work your way out again. Death costs you
-*range*, which is the thing the whole game is about.
+**Why fullness too:** it puts the penalty in the currency the pillar actually runs on. Gold buys
+rolls; **fullness buys distance**. Respawning hungry means the next trip is a short one until you
+eat your way back up — the frontier pushes back in and you have to work your way out again. Death
+costs you *range*, which is the thing the whole game is about.
 
-**Watch — the spiral:** the bag must be earned, but the table still refills **fullness** for free.
-So a death must never leave a player *unable to leave home* — only unable to go **far**. If food
-can't be reached and re-earned within one free fullness bar, death stopped being a cost and became
-a wall. That free meal is the floor holding this rule up; don't remove it.
+**Watch — the spiral:** a death must never leave a player *unable to leave home* — only unable to go
+**far**. If food cannot be reached and eaten close to home, death stopped being a cost and became a
+wall. **Food near home is the floor holding this rule up**; don't let the drop tables push it all out
+to the frontier.
 
 ## Saving
 

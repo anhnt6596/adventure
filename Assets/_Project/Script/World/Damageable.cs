@@ -78,6 +78,19 @@ public class Damageable : MonoBehaviour, IDamageable
         Damaged?.Invoke(source);
     }
 
+    // Put HP back, never above the maximum and never onto something already dead. Kept apart from
+    // TakeDamage(-x) on purpose: that path fires Damaged and can trip Died, and healing is neither.
+    public void Heal(float amount)
+    {
+        if (!IsAlive || amount <= 0f) return;
+
+        float healed = Mathf.Min(amount, MaxHp - _hp);
+        if (healed <= 0f) return;
+
+        _hp += healed;
+        HealthChanged?.Invoke();
+    }
+
     void Die(object source)
     {
         LeaveWorld();                  // out of the world before it can be re-targeted

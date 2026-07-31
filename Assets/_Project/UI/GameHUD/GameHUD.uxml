@@ -1,16 +1,27 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/_Project/UI/GameHUD/GameHUD.uss" />
     <ui:VisualElement name="hud" class="hud" picking-mode="Ignore">
-        <ui:VisualElement name="health" class="health" picking-mode="Ignore">
-            <ui:VisualElement name="health-track" class="health-track" picking-mode="Ignore">
-                <ui:VisualElement name="health-fill" class="health-fill" picking-mode="Ignore" />
-                <ui:Label name="health-text" class="health-text" text="0/0" picking-mode="Ignore" />
+        <ui:VisualElement name="vitals" class="vitals" picking-mode="Ignore">
+            <ui:VisualElement name="health" class="vital" picking-mode="Ignore">
+                <ui:VisualElement name="health-track" class="vital-track" picking-mode="Ignore">
+                    <ui:VisualElement name="health-fill" class="health-fill" picking-mode="Ignore" />
+                    <ui:Label name="health-text" class="vital-text" text="0/0" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="health-icon" class="vital-icon health-icon" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="hunger" class="vital" picking-mode="Ignore">
+                <ui:VisualElement name="hunger-track" class="vital-track" picking-mode="Ignore">
+                    <ui:VisualElement name="hunger-fill" class="hunger-fill" picking-mode="Ignore" />
+                    <ui:VisualElement name="hunger-mark" class="hunger-mark" picking-mode="Ignore" />
+                    <ui:Label name="hunger-text" class="vital-text" text="0/0" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="hunger-icon" class="vital-icon hunger-icon" picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="inventory" class="inventory">
-            <ui:Button name="capacity-button" class="capacity">
+            <ui:Button name="capacity-button" class="chip capacity">
                 <ui:VisualElement name="bag-icon" class="bag-icon" picking-mode="Ignore" />
-                <ui:Label name="capacity-label" class="cap-text" text="0/0" />
+                <ui:Label name="capacity-label" class="cap-text" text="0" />
             </ui:Button>
             <ui:VisualElement name="item-list" class="item-list" picking-mode="Ignore" />
         </ui:VisualElement>
