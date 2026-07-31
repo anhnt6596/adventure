@@ -71,7 +71,7 @@ public class Hunger : MonoBehaviour
             Debug.LogError($"[{nameof(Hunger)}] not injected — add this GameObject to GameScope's Auto Inject list.", this);
             return;
         }
-        _value = Max;
+        _value = Max * Mathf.Clamp01(_cfg.StartFullness);
         _started = true;
         Changed?.Invoke();
     }
@@ -127,6 +127,30 @@ public class Hunger : MonoBehaviour
         Changed?.Invoke();
         return eaten;
     }
+
+    // Stops the stomach emptying, by putting a -100% modifier on the drain Stat rather than by keeping a
+    // flag this class has to remember to check. That is the same road a real effect would take — a safe
+    // zone, a trait, a full-belly buff — so nothing here is a path only a cheat can walk.
+    public bool DrainPaused
+    {
+        get => _drainMod != null;
+        set
+        {
+            if (value == DrainPaused || _stats == null) return;
+            if (value)
+            {
+                _drainMod = new StatModifier(-1f, StatModType.PercentAdd, this);
+                _stats.HungerDrain.Add(_drainMod);
+            }
+            else
+            {
+                _stats.HungerDrain.RemoveBySource(this);
+                _drainMod = null;
+            }
+        }
+    }
+
+    StatModifier _drainMod;
 
     // For a death penalty or a debuff to take fullness away directly.
     public void Drain(float amount)

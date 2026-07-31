@@ -48,19 +48,19 @@
 .cheat-panel {
     display: none;   /* the tab opens it */
     align-self: stretch;
-    width: 300px;
+    width: 620px;
     margin: 16px 0;
-    padding: 10px;
-    background-color: rgba(18, 20, 26, 0.92);
+    padding: 22px;
+    background-color: rgba(18, 20, 26, 0.94);
     border-top-right-radius: 10px;
     border-bottom-right-radius: 10px;
 }
 
 .cheat-title {
-    font-size: 13px;
+    font-size: 32px;
     -unity-font-style: bold;
     color: rgb(235, 200, 90);
-    margin-bottom: 8px;
+    margin-bottom: 18px;
 }
 
 /* where cheat tools get appended */
@@ -69,23 +69,24 @@
 }
 
 .cheat-tool {
-    margin-bottom: 14px;
+    margin-bottom: 30px;
 }
 
 .cheat-tool-title {
-    font-size: 12px;
+    font-size: 26px;
     color: rgb(180, 186, 200);
-    margin-bottom: 4px;
+    margin-bottom: 10px;
 }
 
 .cheat-dropdown {
-    margin: 0 0 6px 0;
+    margin: 0 0 12px 0;
+    font-size: 24px;
 }
 
 .cheat-btn {
-    height: 32px;
+    height: 68px;
     margin: 0;
-    font-size: 13px;
+    font-size: 26px;
     -unity-font-style: bold;
     color: rgb(20, 22, 28);
     background-color: rgb(235, 200, 90);
@@ -102,26 +103,90 @@
     opacity: 0.35;
 }
 
+/* HP / fullness. Both carry a number field as well as the track: the tracks are short, and setting an
+   exact value is half of what these are for. */
+.cheat-slider {
+    margin: 0 0 12px 0;
+    height: 44px;
+}
+
+.cheat-check {
+    margin: 0 0 8px 0;
+    height: 44px;
+}
+
+/* ---- built-in control internals -------------------------------------------------------------------
+   Unity's Slider, Toggle and DropdownField carry their own default styling, which is dark text meant for
+   a light inspector. On this panel that is black on black, and their parts do not inherit font-size — so
+   each one has to be named. This is the whole reason the block below exists. */
+
+.cheat-panel .unity-base-field__label,
+.cheat-panel .unity-toggle__text {
+    font-size: 24px;
+    color: rgb(214, 219, 230);
+    min-width: 150px;
+    -unity-text-align: middle-left;
+}
+
+.cheat-panel .unity-base-slider__tracker {
+    background-color: rgb(58, 63, 76);
+    border-width: 0;
+    border-radius: 4px;
+    height: 10px;
+}
+
+.cheat-panel .unity-base-slider__dragger {
+    background-color: rgb(235, 200, 90);
+    border-width: 0;
+    border-radius: 12px;
+    width: 26px;
+    height: 26px;
+    margin-top: -13px;
+}
+
+/* the number box beside a slider, and the dropdown's own field */
+.cheat-panel .unity-base-text-field__input,
+.cheat-panel .unity-base-popup-field__input {
+    font-size: 24px;
+    color: rgb(240, 242, 248);
+    background-color: rgb(38, 42, 52);
+    border-width: 0;
+    border-radius: 5px;
+    padding: 4px 8px;
+    min-width: 110px;
+}
+
+.cheat-panel .unity-base-popup-field__text {
+    font-size: 24px;
+    color: rgb(240, 242, 248);
+}
+
+.cheat-panel .unity-toggle__checkmark {
+    width: 34px;
+    height: 34px;
+    border-radius: 5px;
+}
+
 /* one row per resource kind in the bag */
 .cheat-bag-row {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 3px;
+    margin-bottom: 8px;
 }
 
 .cheat-bag-name {
     flex-grow: 1;
-    font-size: 12px;
+    font-size: 24px;
     color: rgb(210, 214, 224);
 }
 
 .cheat-bag-remove {
-    width: 22px;
-    height: 22px;
+    width: 48px;
+    height: 48px;
     margin: 0;
     padding: 0;
-    font-size: 13px;
+    font-size: 26px;
     -unity-font-style: bold;
     color: rgb(20, 22, 28);
     background-color: rgb(220, 120, 110);
@@ -134,18 +199,18 @@
 }
 
 .cheat-bag-empty {
-    font-size: 12px;
+    font-size: 24px;
     -unity-font-style: italic;
     color: rgb(140, 146, 158);
 }
 
 /* Deliberately chunky: PanelSettings scales with screen size, so a thin tab ends up near-unclickable. */
 .cheat-toggle {
-    width: 44px;
-    height: 120px;
+    width: 64px;
+    height: 180px;
     margin: 0;
     padding: 0;
-    font-size: 22px;
+    font-size: 36px;
     -unity-font-style: bold;
     color: rgb(20, 22, 28);
     background-color: rgb(235, 200, 90);

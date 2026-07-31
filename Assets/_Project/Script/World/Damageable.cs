@@ -69,9 +69,14 @@ public class Damageable : MonoBehaviour, IDamageable
     void JoinWorld()  { if (_inWorld) return; CombatWorld.Instance.Add(this); _inWorld = true; }
     void LeaveWorld() { if (!_inWorld) return; CombatWorld.Instance.Remove(this); _inWorld = false; }
 
+    // Nothing lands while this is on — no HP lost, and no Damaged either, so it does not even provoke the
+    // thing that swung. A real concept rather than a cheat-only escape hatch: i-frames after a hit, and a
+    // scripted invulnerable phase, both want exactly this.
+    public bool Invulnerable { get; set; }
+
     public void TakeDamage(float amount, object source)
     {
-        if (!IsAlive) return;
+        if (!IsAlive || Invulnerable) return;
         _hp -= amount;
         HealthChanged?.Invoke();
         if (_hp <= 0f) { Die(source); return; }

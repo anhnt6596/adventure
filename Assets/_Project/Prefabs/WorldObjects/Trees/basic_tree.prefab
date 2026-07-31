@@ -139,7 +139,7 @@ MonoBehaviour:
   fadeFrom: 0.2
   fadeTo: 0.3
   reach: 0.1
-  reachTop: -0.4
+  reachTop: -0.3
   stickyEdge: 0.06
   renderers: []
 --- !u!1 &6425603057950927440

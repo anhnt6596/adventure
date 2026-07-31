@@ -20,7 +20,9 @@ public class MainCharStatsConfig : Config, IHungerConfig, IDamageableConfig
     [Tooltip("BASE fullness lost per second. Slow and generous: the player should rarely look at the bar. " +
              "A Stat at runtime — gear and traits will move it either way.")]
     public float hungerDrain = 0.35f;
-    // A slider, because every value from 0 to 1 is a sensible answer: it is a POSITION on the fullness bar.
+    // Sliders, because every value from 0 to 1 is a sensible answer: both are a POSITION on the bar.
+    [Tooltip("How full the character starts, as a fraction of the stomach.")]
+    [Range(0f, 1f)] public float startFullness = 0.5f;
     [Tooltip("Fullness fraction above which HP regenerates. A rule of the mechanic, not a character number.")]
     [Range(0f, 1f)] public float wellFed = 0.75f;
 
@@ -33,7 +35,8 @@ public class MainCharStatsConfig : Config, IHungerConfig, IDamageableConfig
     [Tooltip("PERCENT of max HP lost per second while completely empty. Type 1 for 1%/s.")]
     [Min(0f)] public float starvePercent = 1f;
 
-    public float WellFedFraction => wellFed;   // IHungerConfig
+    public float StartFullness => startFullness;   // IHungerConfig
+    public float WellFedFraction => wellFed;
     public float WellFedHealShare => wellFedHealPercent * 0.01f;   // percent in, share out
     public float StarveShare => starvePercent * 0.01f;
     public float MaxHp => maxHp;               // IDamageableConfig — the HP the MC's Damageable reads

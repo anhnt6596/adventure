@@ -29,6 +29,11 @@ public class GameUI : MonoBehaviour
     VisualElement _bagList;
     Inventory _bagInventory;        // the live one; re-pointed when the player switches
 
+    Slider _hpSlider, _hungerSlider;
+    Toggle _noHungerToggle, _invincibleToggle;
+    Damageable _cheatHealth;
+    Hunger _cheatHunger;
+
     // Separate [Inject] method so the cheat panel's dependencies exist only in the editor — the build's
     // Construct signature stays untouched.
     [Inject]
@@ -73,7 +78,8 @@ public class GameUI : MonoBehaviour
         BindHud();
 #if UNITY_EDITOR
         RefreshCharacterCheat();
-        RebindBag();   // a switched character has its own inventory
+        RebindBag();      // a switched character has its own inventory
+        RebindVitals();   // ...and its own body, so its own HP and stomach
 #endif
     }
 
@@ -102,6 +108,7 @@ public class GameUI : MonoBehaviour
         _cheatToggle = cheat.Q<Button>("cheat-toggle");
         _cheatToggle?.RegisterCallback<ClickEvent>(_ => ToggleCheats());
         SetupCharacterCheat(cheat);
+        SetupVitalCheat(cheat);
         SetupBagCheat(cheat);
 #else
         cheat.RemoveFromHierarchy();
@@ -137,6 +144,91 @@ public class GameUI : MonoBehaviour
     }
 
     string CurrentMcId => _player?.Current != null ? _player.Current.Id : null;
+
+    // Vitals cheat: drag HP or fullness anywhere, or switch off hunger and damage entirely.
+    //
+    // Every one of these drives a REAL api — Heal/TakeDamage, Eat/Drain, and a StatModifier on the drain —
+    // for the same reason the bag's remove button does. A cheat that takes a private back door stops testing
+    // the thing it is pointed at, and is the first thing to rot when that thing changes.
+    void SetupVitalCheat(VisualElement cheat)
+    {
+        _hpSlider = cheat.Q<Slider>("hp-slider");
+        _hungerSlider = cheat.Q<Slider>("hunger-slider");
+        _noHungerToggle = cheat.Q<Toggle>("no-hunger-toggle");
+        _invincibleToggle = cheat.Q<Toggle>("invincible-toggle");
+
+        _hpSlider?.RegisterValueChangedCallback(e => ApplyHp(e.newValue));
+        _hungerSlider?.RegisterValueChangedCallback(e => ApplyHunger(e.newValue));
+        _noHungerToggle?.RegisterValueChangedCallback(e => { if (_cheatHunger != null) _cheatHunger.DrainPaused = e.newValue; });
+        _invincibleToggle?.RegisterValueChangedCallback(e => { if (_cheatHealth != null) _cheatHealth.Invulnerable = e.newValue; });
+
+        RebindVitals();   // the player may already be spawned
+    }
+
+    void RebindVitals()
+    {
+        if (_hpSlider == null && _hungerSlider == null) return;
+
+        var mc = _player?.Current;
+        var health = mc != null ? mc.GetComponentInChildren<Damageable>() : null;
+        var hunger = mc != null ? mc.GetComponentInChildren<Hunger>() : null;
+
+        if (health != _cheatHealth)
+        {
+            if (_cheatHealth != null) _cheatHealth.HealthChanged -= PushVitals;
+            _cheatHealth = health;
+            if (_cheatHealth != null) _cheatHealth.HealthChanged += PushVitals;
+        }
+        if (hunger != _cheatHunger)
+        {
+            if (_cheatHunger != null) _cheatHunger.Changed -= PushVitals;
+            _cheatHunger = hunger;
+            if (_cheatHunger != null) _cheatHunger.Changed += PushVitals;
+        }
+
+        // A fresh body starts clean, so the toggles show what is actually true rather than what was ticked
+        // for the last one.
+        if (_noHungerToggle != null && _cheatHunger != null) _cheatHunger.DrainPaused = _noHungerToggle.value;
+        if (_invincibleToggle != null && _cheatHealth != null) _cheatHealth.Invulnerable = _invincibleToggle.value;
+
+        PushVitals();
+    }
+
+    // Track the live values without re-triggering the callbacks that wrote them.
+    void PushVitals()
+    {
+        if (_hpSlider != null)
+        {
+            _hpSlider.highValue = _cheatHealth != null ? Mathf.Max(1f, _cheatHealth.MaxHp) : 1f;
+            _hpSlider.SetValueWithoutNotify(_cheatHealth != null ? _cheatHealth.Hp : 0f);
+            _hpSlider.SetEnabled(_cheatHealth != null);
+        }
+        if (_hungerSlider != null)
+        {
+            _hungerSlider.highValue = _cheatHunger != null ? Mathf.Max(1f, _cheatHunger.Max) : 1f;
+            _hungerSlider.SetValueWithoutNotify(_cheatHunger != null ? _cheatHunger.Value : 0f);
+            _hungerSlider.SetEnabled(_cheatHunger != null);
+        }
+    }
+
+    // Move by the difference through the real paths, rather than writing HP straight in. Dragging to zero
+    // therefore kills exactly the way an attack does — drops, death screen and all — which is most of why
+    // you would drag it to zero.
+    void ApplyHp(float target)
+    {
+        if (_cheatHealth == null) return;
+        float delta = target - _cheatHealth.Hp;
+        if (delta > 0f) _cheatHealth.Heal(delta);
+        else if (delta < 0f) _cheatHealth.TakeDamage(-delta, this);
+    }
+
+    void ApplyHunger(float target)
+    {
+        if (_cheatHunger == null) return;
+        float delta = target - _cheatHunger.Value;
+        if (delta > 0f) _cheatHunger.Eat(delta);
+        else if (delta < 0f) _cheatHunger.Drain(-delta);
+    }
 
     // Bag cheat: list each resource kind held, with a button to wipe that kind. The remove path is a real
     // Inventory.Remove (crafting/spending will use it too), not a cheat-only shortcut.

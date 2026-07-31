@@ -3,6 +3,10 @@
 // rather than a character's numbers: where the well-fed line sits, and how hard each end bites.
 public interface IHungerConfig
 {
+    // How full a character starts. A FRACTION, not an absolute: the stomach is a Stat that grows with
+    // level and gear, and an absolute would quietly become a smaller and smaller share of it.
+    float StartFullness { get; }
+
     float WellFedFraction { get; }  // above this fraction of fullness, HP regenerates
     // Both of these are a SHARE OF MAX HP per second (0..1), not a flat amount, so neither the reward for
     // eating nor the price of starving changes meaning when the HP pool grows. Of MAX and not of CURRENT:
