@@ -38,6 +38,9 @@
     transition-duration: 0.12s;
 }
 
+/* Glides over a full second rather than snapping: fullness now moves in one-second steps, and a 0.12s
+   ease would read as a twitch followed by a long freeze. Linear and exactly one tick long makes the
+   discrete drain look continuous. HP keeps its short ease — that one moves on hits, not on a clock. */
 .hunger-fill {
     position: absolute;
     top: 0;
@@ -46,7 +49,8 @@
     width: 100%;
     background-color: rgb(214, 154, 58);
     transition-property: width;
-    transition-duration: 0.12s;
+    transition-duration: 1s;
+    transition-timing-function: linear;
 }
 
 /* The well-fed line, drawn ON the bar. Above it HP climbs, at zero HP drains — a rule the player can see

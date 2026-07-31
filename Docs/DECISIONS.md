@@ -20,7 +20,7 @@ the same kind of readout — two bars, one body — and the asymmetry with loot 
 
 | fullness | effect |
 | --- | --- |
-| above the well-fed line (0.75) | HP regenerates |
+| above the well-fed line | HP regenerates |
 | in between | nothing — where most of a trip is spent |
 | empty | HP drains |
 

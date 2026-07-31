@@ -420,7 +420,7 @@ stomach. See `DECISIONS.md` (2026-07-31).
 
 | fullness | effect |
 | --- | --- |
-| above the well-fed line (0.75) | HP **regenerates** |
+| above the well-fed line | HP **regenerates** |
 | in between | nothing — where most of a trip is spent |
 | empty | HP **drains** |
 

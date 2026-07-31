@@ -10,6 +10,12 @@ using VContainer;
 // has a size. That framing is also what deletes the last of the inventory UI: full simply means the next meal
 // is left where it lies, so there is never a choice to present.
 //
+// EVERYTHING HERE MOVES ONCE A SECOND, not once a frame. The numbers were always written per second, so a
+// tick applies them whole instead of a frame's sliver of them: fullness steps down by exactly HungerDrain,
+// starving and being well fed move HP by their whole per-second share of it. That makes the rate a
+// player can feel match the number in the config, keeps HP moving in readable steps rather than in noise
+// below a decimal place, and drops the HUD from a refresh every frame to one a second.
+//
 // IT DRIVES HP AT BOTH ENDS, and that is what makes it a stat rather than a timer:
 //
 //     full            > wellFed   ->  HP regenerates    (being well fed is how you heal)
@@ -21,10 +27,15 @@ using VContainer;
 [DisallowMultipleComponent]
 public class Hunger : MonoBehaviour
 {
+    // One second. Not a knob: the config's numbers are all "per second", so this is the unit they are
+    // written in rather than a tuning value of its own.
+    const float TickInterval = 1f;
+
     ICharacterStats _stats;
     IHungerConfig _cfg;
     Damageable _health;
     float _value;
+    float _tick;
     bool _started;
 
     public event System.Action Changed;
@@ -70,24 +81,37 @@ public class Hunger : MonoBehaviour
         if (!_started) return;
         if (_health != null && !_health.IsAlive) return;   // no digesting while dead
 
-        float dt = Time.deltaTime;
-
-        // The cap can move under us — an upgrade equipped, a buff expiring — so clamp before draining
-        // rather than trusting whatever the last frame left behind.
+        // The cap can move under us — an upgrade equipped, a buff expiring — so clamp every frame rather
+        // than waiting for a tick to notice.
         float max = Max;
         if (_value > max) { _value = max; Changed?.Invoke(); }
 
+        _tick += Time.deltaTime;
+        if (_tick < TickInterval) return;
+
+        // A loop, not an if: a stalled frame must not swallow the seconds it spanned. Time.deltaTime is
+        // capped by Time.maximumDeltaTime, so in practice this runs once.
+        while (_tick >= TickInterval)
+        {
+            _tick -= TickInterval;
+            Step();
+        }
+    }
+
+    void Step()
+    {
         if (_value > 0f)
         {
-            _value = Mathf.Max(0f, _value - DrainRate * dt);
+            _value = Mathf.Max(0f, _value - DrainRate);
             Changed?.Invoke();
         }
 
         if (_health == null) return;
 
         // Starving outranks well fed, and they cannot both be true anyway — this is just the order that reads.
-        if (_value <= 0f) _health.TakeDamage(_cfg.StarveDamage * dt, this);
-        else if (IsWellFed) _health.Heal(_cfg.WellFedHeal * dt);
+        // Draining first means the tick that empties you is also the tick that starts hurting.
+        if (_value <= 0f) _health.TakeDamage(_health.MaxHp * _cfg.StarveShare, this);
+        else if (IsWellFed) _health.Heal(_health.MaxHp * _cfg.WellFedHealShare);
     }
 
     // Eat. Takes what fits and says how much that was; the rest is the caller's problem, which for a pickup
