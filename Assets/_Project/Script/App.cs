@@ -37,6 +37,10 @@ public class App : LifetimeScope
         builder.RegisterInstance(_prefabRegistry);
         builder.RegisterInstance(new SaveService());   // default JSON serializer; instance dodges the optional-ctor-param resolve
 
+        // App scope on purpose: art by name has no scene state, and every UI view is built by the App-scope
+        // UISystem — so this is one of the few things a popup can simply [Inject] instead of being handed.
+        builder.Register<IArtProvider, ArtProvider>(Lifetime.Singleton);
+
         builder.Register<IEventBus, EventBus>(Lifetime.Singleton);
         builder.Register<IDependencyInjector, VContainerInjector>(Lifetime.Singleton);
         builder.RegisterComponent(_uiSystem).As<IUISystem>().AsSelf();
