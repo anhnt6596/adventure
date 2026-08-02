@@ -2,14 +2,86 @@
     flex-grow: 1;
 }
 
+/* Portrait, level, experience and both vitals in one block. They answer one question between them —
+   who am I and how am I doing — and were previously split across opposite corners, which made the
+   player look in two places for it. */
+.player-panel {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+/* The portrait and the sliver of experience under it, as one column: the experience bar is exactly as
+   wide as the face it belongs to, so it reads as part of the portrait rather than as a third bar. */
+.avatar-block {
+    align-items: center;
+}
+
+.level-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 48px;
+    border-width: 3px;
+    border-color: rgba(235, 200, 90, 0.8);
+    background-color: rgba(0, 0, 0, 0.55);
+    -unity-background-scale-mode: scale-to-fit;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* Level sits ON the portrait rather than beside it. It is an attribute of the character, and a number
+   pinned to a face needs no label to say so — which is why it is "5" and not "Lv 5". */
+.level-badge {
+    position: absolute;
+    bottom: -10px;
+    min-width: 34px;
+    height: 34px;
+    color: rgb(20, 22, 28);
+    background-color: rgb(235, 200, 90);
+    border-radius: 17px;
+    border-width: 2px;
+    border-color: rgb(18, 20, 26);
+    font-size: 19px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.level-track {
+    width: 96px;
+    height: 14px;
+    margin-top: 14px;
+    background-color: rgba(0, 0, 0, 0.55);
+    border-radius: 7px;
+    overflow: hidden;
+    justify-content: center;
+}
+
+.level-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 0;
+    background-color: rgb(235, 200, 90);
+    transition-property: width;
+    transition-duration: 0.18s;
+}
+
+.level-exp {
+    -unity-text-align: middle-center;
+    color: rgb(255, 255, 255);
+    font-size: 11px;
+    -unity-font-style: bold;
+}
+
 /* The two vitals, stacked. HP and fullness are the same KIND of thing — a state of the body with a
    ceiling — so they are built from one set of classes and differ only in colour. That is what stops the
    old "why does only food have a limit" question: nobody asks it about a health bar. */
 .vitals {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    align-items: flex-end;
+    margin-left: 14px;
+    align-items: flex-start;
 }
 
 .vital {
@@ -88,9 +160,11 @@
     background-image: url("project://database/Assets/_Project/Art/Icons/stomach.png");
 }
 
+/* Back up to the top now that the vitals have moved to the left panel — the 160px was clearance for
+   them, and leaving it would hold the bag below an empty corner. */
 .inventory {
     position: absolute;
-    top: 160px;
+    top: 16px;
     right: 16px;
     align-items: flex-end;
 }
@@ -155,6 +229,31 @@
     width: 86px;
     height: 86px;
     -unity-background-scale-mode: scale-to-fit;
+}
+
+/* Temporary entry to the upgrade tree. Bottom-right, clear of the player panel top-left and the bag on
+   the right edge. Goes away when the house becomes the place you do this. */
+.hud-actions {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    align-items: flex-end;
+}
+
+.hud-btn {
+    height: 56px;
+    padding: 0 24px;
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(20, 22, 28);
+    background-color: rgb(235, 200, 90);
+    border-width: 0;
+    border-radius: 10px;
+}
+
+.hud-btn:hover {
+    background-color: rgb(245, 215, 120);
+    scale: 1.03 1.03;
 }
 
 .fly-layer {

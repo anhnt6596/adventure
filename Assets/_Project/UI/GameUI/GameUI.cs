@@ -22,9 +22,14 @@ public class GameUI : MonoBehaviour
     bool _cheatsOpen;
 
     PlayerSystem _cheatPlayer;      // IPlayer is read-only; switching character needs the concrete system
-    IGetMCConfig _cheatMcConfig;
+    IGetMCConfig _mcConfig;         // only the character dropdown needs it, so it stays out of the build
     DropdownField _mcDropdown;
     Button _changeMcButton;
+
+    // Nothing awards experience yet, so this is the only way to move a level at all — which is the point:
+    // the tree cannot be played with until something can pay for it.
+    Label _levelReadout;
+    IntegerField _expField, _levelField;
 
     VisualElement _bagList;
     Inventory _bagInventory;        // the live one; re-pointed when the player switches
@@ -40,16 +45,24 @@ public class GameUI : MonoBehaviour
     public void ConstructCheats(PlayerSystem player, IGetMCConfig mcConfig)
     {
         _cheatPlayer = player;
-        _cheatMcConfig = mcConfig;
+        _mcConfig = mcConfig;
     }
 #endif
 
+    CharacterLevels _levels;
+    IGetUpgradeTree _trees;
+    UpgradeSystem _upgrades;
+
     [Inject]
-    public void Construct(IInputGate gate, IUISystem ui, IPlayer player)
+    public void Construct(IInputGate gate, IUISystem ui, IPlayer player,
+                          CharacterLevels levels, IGetUpgradeTree trees, UpgradeSystem upgrades)
     {
         _gate = gate;
         _ui = ui;
         _player = player;   // the HUD will read the player's inventory (and, later, lots more) off this
+        _levels = levels;
+        _trees = trees;
+        _upgrades = upgrades;
     }
 
     void Awake() => _document = GetComponent<UIDocument>();
@@ -78,9 +91,21 @@ public class GameUI : MonoBehaviour
         BindHud();
 #if UNITY_EDITOR
         RefreshCharacterCheat();
-        RebindBag();      // a switched character has its own inventory
-        RebindVitals();   // ...and its own body, so its own HP and stomach
+        RebindBag();        // a switched character has its own inventory
+        RebindVitals();     // ...and its own body, so its own HP and stomach
+        RefreshLevelCheat();// ...and its own level
 #endif
+    }
+
+    // Show first, then feed it: Show runs the popup's OnShow, and the popup cannot resolve any of this for
+    // itself (UISystem builds views with the App container). Same push the HUD gets, for the same reason.
+    void OpenUpgrades()
+    {
+        var popup = _ui?.Show<UpgradePopup>();
+        if (popup == null) return;
+
+        var id = _player?.Current != null ? _player.Current.Id : null;
+        popup.Bind(_trees, _upgrades, _levels, id);
     }
 
     // Point the HUD at the live body. Before START the HUD isn't shown and Get returns null, so this is a
@@ -90,11 +115,19 @@ public class GameUI : MonoBehaviour
         var hud = _ui?.Get<GameHUD>();
         if (hud == null) return;
 
+        // -= first: BindHud runs on every spawn, and the HUD instance is pooled across all of them.
+        hud.UpgradeRequested -= OpenUpgrades;
+        hud.UpgradeRequested += OpenUpgrades;
+
         var mc = _player?.Current;
         var picker = mc != null ? mc.GetComponentInChildren<Picker>() : null;
         hud.SetInventory(picker?.Inventory);
         hud.SetHealth(mc != null ? mc.GetComponentInChildren<Damageable>() : null);
         hud.SetHunger(mc != null ? mc.GetComponentInChildren<Hunger>() : null);
+
+        // Level is the character's, not the body's, so this one is bound by id — and the id is all it needs:
+        // the HUD finds the portrait itself, by name.
+        hud.SetLevels(_levels, mc != null ? mc.Id : null);
     }
 
     // Dev drawer on the left edge: the tab opens a vertical panel that will hold the cheat tools (empty for
@@ -109,6 +142,7 @@ public class GameUI : MonoBehaviour
         _cheatToggle?.RegisterCallback<ClickEvent>(_ => ToggleCheats());
         SetupCharacterCheat(cheat);
         SetupVitalCheat(cheat);
+        SetupLevelCheat(cheat);
         SetupBagCheat(cheat);
 #else
         cheat.RemoveFromHierarchy();
@@ -131,9 +165,9 @@ public class GameUI : MonoBehaviour
     {
         _mcDropdown = cheat.Q<DropdownField>("mc-dropdown");
         _changeMcButton = cheat.Q<Button>("change-mc-button");
-        if (_mcDropdown == null || _changeMcButton == null || _cheatMcConfig == null) return;
+        if (_mcDropdown == null || _changeMcButton == null || _mcConfig == null) return;
 
-        _mcDropdown.choices = new List<string>(_cheatMcConfig.Ids);
+        _mcDropdown.choices = new List<string>(_mcConfig.Ids);
         // Runtime DropdownField can't disable a single entry, so the live one is marked here and the Change
         // button greys out instead — same effect, no custom dropdown.
         _mcDropdown.formatListItemCallback = id => id == CurrentMcId ? $"{id}  (current)" : id;
@@ -230,6 +264,38 @@ public class GameUI : MonoBehaviour
         else if (delta < 0f) _cheatHunger.Drain(-delta);
     }
 
+    // Level cheat. Add exp goes through the REAL AddExp, so it levels up exactly the way a kill eventually
+    // will — carrying over the remainder, and stepping through several levels if the number is big enough.
+    // Set level is the blunt one, and says so by dropping the part-level progress.
+    void SetupLevelCheat(VisualElement cheat)
+    {
+        _levelReadout = cheat.Q<Label>("level-readout");
+        _expField = cheat.Q<IntegerField>("exp-field");
+        _levelField = cheat.Q<IntegerField>("level-field");
+
+        cheat.Q<Button>("add-exp-button")?.RegisterCallback<ClickEvent>(_ =>
+            _levels?.AddExp(CurrentMcId, Mathf.Max(0, _expField?.value ?? 0)));
+
+        cheat.Q<Button>("set-level-button")?.RegisterCallback<ClickEvent>(_ =>
+            _levels?.SetLevel(CurrentMcId, Mathf.Max(CharacterLevels.StartLevel, _levelField?.value ?? 1)));
+
+        // Named, not a lambda: OnDestroy has to be able to take it back off again.
+        if (_levels != null) _levels.Changed += OnAnyLevelChanged;
+        RefreshLevelCheat();
+    }
+
+    void OnAnyLevelChanged(string _) => RefreshLevelCheat();
+
+    void RefreshLevelCheat()
+    {
+        if (_levelReadout == null) return;
+
+        var id = CurrentMcId;
+        if (string.IsNullOrEmpty(id) || _levels == null) { _levelReadout.text = "—"; return; }
+
+        _levelReadout.text = $"{id}   Lv {_levels.Level(id)}   {_levels.Exp(id)}/{_levels.ExpToNext(id)}";
+    }
+
     // Bag cheat: list each resource kind held, with a button to wipe that kind. The remove path is a real
     // Inventory.Remove (crafting/spending will use it too), not a cheat-only shortcut.
     void SetupBagCheat(VisualElement cheat)
@@ -317,6 +383,7 @@ public class GameUI : MonoBehaviour
         if (_player != null) _player.Spawned -= OnPlayerSpawned;
 #if UNITY_EDITOR
         if (_bagInventory != null) _bagInventory.Changed -= RefreshBag;
+        if (_levels != null) _levels.Changed -= OnAnyLevelChanged;
 #endif
     }
 

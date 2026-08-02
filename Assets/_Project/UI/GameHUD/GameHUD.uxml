@@ -1,22 +1,42 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/_Project/UI/GameHUD/GameHUD.uss" />
     <ui:VisualElement name="hud" class="hud" picking-mode="Ignore">
-        <ui:VisualElement name="vitals" class="vitals" picking-mode="Ignore">
-            <ui:VisualElement name="health" class="vital" picking-mode="Ignore">
-                <ui:VisualElement name="health-track" class="vital-track" picking-mode="Ignore">
-                    <ui:VisualElement name="health-fill" class="health-fill" picking-mode="Ignore" />
-                    <ui:Label name="health-text" class="vital-text" text="0/0" picking-mode="Ignore" />
+        <!-- One cluster, because it is all one question: who am I and how am I doing. The portrait carries
+             the level as a badge and the experience as the sliver under it; the two vitals sit alongside.
+             Splitting them across two corners made the player look in two places to answer one thing. -->
+        <ui:VisualElement name="player-panel" class="player-panel" picking-mode="Ignore">
+            <ui:VisualElement name="avatar-block" class="avatar-block" picking-mode="Ignore">
+                <ui:VisualElement name="level-avatar" class="level-avatar" picking-mode="Ignore">
+                    <ui:Label name="level-text" class="level-badge" text="1" picking-mode="Ignore" />
                 </ui:VisualElement>
-                <ui:VisualElement name="health-icon" class="vital-icon health-icon" picking-mode="Ignore" />
-            </ui:VisualElement>
-            <ui:VisualElement name="hunger" class="vital" picking-mode="Ignore">
-                <ui:VisualElement name="hunger-track" class="vital-track" picking-mode="Ignore">
-                    <ui:VisualElement name="hunger-fill" class="hunger-fill" picking-mode="Ignore" />
-                    <ui:VisualElement name="hunger-mark" class="hunger-mark" picking-mode="Ignore" />
-                    <ui:Label name="hunger-text" class="vital-text" text="0/0" picking-mode="Ignore" />
+                <ui:VisualElement name="level-track" class="level-track" picking-mode="Ignore">
+                    <ui:VisualElement name="level-fill" class="level-fill" picking-mode="Ignore" />
+                    <ui:Label name="level-exp" class="level-exp" text="0/0" picking-mode="Ignore" />
                 </ui:VisualElement>
-                <ui:VisualElement name="hunger-icon" class="vital-icon hunger-icon" picking-mode="Ignore" />
             </ui:VisualElement>
+            <ui:VisualElement name="vitals" class="vitals" picking-mode="Ignore">
+                <ui:VisualElement name="health" class="vital" picking-mode="Ignore">
+                    <ui:VisualElement name="health-track" class="vital-track" picking-mode="Ignore">
+                        <ui:VisualElement name="health-fill" class="health-fill" picking-mode="Ignore" />
+                        <ui:Label name="health-text" class="vital-text" text="0/0" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="health-icon" class="vital-icon health-icon" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="hunger" class="vital" picking-mode="Ignore">
+                    <ui:VisualElement name="hunger-track" class="vital-track" picking-mode="Ignore">
+                        <ui:VisualElement name="hunger-fill" class="hunger-fill" picking-mode="Ignore" />
+                        <ui:VisualElement name="hunger-mark" class="hunger-mark" picking-mode="Ignore" />
+                        <ui:Label name="hunger-text" class="vital-text" text="0/0" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="hunger-icon" class="vital-icon hunger-icon" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- TEMPORARY entry to the upgrade tree. It lives on the HUD rather than on GameUI so it appears
+             with the rest of the in-game furniture and is simply absent before START. The real entry point
+             is the house, once there is a house to stand in. -->
+        <ui:VisualElement name="hud-actions" class="hud-actions" picking-mode="Ignore">
+            <ui:Button name="upgrade-button" text="UPGRADES" class="hud-btn" />
         </ui:VisualElement>
         <ui:VisualElement name="inventory" class="inventory">
             <ui:Button name="capacity-button" class="chip capacity">

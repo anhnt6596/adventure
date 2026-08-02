@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Core.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
+using VContainer;
 
 // The in-game HUD, shown when the game starts. First panel: the main character's inventory, top-right.
 // A picked-up resource flies an icon from its world spot to its HUD slot (or the bag when the list is
@@ -26,6 +27,22 @@ public class GameHUD : UIView
     Hunger _hunger;
     VisualElement _hungerRoot, _hungerFill, _hungerMark, _hungerIcon;
     Label _hungerText;
+
+    // Raised by the UPGRADES button. Whoever can reach GameScope subscribes and does the opening.
+    public event System.Action UpgradeRequested;
+
+    // Art is App-scope, so unlike everything else here it can simply be injected rather than pushed in.
+    IArtProvider _art;
+
+    [Inject]
+    public void Construct(IArtProvider art) => _art = art;
+
+    // Level belongs to the CHARACTER, not to the body, so it is pushed as an id + the system that knows
+    // about ids — unlike HP and fullness, which are components on whatever body is currently standing there.
+    CharacterLevels _levels;
+    string _levelCharacterId;
+    VisualElement _levelRoot, _levelAvatar, _levelFill;
+    Label _levelText, _levelExp;
 
     readonly Dictionary<ResourceDef, int> _displayed = new();          // lags the inventory; catches up on land
     readonly Dictionary<ResourceDef, VisualElement> _rowIcon = new();  // fly target per resource
@@ -62,7 +79,18 @@ public class GameHUD : UIView
         _hungerMark = root.Q<VisualElement>("hunger-mark");
         _hungerIcon = root.Q<VisualElement>("hunger-icon");
         _hungerText = root.Q<Label>("hunger-text");
+        // The portrait column, not the whole panel: with no character there is no level to show, but the
+        // vitals beside it are a separate question and must not vanish with it.
+        _levelRoot = root.Q<VisualElement>("avatar-block");
+        _levelAvatar = root.Q<VisualElement>("level-avatar");
+        _levelFill = root.Q<VisualElement>("level-fill");
+        _levelText = root.Q<Label>("level-text");
+        _levelExp = root.Q<Label>("level-exp");
         root.Q<Button>("capacity-button")?.RegisterCallback<ClickEvent>(_ => Toggle());
+
+        // The HUD owns the button but not what it opens: the upgrade popup needs GameScope services, and
+        // nothing built by the App-scope UISystem can reach those. So it asks, and GameUI answers.
+        root.Q<Button>("upgrade-button")?.RegisterCallback<ClickEvent>(_ => UpgradeRequested?.Invoke());
         WarmFlyPool(20);
     }
 
@@ -100,6 +128,45 @@ public class GameHUD : UIView
             _hungerMark.style.left = Length.Percent(Mathf.Clamp01(_hunger.WellFedFraction) * 100f);
     }
 
+    // The level bar. Takes the system rather than a snapshot so the bar keeps up on its own while the popup
+    // or a cheat moves it. The portrait is looked up from the same id, by convention — nothing has to hand
+    // one over, and a character that has no art drawn yet simply shows an empty ring.
+    public void SetLevels(CharacterLevels levels, string characterId)
+    {
+        if (_levels != null) _levels.Changed -= OnLevelChanged;
+        _levels = levels;
+        _levelCharacterId = characterId;
+        if (_levels != null) _levels.Changed += OnLevelChanged;
+
+        var avatar = _art?.Avatar(characterId);
+        if (_levelAvatar != null)
+            _levelAvatar.style.backgroundImage = avatar != null
+                ? new StyleBackground(avatar)
+                : new StyleBackground(StyleKeyword.None);
+
+        RefreshLevel();
+    }
+
+    void OnLevelChanged(string characterId)
+    {
+        if (characterId == _levelCharacterId) RefreshLevel();
+    }
+
+    void RefreshLevel()
+    {
+        bool has = _levels != null && !string.IsNullOrEmpty(_levelCharacterId);
+        if (_levelRoot != null) _levelRoot.style.display = has ? DisplayStyle.Flex : DisplayStyle.None;
+        if (!has) return;
+
+        int level = _levels.Level(_levelCharacterId);
+        int exp = _levels.Exp(_levelCharacterId);
+        int need = _levels.ExpToNext(_levelCharacterId);
+
+        if (_levelText != null) _levelText.text = level.ToString();   // a number on a face needs no "Lv"
+        if (_levelExp != null) _levelExp.text = $"{exp}/{need}";
+        if (_levelFill != null) _levelFill.style.width = Length.Percent(_levels.Fraction(_levelCharacterId) * 100f);
+    }
+
     // The player's HP bar. Bound the same way as the inventory (pushed from GameScope), refreshed off the
     // Damageable's HealthChanged. Rebinds cleanly on a respawn/character-switch (a fresh Damageable).
     public void SetHealth(Damageable health)
@@ -119,7 +186,7 @@ public class GameHUD : UIView
         if (_healthText != null) _healthText.text = $"{Mathf.CeilToInt(hp)}/{Mathf.CeilToInt(max)}";
     }
 
-    public override void OnShow() { Sub(); Refresh(); RefreshHealth(); RefreshHunger(); }
+    public override void OnShow() { Sub(); Refresh(); RefreshHealth(); RefreshHunger(); RefreshLevel(); }
     public override void OnHide() { Unsub(); }
 
     void Sub()
@@ -127,6 +194,7 @@ public class GameHUD : UIView
         if (_inv != null) { _inv.Changed -= Reconcile; _inv.Changed += Reconcile; }
         if (_hunger != null) { _hunger.Changed -= RefreshHunger; _hunger.Changed += RefreshHunger; }
         if (_health != null) { _health.HealthChanged -= RefreshHealth; _health.HealthChanged += RefreshHealth; }
+        if (_levels != null) { _levels.Changed -= OnLevelChanged; _levels.Changed += OnLevelChanged; }
         PickupFly.Requested -= OnPickup; PickupFly.Requested += OnPickup;
     }
 
@@ -135,6 +203,7 @@ public class GameHUD : UIView
         if (_inv != null) _inv.Changed -= Reconcile;
         if (_hunger != null) _hunger.Changed -= RefreshHunger;
         if (_health != null) _health.HealthChanged -= RefreshHealth;
+        if (_levels != null) _levels.Changed -= OnLevelChanged;
         PickupFly.Requested -= OnPickup;
     }
 

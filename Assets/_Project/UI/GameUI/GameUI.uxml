@@ -23,6 +23,14 @@
                     <ui:Toggle name="invincible-toggle" label="Invincible" class="cheat-check" />
                 </ui:VisualElement>
                 <ui:VisualElement class="cheat-tool">
+                    <ui:Label text="Level" class="cheat-tool-title" />
+                    <ui:Label name="level-readout" class="cheat-bag-name" text="—" />
+                    <ui:IntegerField name="exp-field" label="Add exp" value="50" class="cheat-dropdown" />
+                    <ui:Button name="add-exp-button" text="Add exp" class="cheat-btn" />
+                    <ui:IntegerField name="level-field" label="Set level" value="1" class="cheat-dropdown" />
+                    <ui:Button name="set-level-button" text="Set level" class="cheat-btn" />
+                </ui:VisualElement>
+                <ui:VisualElement class="cheat-tool">
                     <ui:Label text="Bag" class="cheat-tool-title" />
                     <ui:VisualElement name="bag-list" class="cheat-bag-list" />
                 </ui:VisualElement>

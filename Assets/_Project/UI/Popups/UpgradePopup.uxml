@@ -1,0 +1,37 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Popups/UpgradePopup.uss" />
+    <!-- BasePopup queries "dimmer" and "popup" by name, so those two are not free to be renamed. -->
+    <ui:VisualElement name="dimmer" class="dimmer">
+        <ui:VisualElement name="popup" class="popup">
+
+            <ui:VisualElement name="head" class="head">
+                <ui:VisualElement name="avatar" class="head-avatar" />
+                <ui:VisualElement class="head-titles">
+                    <ui:Label name="char-name" text="—" class="head-name" />
+                    <ui:Label name="points" text="" class="head-points" />
+                </ui:VisualElement>
+                <ui:Button name="reset-button" text="Reset" class="btn btn--ghost" />
+                <ui:Button name="close-button" text="✕" class="close-btn" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="body" class="body">
+                <!-- The nodes are added to "tree-canvas" from code, over "tree-edges" which paints the links. -->
+                <ui:ScrollView name="tree-scroll" class="tree-scroll">
+                    <ui:VisualElement name="tree-canvas" class="tree-canvas">
+                        <ui:VisualElement name="tree-edges" class="tree-edges" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:ScrollView>
+
+                <ui:VisualElement name="detail" class="detail">
+                    <ui:Label name="detail-title" text="" class="detail-title" />
+                    <ui:Label name="detail-blurb" text="" class="detail-blurb" />
+                    <ui:Label name="detail-state" text="" class="detail-state" />
+                    <ui:Button name="buy-button" text="Unlock" class="btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:Label name="empty" text="No upgrade tree authored for this character yet." class="empty" />
+
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

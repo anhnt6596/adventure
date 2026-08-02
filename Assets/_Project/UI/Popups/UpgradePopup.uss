@@ -1,0 +1,216 @@
+/* Full screen, but not opaque: the world stays faintly visible behind it. The tree is a place you step
+   into for a moment, not a screen you leave the game for. */
+.dimmer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(6, 7, 12, 0.88);
+}
+
+.popup {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+/* ---- head ---- */
+
+.head {
+    flex-direction: row;
+    align-items: center;
+    padding: 16px 20px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.head-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 32px;
+    background-color: rgba(255, 255, 255, 0.08);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.head-titles {
+    flex-grow: 1;
+    margin-left: 14px;
+}
+
+.head-name {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(240, 240, 245);
+}
+
+.head-points {
+    font-size: 18px;
+    color: rgb(235, 200, 90);
+    margin-top: 2px;
+}
+
+.close-btn {
+    width: 44px;
+    height: 44px;
+    margin-left: 10px;
+    font-size: 20px;
+    color: rgb(230, 230, 235);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-width: 0;
+    border-radius: 22px;
+}
+
+.close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ---- body ---- */
+
+.body {
+    flex-grow: 1;
+    flex-direction: row;
+}
+
+.tree-scroll {
+    flex-grow: 1;
+}
+
+/* Sized from code off the tree's outermost ring, so a tree that grows does not need this widened by hand. */
+.tree-canvas {
+    position: relative;
+}
+
+.tree-edges {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* ---- nodes ---- */
+
+.node {
+    position: absolute;
+    width: 84px;
+    height: 84px;
+    border-radius: 42px;
+    border-width: 3px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(26, 28, 38);
+    border-color: rgba(255, 255, 255, 0.18);
+    transition-property: scale, background-color;
+    transition-duration: 0.09s;
+}
+
+.node:hover {
+    scale: 1.08 1.08;
+}
+
+.node-icon {
+    width: 46px;
+    height: 46px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* Four states, and the colour is the whole readout: owned, affordable now, unlocked but unaffordable,
+   and still walled off behind a node further in. */
+.node--root {
+    border-color: rgb(235, 200, 90);
+    background-color: rgb(58, 50, 24);
+}
+
+.node--bought {
+    border-color: rgb(120, 200, 130);
+    background-color: rgb(28, 52, 34);
+}
+
+.node--ready {
+    border-color: rgb(235, 200, 90);
+}
+
+.node--short {
+    border-color: rgba(235, 200, 90, 0.35);
+    opacity: 0.75;
+}
+
+.node--locked {
+    border-color: rgba(255, 255, 255, 0.1);
+    opacity: 0.4;
+}
+
+.node--selected {
+    border-color: rgb(255, 255, 255);
+}
+
+/* ---- detail ---- */
+
+.detail {
+    width: 320px;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-left-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.08);
+}
+
+.detail-title {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(240, 240, 245);
+    white-space: normal;
+}
+
+.detail-blurb {
+    font-size: 15px;
+    color: rgb(190, 192, 200);
+    margin-top: 10px;
+    white-space: normal;
+}
+
+.detail-state {
+    font-size: 14px;
+    color: rgb(160, 162, 172);
+    margin-top: 16px;
+    white-space: normal;
+}
+
+.btn {
+    height: 44px;
+    margin-top: 16px;
+    font-size: 16px;
+    color: rgb(20, 22, 28);
+    background-color: rgb(235, 200, 90);
+    border-width: 0;
+    border-radius: 8px;
+}
+
+.btn:hover {
+    background-color: rgb(245, 215, 120);
+}
+
+.btn:disabled {
+    opacity: 0.35;
+}
+
+.btn--ghost {
+    height: 36px;
+    margin-top: 0;
+    padding: 0 14px;
+    font-size: 14px;
+    color: rgb(230, 230, 235);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn--ghost:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+.empty {
+    flex-grow: 1;
+    -unity-text-align: middle-center;
+    font-size: 18px;
+    color: rgb(150, 152, 162);
+}

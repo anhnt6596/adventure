@@ -19,6 +19,10 @@ public class GameScope : LifetimeScope
         // self-register and attacks query it, so it isn't in DI.
         builder.Register<InventorySystem>(Lifetime.Singleton);
         builder.Register<PayGateSystem>(Lifetime.Singleton);   // remembers which pay gates are already bought
+
+        builder.Register<IGetUpgradeTree, UpgradeTreeProvider>(Lifetime.Singleton);   // wall over ConfigRegistry, like IGetMCConfig
+        builder.Register<CharacterLevels>(Lifetime.Singleton);   // level + exp per character; one level = one upgrade point
+        builder.Register<UpgradeSystem>(Lifetime.Singleton);     // which nodes each character has bought
         builder.Register<IMapService, MapService>(Lifetime.Singleton);
 
         // AsSelf too: IPlayer is deliberately read-only, so switching character (cheat panel now, character
