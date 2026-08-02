@@ -185,6 +185,28 @@ pets, hand a new pet a level scaled to how far the player has come, or **let pet
 the house already has characters cultivating in the yard, and a pet ticking up beside them needs no new
 idea, only the one that is there.
 
+## The ending
+
+**The fallen are not innocent.** They were drinking and causing a disturbance, they were told to stop,
+and they answered back. Thiên Lôi was heavy-handed. He was not wrong.
+
+That is the seam worth pulling. Everything the mortal world puts them through — going hungry, dying,
+walking a leg twice, carrying each other home, sitting out in that yard waiting to be swapped in — is
+what a pack of heaven's children had never once had to do. So the question waiting at the top of the
+climb is not whether the player can win the fight.
+
+**It is whether the character still wants it.**
+
+**Open — and the largest thing still open.** The lean is that the plot tightens and the group simply
+finds its way back to the sky: the goal stays exactly what it was on the first day. That is a clean
+spine and it keeps the hook honest — the player was promised a way up and gets one. The other reading
+is that the climb changes them, and the confrontation turns out not to be the point of it.
+
+Whichever is chosen decides what the game *is* rather than how it plays: a revenge story, or a
+growing-up story wearing a revenge story's clothes. Nothing else in this document depends on the
+answer, which is why it can wait. Nothing else in this document will make the ending land either,
+which is why it cannot wait forever.
+
 ## What this changed elsewhere
 
 **`DECISIONS.md` — done.** Three things followed from the telling and are now recorded there:
