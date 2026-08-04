@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Core.Save;
+using UnityEngine;
 using VContainer;
 
 // Which upgrade nodes each character has bought, and the arithmetic of paying for them.
@@ -11,10 +12,12 @@ using VContainer;
 // disagree with the first the moment a price or a link is edited in the inspector. Same rule PayGateSystem
 // keeps by storing deposits and never a paid flag.
 //
-// POINTS ARE LEVELS, AND A NODE IS A POINT. A character has as many points as levels, every node costs one,
-// so "spent" is a count and "left" is level minus that count. Nothing about the price is authored or saved,
-// and RESET is only "forget the set" — there is no pool to hand anything back to, which is why a full respec
-// is three lines rather than a refund ledger.
+// POINTS ARE LEVELS. A character has as many points as it has levels, so "left" is level minus the cost of
+// everything bought — nothing about the pool is stored, it is arithmetic over the set. RESET is therefore
+// only "forget the set": there is nothing to hand anything back to, which is why a full respec is three
+// lines rather than a refund ledger.
+//
+// Most nodes cost one point. The field exists for the few that should be worth several levels on their own.
 public class UpgradeSystem : ISavable
 {
     readonly Dictionary<string, HashSet<string>> _bought = new Dictionary<string, HashSet<string>>();
@@ -58,15 +61,15 @@ public class UpgradeSystem : ISavable
         return false;
     }
 
-    // One node, one point — so what has been spent IS how many nodes are bought. Counted off the tree rather
-    // than off the saved set, so a node deleted from the config stops charging for itself.
+    // Summed off the TREE rather than off the saved set, so a node deleted from the config stops charging
+    // for itself and a reprice takes effect without anybody having to migrate a save.
     public int Spent(string characterId, UpgradeTreeConfig tree)
     {
         if (tree?.nodes == null) return 0;
 
         int spent = 0;
         foreach (var node in tree.nodes)
-            if (node != null && IsBought(characterId, node)) spent++;
+            if (node != null && IsBought(characterId, node)) spent += Mathf.Max(1, node.cost);
         return spent;
     }
 
@@ -77,7 +80,7 @@ public class UpgradeSystem : ISavable
         => node != null
            && !IsBought(characterId, node)
            && IsUnlocked(characterId, tree, node)
-           && Available(characterId, tree) >= 1;
+           && Available(characterId, tree) >= Mathf.Max(1, node.cost);
 
     public bool Buy(string characterId, UpgradeTreeConfig tree, UpgradeNode node)
     {

@@ -37,7 +37,7 @@ public class Picker : MonoBehaviour, IPickupReceiver
     {
         if (_stats == null) return;
 
-        float r = _stats.PickupRadius;
+        float r = _stats.PickupRadius.Value;
         float r2 = r * r;
         Vector3 p = transform.position;
 
@@ -59,7 +59,7 @@ public class Picker : MonoBehaviour, IPickupReceiver
     {
         if (_stats == null) return;   // runtime only (radius comes from stats)
         Gizmos.color = new Color(0.4f, 0.9f, 1f, 0.6f);
-        float r = _stats.PickupRadius;
+        float r = _stats.PickupRadius.Value;
         Vector3 c = transform.position;
         const int seg = 32;
         Vector3 prev = c + new Vector3(r, 0, 0);

@@ -31,7 +31,10 @@ public class Hunger : MonoBehaviour
     // written in rather than a tuning value of its own.
     const float TickInterval = 1f;
 
-    ICharacterStats _stats;
+    // The CONCRETE stats, not the read-only interface, and that is a declaration rather than a convenience:
+    // this class puts a modifier on the drain (see DrainPaused), so it is one of the few things allowed to
+    // move a stat. Anything that only reads takes ICharacterStats and cannot.
+    MainCharStats _stats;
     IHungerConfig _cfg;
     Damageable _health;
     float _value;
@@ -41,7 +44,7 @@ public class Hunger : MonoBehaviour
     public event System.Action Changed;
 
     [Inject]
-    public void Construct(ICharacterStats stats, IHungerConfig cfg)
+    public void Construct(MainCharStats stats, IHungerConfig cfg)
     {
         _stats = stats;
         _cfg = cfg;
@@ -139,12 +142,14 @@ public class Hunger : MonoBehaviour
             if (value == DrainPaused || _stats == null) return;
             if (value)
             {
-                _drainMod = new StatModifier(-1f, StatModType.PercentAdd, this);
-                _stats.HungerDrain.Add(_drainMod);
+                // Mul 0, not Add -something: the multiply lands on the base before anything is added, so it
+                // zeroes the drain whatever else is currently pushing it up.
+                _drainMod = new StatModifier(0f, StatModKind.Mul, this);
+                _stats.Modifiable(StatId.HungerDrain)?.Add(_drainMod);
             }
             else
             {
-                _stats.HungerDrain.RemoveBySource(this);
+                _stats.Modifiable(StatId.HungerDrain)?.RemoveBySource(this);
                 _drainMod = null;
             }
         }

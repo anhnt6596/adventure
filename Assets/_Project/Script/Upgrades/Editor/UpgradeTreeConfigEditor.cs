@@ -3,23 +3,43 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-// The tree drawn as the tree. Nothing here PLACES anything — position is derived from the requirements
-// (UpgradeTreeLayout), so this is a picture of what you authored rather than a second place to author it.
-// What it is for is the two things a flat array cannot do: show you the shape you just described, and let
-// you point a requirement at a node that exists instead of spelling its id from memory.
+// The tree drawn as the tree, and the place it is arranged. Three things a flat array cannot do: show the
+// shape you just described, let you DRAG a node to where it belongs, and let you point a requirement at a
+// node that exists instead of spelling its id from memory.
+//
+// POSITIONS ARE AUTHORED, and dragging writes them straight onto the node in tree units — the same units the
+// popup scales at runtime, so what you arrange here is what the player sees. Auto Arrange fills them all in
+// from the requirements for anyone who would rather not place a tree by hand, and is a starting point rather
+// than a mode: drag anything afterwards and it stays dragged.
 //
 // The raw array stays one toggle away. A custom inspector that hides the truth is worse than none, and the
 // day this drawer has a bug the array is how you get past it.
 [CustomEditor(typeof(UpgradeTreeConfig))]
 public class UpgradeTreeConfigEditor : Editor
 {
-    const float GraphHeight = 340f;
-    const float NodeRadius = 16f;
+    const float GraphHeight = 420f;
+
+    // How much of a tree unit a node takes up, taken from the popup so the two cannot drift. This is what
+    // makes the preview worth trusting: if two nodes touch here they touch in game.
+    static float NodeUnits => UpgradePopup.NodeSize / UpgradePopup.RingSpacing;
 
     bool _raw;
     int _selected = -1;
+    int _dragging = -1;
+
+    // Pixels per tree unit. NOT fitted to the panel any more: a view that silently rescales itself cannot be
+    // used to judge whether anything is too close to anything else, which is most of what arranging a tree
+    // is. Fixed scale, scroll to see the rest.
+    float _zoom = 130f;
+    Vector2 _scroll;
 
     static GUIStyle _caption;
+    static ArtProvider _art;
+
+    // ArtProvider caches misses so a missing file costs one failed load rather than one per repaint — which
+    // is right at runtime and wrong here, where you drop the file in WHILE looking at the panel. Reselecting
+    // the asset is the refresh.
+    void OnEnable() => _art = null;
 
     public override void OnInspectorGUI()
     {
@@ -44,12 +64,12 @@ public class UpgradeTreeConfigEditor : Editor
 
         var nodes = serializedObject.FindProperty("nodes");
 
-        // Off the live object, not the serialized copy: layout only reads ids and requirements, and the
-        // object is already up to date by the time anything is drawn.
+        // Only for "what can be reached" and for Auto Arrange — the drawing itself reads the authored
+        // positions. Off the live object, which is already up to date by the time anything is drawn.
         var layout = UpgradeTreeLayout.Build((UpgradeTreeConfig)target);
 
-        DrawGraph(nodes, layout);
-        DrawTools(nodes);
+        DrawGraph(nodes);
+        DrawTools(nodes, layout);
         EditorGUILayout.Space();
         DrawSelected(nodes);
         DrawProblems(nodes, layout);
@@ -59,58 +79,85 @@ public class UpgradeTreeConfigEditor : Editor
 
     // ---- graph ------------------------------------------------------------------------------------
 
-    void DrawGraph(SerializedProperty nodes, UpgradeTreeLayout layout)
+    void DrawGraph(SerializedProperty nodes)
     {
-        var rect = GUILayoutUtility.GetRect(0, GraphHeight, GUILayout.ExpandWidth(true));
-        EditorGUI.DrawRect(rect, new Color(0.13f, 0.14f, 0.17f));
-
-        // An empty tree drew a featureless dark box, which reads as "this panel is broken" rather than as
-        // "there is nothing in here yet". Say which one it is.
         if (nodes.arraySize == 0)
         {
+            var box = GUILayoutUtility.GetRect(0, 120f, GUILayout.ExpandWidth(true));
+            EditorGUI.DrawRect(box, new Color(0.13f, 0.14f, 0.17f));
             var empty = new GUIStyle(EditorStyles.centeredGreyMiniLabel) { fontSize = 12 };
-            GUI.Label(rect, "No nodes yet.\nPress Add node below — the tree draws itself from what you add.", empty);
+            GUI.Label(box, "No nodes yet.\nPress Add node below.", empty);
             return;
         }
 
-        Vector2 centre = rect.center;
-        float spacing = (Mathf.Min(rect.width, rect.height) * 0.5f - NodeRadius - 14f)
-                        / Mathf.Max(1f, layout.Radius);
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            GUILayout.Label("Zoom", EditorStyles.miniLabel, GUILayout.Width(38));
+            _zoom = GUILayout.HorizontalSlider(_zoom, 50f, 260f);
+            if (GUILayout.Button("1:1", EditorStyles.miniButton, GUILayout.Width(34)))
+                _zoom = UpgradePopup.RingSpacing;   // exactly what the popup draws at
+        }
 
-        HandleInput(rect, nodes, layout, centre, spacing);
+        float radius = _zoom * NodeUnits * 0.5f;
+        float margin = radius + 26f;
 
-        if (Event.current.type != EventType.Repaint) return;
+        // Symmetric about the centre, like the popup — the character is the thing that should always be in
+        // the middle, whichever way the tree happens to lean.
+        Vector2 extent = Vector2.zero;
+        for (int i = 0; i < nodes.arraySize; i++)
+        {
+            var p = Field(nodes, i, "position").vector2Value;
+            extent = Vector2.Max(extent, new Vector2(Mathf.Abs(p.x), Mathf.Abs(p.y)));
+        }
+        Vector2 size = extent * (2f * _zoom) + Vector2.one * (margin * 2f);
 
-        var previous = Handles.color;
+        _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.Height(GraphHeight));
 
-        DrawEdges(nodes, layout, centre, spacing);
-        DrawCentre(centre);
-        DrawNodes(nodes, layout, centre, spacing);
+        var rect = GUILayoutUtility.GetRect(size.x, size.y,
+                                            GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(false));
+        EditorGUI.DrawRect(rect, new Color(0.13f, 0.14f, 0.17f));
 
-        Handles.color = previous;
-        GUI.Label(new Rect(rect.x + 6, rect.yMax - 18, rect.width - 12, 16),
-                  "layout is derived from requirements — reorder nodes to change the arrangement",
-                  EditorStyles.miniLabel);
+        Vector2 origin = rect.center;
+        HandleInput(rect, nodes, origin, _zoom, radius);
+
+        if (Event.current.type == EventType.Repaint)
+        {
+            var previous = Handles.color;
+            DrawEdges(nodes, origin, _zoom);
+            DrawCentre(origin, radius);
+            DrawNodes(nodes, origin, _zoom, radius);
+            Handles.color = previous;
+        }
+
+        EditorGUILayout.EndScrollView();
+
+        GUILayout.Label("drag a node to place it — scale is the game's, so what touches here touches there",
+                        EditorStyles.miniLabel);
     }
 
-    void DrawCentre(Vector2 centre)
+    void DrawCentre(Vector2 centre, float radius)
     {
         Handles.color = new Color(0.92f, 0.78f, 0.35f);
-        Handles.DrawSolidDisc(centre, Vector3.forward, NodeRadius * 0.75f);
-        GUI.Label(new Rect(centre.x - 50f, centre.y + NodeRadius, 100f, 16f), "centre", Caption);
+        Handles.DrawSolidDisc(centre, Vector3.forward, radius);
+
+        // The same portrait the popup puts there, found the same way, so a missing one is missing in both.
+        var portrait = Art.Avatar(((UpgradeTreeConfig)target).Id);
+        if (portrait != null) DrawSprite(portrait, centre, radius * 1.2f);
+
+        GUI.Label(new Rect(centre.x - 60f, centre.y + radius + 2f, 120f, 16f), "centre", Caption);
     }
 
-    void DrawEdges(SerializedProperty nodes, UpgradeTreeLayout layout, Vector2 centre, float spacing)
+    void DrawEdges(SerializedProperty nodes, Vector2 origin, float spacing)
     {
         for (int i = 0; i < nodes.arraySize; i++)
         {
-            if (!TryPosition(nodes, i, layout, centre, spacing, out var to)) continue;
+            Vector2 to = Position(nodes, i, origin, spacing);
             var requires = Field(nodes, i, "requires");
 
             if (requires.arraySize == 0)
             {
                 Handles.color = new Color(0.92f, 0.78f, 0.35f, 0.4f);
-                Handles.DrawAAPolyLine(2f, centre, to);
+                Handles.DrawAAPolyLine(2f, origin, to);
                 continue;
             }
 
@@ -120,7 +167,7 @@ public class UpgradeTreeConfigEditor : Editor
 
                 // A link to a node that is not there gets a red stub rather than nothing: a missing edge
                 // looks like a tree you laid out that way, a red mark looks like the mistake it is.
-                if (from < 0 || !TryPosition(nodes, from, layout, centre, spacing, out var start))
+                if (from < 0)
                 {
                     Handles.color = new Color(0.9f, 0.35f, 0.3f, 0.9f);
                     Handles.DrawAAPolyLine(2f, to + Vector2.left * 9f, to + Vector2.right * 9f);
@@ -128,87 +175,145 @@ public class UpgradeTreeConfigEditor : Editor
                 }
 
                 Handles.color = new Color(1f, 1f, 1f, 0.3f);
-                Handles.DrawAAPolyLine(2f, start, to);
+                Handles.DrawAAPolyLine(2f, Position(nodes, from, origin, spacing), to);
             }
         }
     }
 
-    void DrawNodes(SerializedProperty nodes, UpgradeTreeLayout layout, Vector2 centre, float spacing)
+    void DrawNodes(SerializedProperty nodes, Vector2 origin, float spacing, float radius)
     {
+        var treeId = ((UpgradeTreeConfig)target).Id;
+
         for (int i = 0; i < nodes.arraySize; i++)
         {
-            if (!TryPosition(nodes, i, layout, centre, spacing, out var p)) continue;
+            Vector2 p = Position(nodes, i, origin, spacing);
 
             Handles.color = new Color(0.28f, 0.31f, 0.38f);
-            Handles.DrawSolidDisc(p, Vector3.forward, NodeRadius);
+            Handles.DrawSolidDisc(p, Vector3.forward, radius);
+
+            // The node's own icon, resolved through ArtProvider — the SAME lookup the game makes, including
+            // the per-character override and the shared fallback. Anything the editor can find here, the
+            // game can load; anything missing here is missing there too, which is the point of not going
+            // through AssetDatabase for this.
+            var key = Field(nodes, i, "key").stringValue;
+            var icon = Art.UpgradeIcon(treeId, key);
+            if (icon != null) DrawSprite(icon, p, radius * 1.15f);
 
             Handles.color = i == _selected ? Color.white : new Color(1f, 1f, 1f, 0.25f);
-            Handles.DrawWireDisc(p, Vector3.forward, NodeRadius);
+            Handles.DrawWireDisc(p, Vector3.forward, radius);
+
+            // Same rule as the popup: the number only appears when it is not the usual one.
+            int cost = Field(nodes, i, "cost").intValue;
+            if (cost > 1)
+                GUI.Label(new Rect(p.x - radius, p.y + radius - 16f, radius * 2f, 16f), cost.ToString(), Caption);
 
             var id = Field(nodes, i, "id").stringValue;
-            GUI.Label(new Rect(p.x - 50f, p.y + NodeRadius + 1f, 100f, 16f),
+            GUI.Label(new Rect(p.x - 60f, p.y + radius + 2f, 120f, 16f),
                       string.IsNullOrEmpty(id) ? "(no id)" : id, Caption);
         }
     }
 
-    void HandleInput(Rect rect, SerializedProperty nodes, UpgradeTreeLayout layout, Vector2 centre, float spacing)
+    // A sprite may be a slice of a bigger texture, so it cannot just be blitted whole — the tex coords come
+    // off the sprite's own rect. No readable texture required, unlike AssetPreview.
+    static void DrawSprite(Sprite sprite, Vector2 centre, float size)
+    {
+        var tex = sprite.texture;
+        if (tex == null) return;
+
+        var tr = sprite.textureRect;
+        var coords = new Rect(tr.x / tex.width, tr.y / tex.height, tr.width / tex.width, tr.height / tex.height);
+
+        // Fit the longer side, so a tall or wide icon keeps its shape instead of being squashed to a square.
+        float aspect = tr.width / Mathf.Max(1f, tr.height);
+        float w = aspect >= 1f ? size : size * aspect;
+        float h = aspect >= 1f ? size / aspect : size;
+
+        GUI.DrawTextureWithTexCoords(new Rect(centre.x - w * 0.5f, centre.y - h * 0.5f, w, h), tex, coords);
+    }
+
+    // One instance, reused: it caches what it finds (and what it does not), so scrubbing a tree does not hit
+    // Resources once per node per repaint.
+    static ArtProvider Art => _art ??= new ArtProvider();
+
+    void HandleInput(Rect rect, SerializedProperty nodes, Vector2 origin, float spacing, float radius)
     {
         var e = Event.current;
-        if (e.type != EventType.MouseDown || e.button != 0 || !rect.Contains(e.mousePosition)) return;
 
-        _selected = -1;
-        for (int i = nodes.arraySize - 1; i >= 0; i--)
-            if (TryPosition(nodes, i, layout, centre, spacing, out var p)
-                && Vector2.Distance(e.mousePosition, p) <= NodeRadius)
-            {
-                _selected = i;
+        switch (e.type)
+        {
+            case EventType.MouseDown when e.button == 0 && rect.Contains(e.mousePosition):
+                _selected = HitTest(nodes, e.mousePosition, origin, spacing, radius);
+                _dragging = _selected;
+                GUI.FocusControl(null);   // or the last text field keeps the caret and eats the typing
+                e.Use();
+                Repaint();
                 break;
-            }
 
-        GUI.FocusControl(null);   // or the last text field keeps the caret and eats the typing
-        e.Use();
-        Repaint();
+            case EventType.MouseDrag when _dragging >= 0 && _dragging < nodes.arraySize:
+                // Back out of pixels into tree units, rounded so a placement is a number somebody could
+                // also have typed. Shift for finer work.
+                Vector2 units = (e.mousePosition - origin) / spacing;
+                float step = e.shift ? 0.05f : 0.25f;
+                Field(nodes, _dragging, "position").vector2Value =
+                    new Vector2(Mathf.Round(units.x / step) * step, Mathf.Round(units.y / step) * step);
+                e.Use();
+                Repaint();
+                break;
+
+            case EventType.MouseUp when _dragging >= 0:
+                _dragging = -1;
+                e.Use();
+                break;
+        }
     }
 
-    static bool TryPosition(SerializedProperty nodes, int index, UpgradeTreeLayout layout,
-                            Vector2 centre, float spacing, out Vector2 position)
+    static int HitTest(SerializedProperty nodes, Vector2 mouse, Vector2 origin, float spacing, float radius)
     {
-        position = centre;
-        var id = Field(nodes, index, "id").stringValue;
-        if (string.IsNullOrEmpty(id) || !layout.TryGet(id, out var slot)) return false;
-
-        position = centre + slot.Offset * spacing;
-        return true;
+        for (int i = nodes.arraySize - 1; i >= 0; i--)   // topmost first, matching the draw order
+            if (Vector2.Distance(mouse, Position(nodes, i, origin, spacing)) <= radius)
+                return i;
+        return -1;
     }
+
+    static Vector2 Position(SerializedProperty nodes, int index, Vector2 origin, float spacing)
+        => origin + Field(nodes, index, "position").vector2Value * spacing;
 
     // ---- editing ----------------------------------------------------------------------------------
 
-    void DrawTools(SerializedProperty nodes)
+    void DrawTools(SerializedProperty nodes, UpgradeTreeLayout layout)
     {
         using (new EditorGUILayout.HorizontalScope())
         {
             if (GUILayout.Button("Add node")) Add(nodes);
 
+            // A starting point, not a mode. It overwrites every position, so it is the thing you press on a
+            // fresh tree or when an arrangement has got away from you — and anything dragged afterwards
+            // stays where it was put.
+            using (new EditorGUI.DisabledScope(nodes.arraySize == 0))
+                if (GUILayout.Button("Auto arrange") && Confirm(nodes.arraySize))
+                    AutoArrange(nodes, layout);
+
             using (new EditorGUI.DisabledScope(_selected < 0 || _selected >= nodes.arraySize))
-            {
-                // Order decides which sibling gets which slice of the circle, so moving a node in the array
-                // is the one handle on the arrangement — hence two buttons rather than a hidden rule.
-                if (GUILayout.Button("Move ◀", GUILayout.Width(70)) && _selected > 0)
-                {
-                    nodes.MoveArrayElement(_selected, _selected - 1);
-                    _selected--;
-                }
-                if (GUILayout.Button("Move ▶", GUILayout.Width(70)) && _selected < nodes.arraySize - 1)
-                {
-                    nodes.MoveArrayElement(_selected, _selected + 1);
-                    _selected++;
-                }
-                if (GUILayout.Button("Delete"))
+                if (GUILayout.Button("Delete", GUILayout.Width(70)))
                 {
                     nodes.DeleteArrayElementAtIndex(_selected);
                     _selected = -1;
                 }
-            }
+        }
+    }
+
+    static bool Confirm(int count)
+        => EditorUtility.DisplayDialog("Auto arrange",
+            $"Reposition all {count} nodes from their requirements? Anything placed by hand is lost.",
+            "Arrange", "Cancel");
+
+    static void AutoArrange(SerializedProperty nodes, UpgradeTreeLayout layout)
+    {
+        for (int i = 0; i < nodes.arraySize; i++)
+        {
+            var id = Field(nodes, i, "id").stringValue;
+            if (!string.IsNullOrEmpty(id) && layout.TryGet(id, out var slot))
+                Field(nodes, i, "position").vector2Value = slot.Offset;
         }
     }
 
@@ -219,9 +324,23 @@ public class UpgradeTreeConfigEditor : Editor
 
         // Unity copies the previous element into a new slot, so every field has to be stated — otherwise a
         // new node arrives wearing the last one's id and silently becomes a duplicate.
-        Field(nodes, index, "id").stringValue = UniqueId(nodes, index);
+        var id = UniqueId(nodes, index);
+        Field(nodes, index, "id").stringValue = id;
         Field(nodes, index, "key").stringValue = "";
+        Field(nodes, index, "cost").intValue = 1;
         Field(nodes, index, "requires").ClearArray();
+        Field(nodes, index, "effect").managedReferenceValue = null;
+
+        // Pushed through before asking the layout anything: it reads the live object, and until this lands
+        // the new node does not exist out there to be given a place.
+        nodes.serializedObject.ApplyModifiedProperties();
+
+        // Somewhere sensible rather than on top of the centre, where it would be invisible under whatever is
+        // already there. With no requirements yet the layout treats it as another first-ring node and spaces
+        // it out with them.
+        var guess = UpgradeTreeLayout.Build((UpgradeTreeConfig)nodes.serializedObject.targetObject);
+        Field(nodes, index, "position").vector2Value =
+            guess.TryGet(id, out var slot) ? slot.Offset : new Vector2(0f, -1f);
 
         _selected = index;
     }
@@ -246,8 +365,28 @@ public class UpgradeTreeConfigEditor : Editor
 
         EditorGUILayout.LabelField("Selected node", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(Field(nodes, _selected, "id"));
-        EditorGUILayout.PropertyField(Field(nodes, _selected, "key"));
+
+        // The key and what it currently resolves to, side by side. Naming art by convention only works if
+        // you can see whether the convention was met, and the alternative is playing the game to find out.
+        var key = Field(nodes, _selected, "key");
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            EditorGUILayout.PropertyField(key);
+
+            var found = Art.UpgradeIcon(((UpgradeTreeConfig)target).Id, key.stringValue);
+            var slot = GUILayoutUtility.GetRect(34f, 34f, GUILayout.Width(34f), GUILayout.Height(34f));
+            if (found != null) DrawSprite(found, slot.center, 32f);
+            else EditorGUI.DrawRect(slot, new Color(1f, 1f, 1f, 0.05f));
+        }
+
+        if (!string.IsNullOrEmpty(key.stringValue)
+            && Art.UpgradeIcon(((UpgradeTreeConfig)target).Id, key.stringValue) == null)
+            EditorGUILayout.LabelField($"no icon at Resources/{ArtProvider.UpgradeFolder}/{key.stringValue}",
+                                       EditorStyles.miniLabel);
+
+        EditorGUILayout.PropertyField(Field(nodes, _selected, "cost"));
         DrawRequires(nodes, _selected);
+        DrawEffect(nodes, _selected);
     }
 
     // Requirements are picked, never typed. They are ids of other nodes, and a typo used to mean a node that
@@ -306,6 +445,39 @@ public class UpgradeTreeConfigEditor : Editor
 
         if (requires.arraySize == 0)
             EditorGUILayout.LabelField("No requirements — this one is on the first ring.", EditorStyles.miniLabel);
+    }
+
+    // What the node does. The type dropdown comes from ManagedRefPicker, the same reflection the enemy
+    // brains use, so a new IUpgradeEffect class shows up here without this file being touched.
+    void DrawEffect(SerializedProperty nodes, int index)
+    {
+        var effect = Field(nodes, index, "effect");
+        if (effect == null) return;
+
+        EditorGUILayout.Space();
+
+        if (ManagedRefPicker.DrawTypeDropdown(effect, typeof(IUpgradeEffect), "Effect", allowNone: true))
+            return;   // the type just changed; its fields do not exist until the next repaint
+
+        if (effect.managedReferenceValue == null)
+        {
+            EditorGUILayout.LabelField("No effect — this node only opens the ones after it.", EditorStyles.miniLabel);
+            return;
+        }
+
+        // The effect's own fields, inline — no foldout, so the node reads as one flat screen. A buff row
+        // draws itself through StatBuffDrawer, which is where the stat dropdown lives: rows sit inside a
+        // list, and a list is painted by Unity's drawer, so nothing done by hand here would reach them.
+        EditorGUI.indentLevel++;
+        var end = effect.GetEndProperty();
+        var it = effect.Copy();
+        bool enter = true;
+        while (it.NextVisible(enter) && !SerializedProperty.EqualContents(it, end))
+        {
+            enter = false;
+            EditorGUILayout.PropertyField(it, true);
+        }
+        EditorGUI.indentLevel--;
     }
 
     // ---- validation -------------------------------------------------------------------------------

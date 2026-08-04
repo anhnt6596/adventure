@@ -1,5 +1,9 @@
 /* Full screen, but not opaque: the world stays faintly visible behind it. The tree is a place you step
-   into for a moment, not a screen you leave the game for. */
+   into for a moment, not a screen you leave the game for.
+
+   SIZES ARE CHUNKY ON PURPOSE, and match the rest of the game rather than a desktop inspector. PanelSettings
+   scales the whole UI with the screen, so anything authored at "looks fine on my monitor" ends up unreadable
+   on a phone — the HUD is already built at 28-34px for the same reason. */
 .dimmer {
     position: absolute;
     left: 0;
@@ -19,46 +23,46 @@
 .head {
     flex-direction: row;
     align-items: center;
-    padding: 16px 20px;
+    padding: 22px 28px;
     background-color: rgba(0, 0, 0, 0.35);
     border-bottom-width: 1px;
     border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 .head-avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 32px;
+    width: 96px;
+    height: 96px;
+    border-radius: 48px;
     background-color: rgba(255, 255, 255, 0.08);
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .head-titles {
     flex-grow: 1;
-    margin-left: 14px;
+    margin-left: 20px;
 }
 
 .head-name {
-    font-size: 26px;
+    font-size: 40px;
     -unity-font-style: bold;
     color: rgb(240, 240, 245);
 }
 
 .head-points {
-    font-size: 18px;
+    font-size: 26px;
     color: rgb(235, 200, 90);
-    margin-top: 2px;
+    margin-top: 4px;
 }
 
 .close-btn {
-    width: 44px;
-    height: 44px;
-    margin-left: 10px;
-    font-size: 20px;
+    width: 64px;
+    height: 64px;
+    margin-left: 14px;
+    font-size: 30px;
     color: rgb(230, 230, 235);
     background-color: rgba(255, 255, 255, 0.1);
     border-width: 0;
-    border-radius: 22px;
+    border-radius: 32px;
 }
 
 .close-btn:hover {
@@ -76,7 +80,7 @@
     flex-grow: 1;
 }
 
-/* Sized from code off the tree's outermost ring, so a tree that grows does not need this widened by hand. */
+/* Sized from code off what the tree occupies, so a tree that grows does not need this widened by hand. */
 .tree-canvas {
     position: relative;
 }
@@ -93,10 +97,10 @@
 
 .node {
     position: absolute;
-    width: 84px;
-    height: 84px;
-    border-radius: 42px;
-    border-width: 3px;
+    width: 120px;
+    height: 120px;
+    border-radius: 60px;
+    border-width: 4px;
     padding: 0;
     align-items: center;
     justify-content: center;
@@ -111,9 +115,22 @@
 }
 
 .node-icon {
-    width: 46px;
-    height: 46px;
+    width: 68px;
+    height: 68px;
     -unity-background-scale-mode: scale-to-fit;
+}
+
+/* Only worn by a node that costs more than one point, so it reads as "this one is dearer" rather than as a
+   label every node happens to carry. */
+.node-cost {
+    position: absolute;
+    bottom: -10px;
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(20, 22, 28);
+    background-color: rgb(235, 200, 90);
+    border-radius: 13px;
+    padding: 1px 11px;
 }
 
 /* Four states, and the colour is the whole readout: owned, affordable now, unlocked but unaffordable,
@@ -132,14 +149,16 @@
     border-color: rgb(235, 200, 90);
 }
 
+/* Dimmed by COLOUR, never by opacity: a translucent node lets the link lines run straight through it, so a
+   node that cannot be bought stops looking like an object and starts looking like a hole. */
 .node--short {
-    border-color: rgba(235, 200, 90, 0.35);
-    opacity: 0.75;
+    border-color: rgb(96, 84, 46);
+    background-color: rgb(22, 23, 30);
 }
 
 .node--locked {
-    border-color: rgba(255, 255, 255, 0.1);
-    opacity: 0.4;
+    border-color: rgb(46, 48, 56);
+    background-color: rgb(19, 20, 26);
 }
 
 .node--selected {
@@ -149,42 +168,43 @@
 /* ---- detail ---- */
 
 .detail {
-    width: 320px;
-    padding: 20px;
+    width: 460px;
+    padding: 28px;
     background-color: rgba(0, 0, 0, 0.4);
     border-left-width: 1px;
     border-left-color: rgba(255, 255, 255, 0.08);
 }
 
 .detail-title {
-    font-size: 22px;
+    font-size: 34px;
     -unity-font-style: bold;
     color: rgb(240, 240, 245);
     white-space: normal;
 }
 
 .detail-blurb {
-    font-size: 15px;
+    font-size: 22px;
     color: rgb(190, 192, 200);
-    margin-top: 10px;
+    margin-top: 14px;
     white-space: normal;
 }
 
 .detail-state {
-    font-size: 14px;
+    font-size: 21px;
     color: rgb(160, 162, 172);
-    margin-top: 16px;
+    margin-top: 22px;
     white-space: normal;
 }
 
 .btn {
-    height: 44px;
-    margin-top: 16px;
-    font-size: 16px;
+    height: 64px;
+    margin-top: 22px;
+    font-size: 26px;
+    -unity-font-style: bold;
     color: rgb(20, 22, 28);
     background-color: rgb(235, 200, 90);
     border-width: 0;
-    border-radius: 8px;
+    border-radius: 10px;
 }
 
 .btn:hover {
@@ -196,10 +216,10 @@
 }
 
 .btn--ghost {
-    height: 36px;
+    height: 52px;
     margin-top: 0;
-    padding: 0 14px;
-    font-size: 14px;
+    padding: 0 22px;
+    font-size: 22px;
     color: rgb(230, 230, 235);
     background-color: rgba(255, 255, 255, 0.1);
 }
@@ -211,6 +231,6 @@
 .empty {
     flex-grow: 1;
     -unity-text-align: middle-center;
-    font-size: 18px;
+    font-size: 28px;
     color: rgb(150, 152, 162);
 }

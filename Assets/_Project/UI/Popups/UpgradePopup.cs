@@ -27,9 +27,12 @@ public class UpgradePopup : BasePopup
     // A full-screen panel that fades; zoom is for the small centred popups.
     protected override EffectType AppearFx => EffectType.Fade;
 
-    const float RingSpacing = 155f;
-    const float NodeSize = 84f;
-    const float CanvasMargin = 110f;
+    // Public so the tree editor can draw at the same proportions — a node that fits here and overlaps in
+    // game is the whole reason to have a preview, and two copies of these numbers would drift apart.
+    public const float RingSpacing = 230f;   // one tree unit, in pixels
+    public const float NodeSize = 120f;      // matches .node in the USS
+
+    const float CanvasMargin = 160f;
 
     IGetUpgradeTree _trees;
     UpgradeSystem _upgrades;
@@ -46,7 +49,6 @@ public class UpgradePopup : BasePopup
     VisualElement _centreElement;
 
     UpgradeTreeConfig _tree;
-    UpgradeTreeLayout _layout;
     string _characterId;
     UpgradeNode _selected;
     Vector2 _centre;
@@ -143,8 +145,6 @@ public class UpgradePopup : BasePopup
                 ? new StyleBackground(avatar)
                 : new StyleBackground(StyleKeyword.None);
 
-        _layout = UpgradeTreeLayout.Build(_tree);
-
         bool hasTree = _tree != null && _tree.nodes != null && _tree.nodes.Length > 0;
         if (_body != null) _body.style.display = hasTree ? DisplayStyle.Flex : DisplayStyle.None;
         if (_empty != null) _empty.style.display = hasTree ? DisplayStyle.None : DisplayStyle.Flex;
@@ -153,12 +153,24 @@ public class UpgradePopup : BasePopup
         ClearNodes();
         if (!hasTree) return;
 
-        float size = 2f * (_layout.Radius * RingSpacing + CanvasMargin);
-        _centre = new Vector2(size * 0.5f, size * 0.5f);
+        // The canvas is SYMMETRIC about the centre, not a tight box around the nodes. A tight box puts the
+        // centre wherever the tree happens to be lopsided, so the character you are looking at drifts off to
+        // one side — and the centre is the one thing that should always be in the middle. The empty half of
+        // a one-sided tree is the price, and it is only scrolling.
+        Vector2 extent = Vector2.zero;
+        foreach (var node in _tree.nodes)
+        {
+            if (node == null) continue;
+            extent = Vector2.Max(extent, new Vector2(Mathf.Abs(node.position.x), Mathf.Abs(node.position.y)));
+        }
+
+        var size = extent * (2f * RingSpacing) + new Vector2(CanvasMargin, CanvasMargin) * 2f;
+        _centre = size * 0.5f;
+
         if (_canvas != null)
         {
-            _canvas.style.width = size;
-            _canvas.style.height = size;
+            _canvas.style.width = size.x;
+            _canvas.style.height = size.y;
         }
 
         // The centre is not a node and is never bought — it is the character, and everything without a
@@ -181,9 +193,8 @@ public class UpgradePopup : BasePopup
         foreach (var node in _tree.nodes)
         {
             if (node == null || string.IsNullOrEmpty(node.id)) continue;
-            if (!_layout.TryGet(node.id, out var slot)) continue;
 
-            var position = _centre + slot.Offset * RingSpacing;
+            var position = _centre + node.position * RingSpacing;
 
             var element = MakeNode(node);
             element.style.left = position.x - NodeSize * 0.5f;
@@ -195,6 +206,21 @@ public class UpgradePopup : BasePopup
         }
 
         Refresh();
+        ScrollToCentre();
+    }
+
+    // Opening on the centre rather than on the top-left corner of a canvas that may be several screens
+    // wide. Deferred by a frame because the viewport has no size until layout has run, and scrolling to the
+    // middle of a rectangle nobody has measured yet lands at zero.
+    void ScrollToCentre()
+    {
+        if (_scroll == null) return;
+
+        _scroll.schedule.Execute(() =>
+        {
+            var viewport = _scroll.contentViewport.layout.size;
+            _scroll.scrollOffset = _centre - viewport * 0.5f;
+        }).ExecuteLater(0);
     }
 
     VisualElement MakeNode(UpgradeNode node)
@@ -211,6 +237,17 @@ public class UpgradePopup : BasePopup
             icon.AddToClassList("node-icon");
             icon.pickingMode = PickingMode.Ignore;
             button.Add(icon);
+        }
+
+        // The badge appears ONLY on a node that costs more than one point. Stamping "1" on nearly every node
+        // is a number the player learns to stop reading, and then the one node that says 3 does not stand
+        // out either. Silence is what makes the exception loud.
+        if (node.cost > 1)
+        {
+            var cost = new Label(node.cost.ToString());
+            cost.AddToClassList("node-cost");
+            cost.pickingMode = PickingMode.Ignore;
+            button.Add(cost);
         }
 
         return button;
@@ -270,7 +307,7 @@ public class UpgradePopup : BasePopup
     {
         if (_upgrades.IsBought(_characterId, node)) return "node--bought";
         if (!_upgrades.IsUnlocked(_characterId, _tree, node)) return "node--locked";
-        return available >= 1 ? "node--ready" : "node--short";
+        return available >= Mathf.Max(1, node.cost) ? "node--ready" : "node--short";
     }
 
     void RefreshDetail(int available)
@@ -286,14 +323,15 @@ public class UpgradePopup : BasePopup
         bool bought = _upgrades.IsBought(_characterId, node);
         bool unlocked = _upgrades.IsUnlocked(_characterId, _tree, node);
 
-        // No price is shown anywhere: every node costs one point, so the only number that ever changes is
-        // how many are left, and the header already carries that.
+        int cost = Mathf.Max(1, node.cost);
+
         if (_detailState != null)
         {
             _detailState.text =
                 bought ? "Unlocked."
                 : !unlocked ? "Locked — unlock a node leading into this one first."
-                : available < 1 ? "No points left. Level up to spend again."
+                : available < cost ? $"Costs {cost} points — you have {available}."
+                : cost > 1 ? $"Costs {cost} points."
                 : "";
         }
 

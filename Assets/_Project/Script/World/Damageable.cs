@@ -17,6 +17,7 @@ public class Damageable : MonoBehaviour, IDamageable
     IDamageableConfig Cfg => _unit != null ? _unit.DamageableConfig : null;
 
     float _hp;
+    float _lastMax;                // to tell a raised ceiling from a lowered one when the stat moves
     bool _inWorld;                 // guards against a double Add/Remove
 
     public Vector3 Position => transform.position;
@@ -28,7 +29,11 @@ public class Damageable : MonoBehaviour, IDamageable
     public int Team => _unit != null ? _unit.Team : Teams.Universal;
 
     public float Hp => _hp;
-    public float MaxHp => Cfg != null ? Cfg.MaxHp : 0f;
+
+    // A live maximum when the unit has one (the main character), the config's flat number otherwise (props,
+    // enemies). One property so nothing downstream has to know which kind of body it is looking at.
+    IStat MaxStat => _unit != null ? _unit.MaxHpStat : null;
+    public float MaxHp => MaxStat != null ? MaxStat.Value : (Cfg != null ? Cfg.MaxHp : 0f);
 
     public event System.Action<object> Damaged;   // non-fatal hit; arg = damage source (HitFlash ignores it, AI targets it)
     public event System.Action<object> Died;   // killed — the arg is the damage source (force origin for drops)
@@ -51,12 +56,36 @@ public class Damageable : MonoBehaviour, IDamageable
     // so MaxHp isn't available until now.
     void Start()
     {
-        if (Cfg == null)
+        if (Cfg == null && MaxStat == null)
         {
             Debug.LogError($"[{nameof(Damageable)}] no config on its Unit ({(_unit != null ? _unit.GetType().Name : "no Unit found")}) — it has no HP.", this);
             return;
         }
-        _hp = Cfg.MaxHp;
+
+        _hp = MaxHp;
+        _lastMax = _hp;
+
+        // Only a live maximum can move, so only that one is worth listening to.
+        if (MaxStat != null) MaxStat.Changed += OnMaxChanged;
+
+        HealthChanged?.Invoke();
+    }
+
+    // Raising the ceiling hands over the difference, so buying +20 max HP is worth 20 HP right now rather
+    // than being a promise that only pays off after the next heal. Lowering it leaves the current HP alone
+    // and just clamps — a debuff that takes the ceiling away should not also deal the damage.
+    void OnMaxChanged()
+    {
+        float max = MaxHp;
+        float delta = max - _lastMax;
+        _lastMax = max;
+
+        if (!IsAlive) return;   // nothing to top up on something already dead
+
+        if (delta > 0f) _hp += delta;
+        else if (_hp > max) _hp = max;
+        else return;            // ceiling moved but this body was not touching it
+
         HealthChanged?.Invoke();
     }
 
@@ -64,7 +93,14 @@ public class Damageable : MonoBehaviour, IDamageable
     // world is a static (CombatWorld.Instance), ready before any OnEnable, so it self-registers — no wiring.
     void OnEnable() => JoinWorld();
     void OnDisable() => LeaveWorld();
-    void OnDestroy() => LeaveWorld();
+
+    void OnDestroy()
+    {
+        LeaveWorld();
+        // Stats outlive a body — a character switch throws the body away and builds new stats, but a timed
+        // buff on the old set could still fire — so the listener has to come off with the body.
+        if (MaxStat != null) MaxStat.Changed -= OnMaxChanged;
+    }
 
     void JoinWorld()  { if (_inWorld) return; CombatWorld.Instance.Add(this); _inWorld = true; }
     void LeaveWorld() { if (!_inWorld) return; CombatWorld.Instance.Remove(this); _inWorld = false; }

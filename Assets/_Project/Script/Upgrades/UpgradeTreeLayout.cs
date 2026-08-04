@@ -1,12 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Where every node sits, worked out from the graph rather than authored.
+// A first guess at where every node should sit, worked out from the graph.
 //
-// NOTHING ABOUT POSITION IS IN THE CONFIG, and that is the point: a ring is just "how deep", an angle is
-// just "which way", and both of those are already implied by what requires what. Authoring them by hand
-// meant keeping two descriptions of one shape in step, and letting a layout number decide which node was
-// the centre — so dragging a node an inch changed the rules of the tree.
+// NOT WHAT THE GAME READS ANY MORE. Positions are authored — dragged in the tree editor and saved on the
+// node — because a tree is a picture and a picture wants a hand on it. This runs behind the Auto Arrange
+// button and when a new node needs somewhere sensible to land, so nobody has to place a whole tree from
+// scratch to see its shape.
+//
+// It also still answers "which nodes can be reached at all", which is a property of the graph rather than
+// of the drawing, and the tree editor reports it as a problem.
 //
 // THE CENTRE IS IMPLICIT. It is not a node and cannot be authored; a node with no requirements simply hangs
 // off it. So "the tree has a root" stops being something anyone can forget to set up.

@@ -18,11 +18,8 @@ using UnityEngine;
 // presentation — the same rule that keeps portraits off MainCharStatsConfig. A config that carries its own
 // text is a config that has to be re-opened to fix a typo and re-authored to translate.
 //
-// WHAT A NODE DOES IS NOT HERE YET, and that is deliberate rather than unfinished. This pass is the graph,
-// the price, the buying and the save — the parts that have to be right before there is anything to hang an
-// effect on. Stats also have to grow a way of being modified from outside first (see Docs/TODO.md); until
-// both land, a node's title and blurb are what says what it gives, which is enough to lay a tree out, price
-// it, and play with the shape.
+// WHAT A NODE DOES lives in its effect, behind [SerializeReference] — see IUpgradeEffect. A node with no
+// effect is a junction: it costs a point and opens what comes after it, which is a real thing to want.
 [CreateAssetMenu(menuName = "Upgrades/Upgrade Tree")]
 public class UpgradeTreeConfig : Config
 {
@@ -57,12 +54,17 @@ public class UpgradeNode
              "declared, and why there is no root to configure.")]
     public string[] requires = Array.Empty<string>();
 
-    // NO POSITION, AND NO PRICE.
-    //
-    // Position is derived — see UpgradeTreeLayout. Depth is the shortest chain of requirements leading here,
-    // and the angle is this node's share of its parent's wedge. Both were already implied by `requires`;
-    // writing them down as well meant two descriptions of one shape, free to disagree.
-    //
-    // Price is always one point, so a field for it would be a stored copy of the number 1. What makes an
-    // outer node expensive is the chain you had to buy to reach it, which `requires` already says.
+    [Tooltip("What owning this node does. Empty is allowed and means the node only opens the ones after it — " +
+             "a junction, which is a real thing to want.")]
+    [SerializeReference] public IUpgradeEffect effect;
+
+    [Tooltip("Upgrade points. One is the usual answer and the one the UI stays quiet about; raise it for a " +
+             "node that is worth several levels on its own.")]
+    [Min(1)] public int cost = 1;
+
+    [Tooltip("Where the node sits, in TREE UNITS: 1 is one step out from the centre, y grows downward. Not " +
+             "pixels — both the editor and the popup scale it, so the same tree reads the same at any size.\n\n" +
+             "Dragged in the tree editor rather than typed. Auto Arrange fills them all in from the " +
+             "requirements when you would rather not place anything by hand.")]
+    public Vector2 position;
 }

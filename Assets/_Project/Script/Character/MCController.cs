@@ -11,6 +11,10 @@ public class MCController : DynamicUnit
     public override int Team => Teams.Player;
     public override IDamageableConfig DamageableConfig => _dmg; // HP from MainCharStatsConfig
 
+    // The main character's maximum HP is a live stat, so upgrades and buffs can move it. Damageable takes
+    // this in preference to the config's flat number — see Unit.MaxHpStat.
+    public override IStat MaxHpStat => _stats?.MaxHp;
+
     [Inject]
     public void Construct(ICharacterStats stats, IDamageableConfig dmg)
     {
@@ -20,7 +24,7 @@ public class MCController : DynamicUnit
 
     protected override float MoveSpeed => _stats.MoveSpeed.Value;
     protected override float AttackSpeed => _stats.AttackSpeed.Value;
-    protected override float AttackCooldown => _stats.AttackCooldown;
-    protected override float Mass => _stats.Mass;
+    protected override float AttackCooldown => _stats.AttackCooldown.Value;
+    protected override float Mass => _stats.Mass.Value;
     public override float AttackPower => _stats.AttackPower.Value;
 }

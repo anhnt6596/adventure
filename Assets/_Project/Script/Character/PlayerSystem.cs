@@ -16,9 +16,12 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
     readonly PrefabRegistry _prefabs;
     readonly IObjectResolver _container;
     readonly SaveService _save;
+    readonly IGetUpgradeTree _trees;
+    readonly UpgradeSystem _upgrades;
 
     string _currentId = DefaultId;
     IScopedObjectResolver _scope;   // per-spawn scope holding this body's stats/config; disposed on the next spawn
+    MainCharStats _stats;           // the live set, kept so a node bought mid-game can land on it now
 
     public MCController Current { get; private set; }
     public bool Exists => Current != null;
@@ -28,13 +31,20 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
     public string SaveKey => "player";
 
     [Inject]
-    public PlayerSystem(IGetMCConfig mcConfig, PrefabRegistry prefabs, IObjectResolver container, SaveService save)
+    public PlayerSystem(IGetMCConfig mcConfig, PrefabRegistry prefabs, IObjectResolver container, SaveService save,
+                        IGetUpgradeTree trees, UpgradeSystem upgrades)
     {
         _mcConfig = mcConfig;
         _prefabs = prefabs;
         _container = container;
         _save = save;
+        _trees = trees;
+        _upgrades = upgrades;
         _save.Register(this);   // runs Load() now → _currentId from save (DefaultId on a fresh game)
+
+        // Buying a node has to show up NOW — the popup is open, nothing respawns, and an upgrade you cannot
+        // feel until you next die is a bug nobody reports for a month.
+        _upgrades.Changed += ApplyUpgrades;
     }
 
     public void Start()
@@ -96,13 +106,23 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         if (hasBody) UnityEngine.Object.Destroy(Current.gameObject);
         _scope?.Dispose();
 
-        var stats = new MainCharStats(cfg);
+        _stats = new MainCharStats(cfg);
         _scope = _container.CreateScope(b =>
         {
-            b.RegisterInstance<ICharacterStats>(stats);
+            // Both faces of ONE registration: everything that only READS a stat asks for ICharacterStats and
+            // cannot modify one; the few components that genuinely move a stat (Hunger pausing the drain)
+            // ask for MainCharStats, and asking for it is the declaration.
+            //
+            // As().AsSelf() rather than two RegisterInstance calls — RegisterInstance also registers the
+            // concrete type, so registering it twice puts MainCharStats in the registry twice and the scope
+            // refuses to build. Same shape GameScope already uses for PlayerSystem itself.
+            b.RegisterInstance(_stats).As<ICharacterStats>().AsSelf();
             b.RegisterInstance<IHungerConfig>(cfg);
             b.RegisterInstance<IDamageableConfig>(cfg);   // MC's HP — MCController exposes it to its Damageable
         });
+
+        // Before the body is built, so Damageable's Start reads a maximum that already includes them.
+        ApplyUpgrades();
 
         // NOTE: _scope.Instantiate() would re-route injection through the parent LifetimeScope (which lacks
         // ICharacterStats) — instantiate plainly, then inject with THIS scope so the per-spawn stats bind.
@@ -111,6 +131,26 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         Current = go.GetComponent<MCController>();   // guaranteed by the prefab check above
         Spawned?.Invoke(Current);
         return true;
+    }
+
+    // Everything the tree adds is tagged with this one object, so re-applying is "take all of mine off, put
+    // all of mine back" — one code path that serves buying, resetting and respawning alike. Three separate
+    // paths would be three chances for them to disagree about what is currently on the character.
+    static readonly object UpgradeSource = new object();
+
+    void ApplyUpgrades()
+    {
+        if (_stats == null) return;
+
+        _stats.RemoveBySource(UpgradeSource);
+
+        var tree = _trees?.Get(_currentId);
+        if (tree?.nodes == null) return;
+
+        var context = new UpgradeContext(_stats, UpgradeSource);
+        foreach (var node in tree.nodes)
+            if (node?.effect != null && _upgrades.IsBought(_currentId, node))
+                node.effect.Apply(context);
     }
 
     public void Save(SaveBag bag) => bag.Set("current", _currentId);

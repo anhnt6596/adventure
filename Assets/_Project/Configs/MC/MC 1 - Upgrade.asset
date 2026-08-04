@@ -18,16 +18,34 @@ MonoBehaviour:
     key: attack
     requires:
     - attack-1
+    effect:
+      rid: -2
+    cost: 1
+    position: {x: 0, y: -2}
   - id: attack-1
     key: attack
     requires: []
-  - id: 
-    key: 
-    requires: []
+    effect:
+      rid: -2
+    cost: 1
+    position: {x: 0, y: -1}
   - id: speed-1
     key: speed
     requires: []
+    effect:
+      rid: -2
+    cost: 1
+    position: {x: -0.00000008742278, y: 1}
   - id: speed-2
     key: speed
     requires:
     - speed-1
+    effect:
+      rid: -2
+    cost: 1
+    position: {x: -0.00000017484555, y: 2}
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }

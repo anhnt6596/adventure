@@ -3,12 +3,17 @@ using UnityEngine;
 
 // Loads art out of Resources by convention, and remembers what it found.
 //
-// FOLDER LAYOUT — PLACEHOLDER. Nothing is authored at these paths yet; they are one const each precisely so
-// that pointing them at the real folders later is a one-line edit rather than a hunt. The shape follows what
-// the project already does for maps (Resources/Maps/{id}, see MapService), so an avatar for "MC 1" is
-// expected at:
+// FOLDER LAYOUT. A Resources folder counts at any depth, so these are paths INSIDE whichever one holds them
+// — stat icons currently live under Assets/_Project/Art/Icons/Resources/, which makes the path just
+// "StatIcons/hp". The shape follows what the project already does for maps (Resources/Maps/{id}).
 //
 //     <anywhere>/Resources/Avatars/MC 1.png
+//     <anywhere>/Resources/StatIcons/hp.png
+//
+// Only things looked up BY NAME belong here. Anything a UXML, a prefab or a serialized field points at is
+// already packed because something points at it — the heart and stomach on the HUD are referenced straight
+// from GameHUD.uss and need no Resources folder at all. Everything under one, by contrast, ships whether it
+// is used or not.
 //
 // CACHED, MISSES INCLUDED. Resources.Load is not free and these are asked for on every HUD rebind and every
 // time the upgrade popup opens. A miss is cached as null too, so a piece of art nobody has drawn yet costs
@@ -17,7 +22,10 @@ using UnityEngine;
 public class ArtProvider : IArtProvider
 {
     const string AvatarFolder = "Avatars";
-    const string UpgradeFolder = "Upgrades";
+
+    // Public because the tree editor tells the author where it looked when it found nothing, and a second
+    // copy of the folder name is a message that goes stale the first time this moves.
+    public const string UpgradeFolder = "StatIcons";
 
     readonly Dictionary<string, Sprite> _cache = new Dictionary<string, Sprite>();
     readonly HashSet<string> _warned = new HashSet<string>();
