@@ -33,6 +33,9 @@ public class UpgradeTreeConfigEditor : Editor
     float _zoom = 130f;
     Vector2 _scroll;
 
+    // The canvas size a drag began at — see DrawGraph, where it is what stops a drag fighting itself.
+    Vector2 _latchedSize;
+
     static GUIStyle _caption;
     static ArtProvider _art;
 
@@ -111,13 +114,24 @@ public class UpgradeTreeConfigEditor : Editor
         }
         Vector2 size = extent * (2f * _zoom) + Vector2.one * (margin * 2f);
 
+        // A canvas measured from the nodes CANNOT be resized under a drag. It is symmetric about the centre
+        // and its top-left is pinned by the layout, so growing it moves the centre — and the centre is what a
+        // dragged position is measured from, so the node moves, so the canvas resizes again. Dragging a node
+        // past the edge and back sat in exactly that loop and flickered.
+        //
+        // So a drag latches the canvas: it may only GROW, and the centre stays the point it was when the drag
+        // started, which makes the node follow the cursor one to one. Growth therefore all lands on the right
+        // and below; a node dragged up or left simply leaves the box for a moment. Releasing drops the latch
+        // and the next repaint claims the tight, re-centred size.
+        if (_dragging >= 0) size = Vector2.Max(size, _latchedSize);
+
         _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.Height(GraphHeight));
 
         var rect = GUILayoutUtility.GetRect(size.x, size.y,
                                             GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(false));
         EditorGUI.DrawRect(rect, new Color(0.13f, 0.14f, 0.17f));
 
-        Vector2 origin = rect.center;
+        Vector2 origin = _dragging >= 0 ? rect.position + _latchedSize * 0.5f : rect.center;
         HandleInput(rect, nodes, origin, _zoom, radius);
 
         if (Event.current.type == EventType.Repaint)
@@ -239,11 +253,22 @@ public class UpgradeTreeConfigEditor : Editor
     {
         var e = Event.current;
 
+        // Ending the drag comes first, and off rawType: a button released outside the window never arrives as
+        // a MouseUp, and a drag nobody ended would hold the canvas latched at whatever size it had.
+        if (_dragging >= 0 && e.rawType == EventType.MouseUp)
+        {
+            _dragging = -1;
+            if (e.type == EventType.MouseUp) e.Use();
+            Repaint();   // the latch is off — claim the tight size now, not on whatever repaint comes next
+            return;
+        }
+
         switch (e.type)
         {
             case EventType.MouseDown when e.button == 0 && rect.Contains(e.mousePosition):
                 _selected = HitTest(nodes, e.mousePosition, origin, spacing, radius);
                 _dragging = _selected;
+                _latchedSize = rect.size;   // what the canvas may not shrink below until the drag ends
                 GUI.FocusControl(null);   // or the last text field keeps the caret and eats the typing
                 e.Use();
                 Repaint();
@@ -258,11 +283,6 @@ public class UpgradeTreeConfigEditor : Editor
                     new Vector2(Mathf.Round(units.x / step) * step, Mathf.Round(units.y / step) * step);
                 e.Use();
                 Repaint();
-                break;
-
-            case EventType.MouseUp when _dragging >= 0:
-                _dragging = -1;
-                e.Use();
                 break;
         }
     }
@@ -294,11 +314,24 @@ public class UpgradeTreeConfigEditor : Editor
                     AutoArrange(nodes, layout);
 
             using (new EditorGUI.DisabledScope(_selected < 0 || _selected >= nodes.arraySize))
-                if (GUILayout.Button("Delete", GUILayout.Width(70)))
+            {
+                if (GUILayout.Button(new GUIContent("Clone",
+                        "A copy beside the original, keeping its requirements — a sibling on the same branch."),
+                        GUILayout.Width(58)))
+                    Clone(nodes, _selected, requireSource: false);
+
+                if (GUILayout.Button(new GUIContent("Clone next",
+                        "A copy one ring further out that REQUIRES the original, replacing the requirements " +
+                        "it copied — the next step along this branch."),
+                        GUILayout.Width(74)))
+                    Clone(nodes, _selected, requireSource: true);
+
+                if (GUILayout.Button("Delete", GUILayout.Width(58)))
                 {
                     nodes.DeleteArrayElementAtIndex(_selected);
                     _selected = -1;
                 }
+            }
         }
     }
 
@@ -344,6 +377,55 @@ public class UpgradeTreeConfigEditor : Editor
 
         _selected = index;
     }
+
+    // The rest of a tree is mostly the last node again: the same buff one ring further out, the same shape on
+    // another branch. So everything comes across, THE ID INCLUDED — a clone is renamed on the spot, and
+    // editing 'attack-2' into 'attack-3' is less work than typing a name from nothing. Until it is renamed the
+    // problems box says two nodes share an id, which is the reminder rather than a fault.
+    //
+    // requireSource is the difference between the two buttons: off, the copy is a sibling and keeps the
+    // requirements it was cloned with; on, it hangs off the original instead and becomes the next step along
+    // that branch.
+    void Clone(SerializedProperty nodes, int index, bool requireSource)
+    {
+        // Read before inserting: afterwards there are two elements holding this and no reason to trust which.
+        var sourceId = Field(nodes, index, "id").stringValue;
+        var sourcePosition = Field(nodes, index, "position").vector2Value;
+
+        nodes.InsertArrayElementAtIndex(index);   // Unity's insert leaves a copy of that element behind it
+        int clone = index + 1;
+
+        if (requireSource)
+        {
+            var requires = Field(nodes, clone, "requires");
+            requires.ClearArray();   // replaced, not added to: following one node is one link, not two
+            requires.InsertArrayElementAtIndex(0);
+            requires.GetArrayElementAtIndex(0).stringValue = sourceId;
+
+            // Sharing the id makes this read as a node requiring itself for as long as the rename is
+            // outstanding. It points at the original the moment the rename lands, which is the whole trick —
+            // the link is stored as the name the original keeps.
+            Field(nodes, clone, "position").vector2Value = StepOut(sourcePosition);
+        }
+        else
+        {
+            // A node's width away, rather than exactly on top where it would be invisible under the original.
+            Field(nodes, clone, "position").vector2Value = sourcePosition + Vector2.one * NodeUnits;
+        }
+
+        // The insert copies the REFERENCE to the effect, so both nodes would drive one object and editing
+        // either would edit both. A round trip through JSON is what makes the clone's a separate instance.
+        var effect = Field(nodes, index, "effect").managedReferenceValue;
+        Field(nodes, clone, "effect").managedReferenceValue =
+            effect == null ? null : JsonUtility.FromJson(JsonUtility.ToJson(effect), effect.GetType());
+
+        _selected = clone;
+    }
+
+    // One ring further from the centre, along the line the original already sits on — where the node that
+    // follows it belongs. A node sitting ON the centre gives no such line, so it starts the way a new one does.
+    static Vector2 StepOut(Vector2 from)
+        => from.sqrMagnitude > 1e-6f ? from + from.normalized : new Vector2(0f, -1f);
 
     static string UniqueId(SerializedProperty nodes, int ignore)
     {
