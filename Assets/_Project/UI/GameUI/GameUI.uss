@@ -50,17 +50,17 @@
     align-self: stretch;
     width: 620px;
     margin: 16px 0;
-    padding: 22px;
+    padding: 16px;
     background-color: rgba(18, 20, 26, 0.94);
     border-top-right-radius: 10px;
     border-bottom-right-radius: 10px;
 }
 
 .cheat-title {
-    font-size: 32px;
+    font-size: 26px;
     -unity-font-style: bold;
     color: rgb(235, 200, 90);
-    margin-bottom: 18px;
+    margin-bottom: 12px;
 }
 
 /* where cheat tools get appended */
@@ -68,30 +68,55 @@
     flex-grow: 1;
 }
 
+/* Each tool is a CARD, not a gap. Spacing alone stopped saying where one tool ended once there were more
+   than three of them — a panel of controls all styled alike reads as one long list of them. */
 .cheat-tool {
-    margin-bottom: 30px;
+    margin-bottom: 12px;
+    padding: 10px 14px 12px 14px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left-width: 3px;
+    border-left-color: rgb(235, 200, 90);
 }
 
 .cheat-tool-title {
-    font-size: 26px;
-    color: rgb(180, 186, 200);
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(235, 200, 90);
     margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.14);
 }
 
-.cheat-dropdown {
-    margin: 0 0 12px 0;
-    font-size: 24px;
+/* a control and the button that acts on it, side by side — reading down a column of full-width buttons
+   made every tool look the same height and none of them look connected to its own field */
+.cheat-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.cheat-field {
+    flex-grow: 1;
+    margin: 0;
+    font-size: 26px;
 }
 
 .cheat-btn {
-    height: 68px;
+    height: 46px;
     margin: 0;
-    font-size: 26px;
+    font-size: 24px;
     -unity-font-style: bold;
     color: rgb(20, 22, 28);
     background-color: rgb(235, 200, 90);
     border-width: 0;
     border-radius: 6px;
+}
+
+.cheat-btn-inline {
+    width: 110px;
+    margin-left: 10px;
 }
 
 .cheat-btn:hover {
@@ -106,13 +131,13 @@
 /* HP / fullness. Both carry a number field as well as the track: the tracks are short, and setting an
    exact value is half of what these are for. */
 .cheat-slider {
-    margin: 0 0 12px 0;
-    height: 44px;
+    margin: 0 0 8px 0;
+    height: 38px;
 }
 
 .cheat-check {
-    margin: 0 0 8px 0;
-    height: 44px;
+    margin: 0 0 4px 0;
+    height: 34px;
 }
 
 /* ---- built-in control internals -------------------------------------------------------------------
@@ -122,9 +147,9 @@
 
 .cheat-panel .unity-base-field__label,
 .cheat-panel .unity-toggle__text {
-    font-size: 24px;
+    font-size: 26px;
     color: rgb(214, 219, 230);
-    min-width: 150px;
+    min-width: 170px;
     -unity-text-align: middle-left;
 }
 
@@ -147,7 +172,7 @@
 /* the number box beside a slider, and the dropdown's own field */
 .cheat-panel .unity-base-text-field__input,
 .cheat-panel .unity-base-popup-field__input {
-    font-size: 24px;
+    font-size: 26px;
     color: rgb(240, 242, 248);
     background-color: rgb(38, 42, 52);
     border-width: 0;
@@ -156,8 +181,15 @@
     min-width: 110px;
 }
 
+/* only where a field shares its row with a button, so the two line up. Left off the general rule because a
+   slider's number box lives inside a shorter row and would burst out of it. */
+.cheat-row .unity-base-text-field__input,
+.cheat-row .unity-base-popup-field__input {
+    height: 46px;
+}
+
 .cheat-panel .unity-base-popup-field__text {
-    font-size: 24px;
+    font-size: 26px;
     color: rgb(240, 242, 248);
 }
 
@@ -167,26 +199,59 @@
     border-radius: 5px;
 }
 
+/* a line of live text a tool reports about itself, rather than a control */
+.cheat-readout {
+    font-size: 26px;
+    color: rgb(210, 214, 224);
+    margin-bottom: 8px;
+}
+
+/* Name and number, two to a line: nine stats down a single column pushed everything under it off the
+   panel, and a stat readout is short enough that half a width is plenty. */
+.cheat-kv-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.cheat-stat-row {
+    width: 50%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 14px 2px 0;
+}
+
+.cheat-stat-name {
+    font-size: 22px;
+    color: rgb(160, 166, 180);
+}
+
+.cheat-stat-value {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(240, 242, 248);
+}
+
 /* one row per resource kind in the bag */
 .cheat-bag-row {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .cheat-bag-name {
     flex-grow: 1;
-    font-size: 24px;
+    font-size: 26px;
     color: rgb(210, 214, 224);
 }
 
 .cheat-bag-remove {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     margin: 0;
     padding: 0;
-    font-size: 26px;
+    font-size: 24px;
     -unity-font-style: bold;
     color: rgb(20, 22, 28);
     background-color: rgb(220, 120, 110);

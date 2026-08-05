@@ -34,6 +34,9 @@ public class GameUI : MonoBehaviour
     VisualElement _bagList;
     Inventory _bagInventory;        // the live one; re-pointed when the player switches
 
+    VisualElement _statList;
+    ICharacterStats _cheatStats;    // the live body's set — read-only, this only shows it
+
     Slider _hpSlider, _hungerSlider;
     Toggle _noHungerToggle, _invincibleToggle;
     Damageable _cheatHealth;
@@ -93,6 +96,7 @@ public class GameUI : MonoBehaviour
         RefreshCharacterCheat();
         RebindBag();        // a switched character has its own inventory
         RebindVitals();     // ...and its own body, so its own HP and stomach
+        RebindStats();      // ...and a set of stats built fresh for that body
         RefreshLevelCheat();// ...and its own level
 #endif
     }
@@ -141,6 +145,7 @@ public class GameUI : MonoBehaviour
         _cheatToggle = cheat.Q<Button>("cheat-toggle");
         _cheatToggle?.RegisterCallback<ClickEvent>(_ => ToggleCheats());
         SetupCharacterCheat(cheat);
+        SetupStatCheat(cheat);
         SetupVitalCheat(cheat);
         SetupLevelCheat(cheat);
         SetupBagCheat(cheat);
@@ -178,6 +183,82 @@ public class GameUI : MonoBehaviour
     }
 
     string CurrentMcId => _player?.Current != null ? _player.Current.Id : null;
+
+    // Every stat the character has, as it stands right now. Read-only on purpose: this is the panel that
+    // answers "did that upgrade actually land, and how much of it" — the numbers are moved from the tree, or
+    // from the vitals below, and this is where you watch what they did.
+    //
+    // It shows the FINAL value and not the base, because that is the only thing ICharacterStats offers and
+    // rightly so: a base is the character's own number and belongs to whoever may set it.
+    void SetupStatCheat(VisualElement cheat)
+    {
+        _statList = cheat.Q<VisualElement>("stat-list");
+        if (_statList != null) RebindStats();   // the player may already be spawned
+    }
+
+    void RebindStats()
+    {
+        if (_statList == null) return;
+
+        // Stats are built per spawn, so the old set outlives nothing — but it can still fire while a timed
+        // buff on it expires, and a listener left on it would redraw the panel from a body that is gone.
+        var stats = _player?.Current != null ? _player.Current.Stats : null;
+        if (stats != _cheatStats)
+        {
+            ListenToStats(_cheatStats, false);
+            _cheatStats = stats;
+            ListenToStats(_cheatStats, true);
+        }
+        RefreshStats();
+    }
+
+    void ListenToStats(ICharacterStats stats, bool on)
+    {
+        if (stats == null) return;
+
+        foreach (var id in StatId.All)
+        {
+            var stat = stats.Get(id);
+            if (stat == null) continue;
+            if (on) stat.Changed += RefreshStats;
+            else stat.Changed -= RefreshStats;
+        }
+    }
+
+    // Rebuilt whole rather than each row updated in place: nine labels is nothing, and a rebuild cannot
+    // fall out of step with a stat list that grows.
+    void RefreshStats()
+    {
+        if (_statList == null) return;
+        _statList.Clear();
+
+        if (_cheatStats == null)
+        {
+            var none = new Label("no character");
+            none.AddToClassList("cheat-bag-empty");
+            _statList.Add(none);
+            return;
+        }
+
+        foreach (var id in StatId.All)
+        {
+            var stat = _cheatStats.Get(id);
+            if (stat == null) continue;
+
+            var row = new VisualElement();
+            row.AddToClassList("cheat-stat-row");
+
+            var name = new Label(id);
+            name.AddToClassList("cheat-stat-name");
+
+            var value = new Label(stat.Value.ToString("0.##"));
+            value.AddToClassList("cheat-stat-value");
+
+            row.Add(name);
+            row.Add(value);
+            _statList.Add(row);
+        }
+    }
 
     // Vitals cheat: drag HP or fullness anywhere, or switch off hunger and damage entirely.
     //
@@ -384,6 +465,7 @@ public class GameUI : MonoBehaviour
 #if UNITY_EDITOR
         if (_bagInventory != null) _bagInventory.Changed -= RefreshBag;
         if (_levels != null) _levels.Changed -= OnAnyLevelChanged;
+        ListenToStats(_cheatStats, false);
 #endif
     }
 

@@ -11,6 +11,11 @@ public class MCController : DynamicUnit
     public override int Team => Teams.Player;
     public override IDamageableConfig DamageableConfig => _dmg; // HP from MainCharStatsConfig
 
+    // The live set this body was built with, for anything that wants to SHOW the numbers — the read side
+    // only, so handing it out is not handing out permission to buff (see ICharacterStats). Bound like the
+    // rest of the HUD's sources are: off the body, so a switch or a respawn re-points it by itself.
+    public ICharacterStats Stats => _stats;
+
     // The main character's maximum HP is a live stat, so upgrades and buffs can move it. Damageable takes
     // this in preference to the config's flat number — see Unit.MaxHpStat.
     public override IStat MaxHpStat => _stats?.MaxHp;
