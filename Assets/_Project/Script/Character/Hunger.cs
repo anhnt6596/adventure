@@ -142,9 +142,13 @@ public class Hunger : MonoBehaviour
             if (value == DrainPaused || _stats == null) return;
             if (value)
             {
-                // Mul 0, not Add -something: the multiply lands on the base before anything is added, so it
-                // zeroes the drain whatever else is currently pushing it up.
-                _drainMod = new StatModifier(0f, StatModKind.Mul, this);
+                // -1 is -100% of the base drain: a multiplier is a share now, not a factor, so 0 would be a
+                // modifier that does nothing (see StatModifier).
+                //
+                // It is a real pause only while nothing else touches this stat. Shares add up, so a +20% from
+                // hungry gear would leave a fifth of the drain running, and a flat Add never went through the
+                // share at all. The day either exists, pausing has to stop being a modifier.
+                _drainMod = new StatModifier(-1f, StatModKind.Mul, this);
                 _stats.Modifiable(StatId.HungerDrain)?.Add(_drainMod);
             }
             else

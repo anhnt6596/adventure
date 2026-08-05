@@ -142,15 +142,27 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
     {
         if (_stats == null) return;
 
-        _stats.RemoveBySource(UpgradeSource);
+        // Batched, because taking everything off and putting it back is ONE change to the character and has to
+        // reach the rest of the game as one. Unbatched, the ceiling of every stat falls to its base and climbs
+        // again inside this method, and whoever reacts to the fall has already acted by the time the climb
+        // arrives — see Stat.BeginBatch.
+        _stats.BeginBatch();
+        try
+        {
+            _stats.RemoveBySource(UpgradeSource);
 
-        var tree = _trees?.Get(_currentId);
-        if (tree?.nodes == null) return;
+            var tree = _trees?.Get(_currentId);
+            if (tree?.nodes == null) return;
 
-        var context = new UpgradeContext(_stats, UpgradeSource);
-        foreach (var node in tree.nodes)
-            if (node?.effect != null && _upgrades.IsBought(_currentId, node))
-                node.effect.Apply(context);
+            var context = new UpgradeContext(_stats, UpgradeSource);
+            foreach (var node in tree.nodes)
+                if (node?.effect != null && _upgrades.IsBought(_currentId, node))
+                    node.effect.Apply(context);
+        }
+        finally
+        {
+            _stats.EndBatch();
+        }
     }
 
     public void Save(SaveBag bag) => bag.Set("current", _currentId);

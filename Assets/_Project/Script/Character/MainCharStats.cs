@@ -60,4 +60,18 @@ public class MainCharStats : ICharacterStats
         if (source == null) return;
         foreach (var stat in _byId.Values) stat.RemoveBySource(source);
     }
+
+    // Across EVERY stat, because the thing this exists for — the tree dropping all of its modifiers and adding
+    // them back — is a rebuild of the whole set and not of one number. See Stat.BeginBatch for what goes wrong
+    // when the outside watches that happen step by step. Always in a try/finally: a throw halfway through would
+    // otherwise leave every stat silent for good.
+    public void BeginBatch()
+    {
+        foreach (var stat in _byId.Values) stat.BeginBatch();
+    }
+
+    public void EndBatch()
+    {
+        foreach (var stat in _byId.Values) stat.EndBatch();
+    }
 }
