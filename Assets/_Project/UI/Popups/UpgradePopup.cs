@@ -33,14 +33,15 @@ public class UpgradePopup : BasePopup
     public const float NodeSize = 120f;      // matches .node in the USS
 
     const float CanvasMargin = 160f;
+    const float TipGap = 16f;        // between the top of a node and the tooltip standing over it
 
     IGetUpgradeTree _trees;
     UpgradeSystem _upgrades;
     CharacterLevels _levels;
     IArtProvider _art;
 
-    readonly VisualElement _avatar, _body, _canvas, _edges, _detail;
-    readonly Label _charName, _points, _detailTitle, _detailBlurb, _detailState, _empty;
+    readonly VisualElement _avatar, _body, _canvas, _edges, _tip;
+    readonly Label _charName, _points, _tipText, _empty;
     readonly Button _buyButton, _resetButton;
     readonly ScrollView _scroll;
 
@@ -62,10 +63,8 @@ public class UpgradePopup : BasePopup
         _scroll = root.Q<ScrollView>("tree-scroll");
         _canvas = root.Q<VisualElement>("tree-canvas");
         _edges = root.Q<VisualElement>("tree-edges");
-        _detail = root.Q<VisualElement>("detail");
-        _detailTitle = root.Q<Label>("detail-title");
-        _detailBlurb = root.Q<Label>("detail-blurb");
-        _detailState = root.Q<Label>("detail-state");
+        _tip = root.Q<VisualElement>("tip");
+        _tipText = root.Q<Label>("tip-text");
         _empty = root.Q<Label>("empty");
         _buyButton = root.Q<Button>("buy-button");
         _resetButton = root.Q<Button>("reset-button");
@@ -74,12 +73,23 @@ public class UpgradePopup : BasePopup
         _buyButton?.RegisterCallback<ClickEvent>(_ => Buy());
         _resetButton?.RegisterCallback<ClickEvent>(_ => ResetTree());
 
+        // Pressing anywhere that is not the tooltip or a node puts the tooltip away. On the way DOWN the
+        // tree, because a button swallows the press it handles and half of what a player can hit in here is
+        // a button — waiting for the event to bubble back up would mean it never arrives.
+        root.RegisterCallback<PointerDownEvent>(OnPressedAnywhere, TrickleDown.TrickleDown);
+
         if (_scroll != null)
         {
             _scroll.mode = ScrollViewMode.VerticalAndHorizontal;
             // Drag anywhere in the tree to pan it — the same manipulator the rest of the UI uses, so it
             // behaves the way every other draggable surface in the game does.
             _scroll.contentViewport.AddManipulator(new DragScrollManipulator(_scroll));
+
+            // The tooltip hangs outside the scroll view, so nothing moves it when the tree slides underneath.
+            // Dragging to pan closes it anyway (the press lands outside it), but a mouse wheel does not — and
+            // a tooltip left floating over the wrong node is worse than one that closed.
+            _scroll.horizontalScroller.valueChanged += _ => PlaceTip();
+            _scroll.verticalScroller.valueChanged += _ => PlaceTip();
         }
 
         if (_edges != null) _edges.generateVisualContent += PaintEdges;
@@ -239,16 +249,13 @@ public class UpgradePopup : BasePopup
             button.Add(icon);
         }
 
-        // The badge appears ONLY on a node that costs more than one point. Stamping "1" on nearly every node
-        // is a number the player learns to stop reading, and then the one node that says 3 does not stand
-        // out either. Silence is what makes the exception loud.
-        if (node.cost > 1)
-        {
-            var cost = new Label(node.cost.ToString());
-            cost.AddToClassList("node-cost");
-            cost.pickingMode = PickingMode.Ignore;
-            button.Add(cost);
-        }
+        // On every node, not only the dear ones: a price that appears just above one point makes the player
+        // work out what the ordinary price is, and this is the one screen where that should never take
+        // working out. Same reason the tooltip no longer spells the cost in a sentence.
+        var cost = new Label(Mathf.Max(1, node.cost).ToString());
+        cost.AddToClassList("node-cost");
+        cost.pickingMode = PickingMode.Ignore;
+        button.Add(cost);
 
         return button;
     }
@@ -261,9 +268,41 @@ public class UpgradePopup : BasePopup
         _centreElement?.RemoveFromHierarchy();
     }
 
+    void OnPressedAnywhere(PointerDownEvent evt)
+    {
+        if (_selected == null) return;
+
+        // A node is left alone here: its own click decides whether that means "show me this one" or "close
+        // the one I already had open", and answering twice would make a second press do both.
+        var target = evt.target as VisualElement;
+        if (Within(target, _tip) || WithinNode(target)) return;
+
+        _selected = null;
+        Refresh();
+    }
+
+    static bool Within(VisualElement element, VisualElement container)
+    {
+        if (container == null) return false;
+        for (var e = element; e != null; e = e.parent)
+            if (e == container) return true;
+        return false;
+    }
+
+    // By class rather than by looking the element up in _nodeElements: a press lands on whatever is topmost,
+    // which for a node is usually its icon or its cost badge rather than the node itself.
+    static bool WithinNode(VisualElement element)
+    {
+        for (var e = element; e != null; e = e.parent)
+            if (e.ClassListContains("node")) return true;
+        return false;
+    }
+
+    // Clicking the open node again closes it, so the tooltip can be dismissed without having to pick some
+    // other node just to get rid of it.
     void Select(UpgradeNode node)
     {
-        _selected = node;
+        _selected = _selected != null && node != null && _selected.id == node.id ? null : node;
         Refresh();
     }
 
@@ -272,9 +311,9 @@ public class UpgradePopup : BasePopup
     //
     // TODO: text by (character, key), the way icons already are — a string table keyed exactly like the art
     // folders, so nothing readable lives in a config. Until it exists the key IS the label, which is ugly on
-    // purpose: an unlocalised placeholder that looks like one will not quietly ship.
+    // purpose: an unlocalised placeholder that looks like one will not quietly ship. It only reaches the
+    // hover tooltip now; what the player reads on click is the effect describing itself.
     string Title(UpgradeNode node) => node?.key ?? "";
-    string Blurb(UpgradeNode node) => "";
 
     void Refresh()
     {
@@ -300,7 +339,7 @@ public class UpgradePopup : BasePopup
         }
 
         _edges?.MarkDirtyRepaint();
-        RefreshDetail(available);
+        RefreshTip();
     }
 
     string StateClass(UpgradeNode node, int available)
@@ -310,34 +349,51 @@ public class UpgradePopup : BasePopup
         return available >= Mathf.Max(1, node.cost) ? "node--ready" : "node--short";
     }
 
-    void RefreshDetail(int available)
+    // Over the selected node, in the coordinates of whatever the tooltip hangs off — the popup, not the tree.
+    // Taken from the node's LAID-OUT rectangle rather than from the position it was authored at, so the scroll
+    // offset, the viewport's own place on screen and the header's height are all already in the answer and
+    // none of them has to be reproduced here. The USS translate does the rest: back half a width, up a whole
+    // height, so it stands centred above the node.
+    void PlaceTip()
     {
-        bool has = _selected != null;
-        if (_detail != null) _detail.style.visibility = has ? Visibility.Visible : Visibility.Hidden;
+        if (_tip == null || _selected == null) return;
+        if (!_nodeElements.TryGetValue(_selected.id, out var element)) return;
+
+        var box = element.worldBound;
+        var anchor = _tip.parent.WorldToLocal(new Vector2(box.center.x, box.yMin));
+        _tip.style.left = anchor.x;
+        _tip.style.top = anchor.y - TipGap;
+    }
+
+    void RefreshTip()
+    {
+        if (_tip == null) return;
+
+        // display, not visibility: a hidden-but-laid-out tooltip still takes clicks off the nodes underneath
+        // it, which on a tight tree means a node you cannot press and nothing on screen explaining why.
+        bool has = _selected != null && _nodeElements.ContainsKey(_selected.id);
+        _tip.style.display = has ? DisplayStyle.Flex : DisplayStyle.None;
         if (!has) return;
 
         var node = _selected;
-        if (_detailTitle != null) _detailTitle.text = Title(node);
-        if (_detailBlurb != null) _detailBlurb.text = Blurb(node);
+        PlaceTip();
 
-        bool bought = _upgrades.IsBought(_characterId, node);
-        bool unlocked = _upgrades.IsUnlocked(_characterId, _tree, node);
-
-        int cost = Mathf.Max(1, node.cost);
-
-        if (_detailState != null)
+        // What it DOES, asked of the effect. A node with none is not a mistake — it is the branch-opener the
+        // tree needs to reach the ones past it, and saying so is better than an empty box.
+        if (_tipText != null)
         {
-            _detailState.text =
-                bought ? "Unlocked."
-                : !unlocked ? "Locked — unlock a node leading into this one first."
-                : available < cost ? $"Costs {cost} points — you have {available}."
-                : cost > 1 ? $"Costs {cost} points."
-                : "";
+            var described = node.effect?.Describe();
+            _tipText.text = string.IsNullOrEmpty(described) ? "Opens the nodes after it." : described;
         }
 
+        // No sentence explaining the price or why it is locked. The button carries the price, and a button
+        // you can see but cannot press already says "not yet" — a paragraph saying it again is something the
+        // player reads once and skips forever after.
         if (_buyButton != null)
         {
+            bool bought = _upgrades.IsBought(_characterId, node);
             _buyButton.style.display = bought ? DisplayStyle.None : DisplayStyle.Flex;
+            _buyButton.text = $"Unlock ({Mathf.Max(1, node.cost)})";
             _buyButton.SetEnabled(_upgrades.CanBuy(_characterId, _tree, node));
         }
     }

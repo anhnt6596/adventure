@@ -120,8 +120,9 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
-/* Only worn by a node that costs more than one point, so it reads as "this one is dearer" rather than as a
-   label every node happens to carry. */
+/* Every node wears its price. It used to appear only above one point, so that the dear ones stood out — but
+   that leaves the player working out what the ordinary price even is, and the tree is the one screen where
+   the answer should never need working out. */
 .node-cost {
     position: absolute;
     bottom: -10px;
@@ -140,9 +141,12 @@
     background-color: rgb(58, 50, 24);
 }
 
+/* The brightest fill of the four. Owned is the state the player is collecting, so it should read as lit from
+   the inside rather than as a darker shade of the same disc — and the icon, which is what actually says what
+   the node IS, only comes off the background when the background is well clear of it. */
 .node--bought {
-    border-color: rgb(120, 200, 130);
-    background-color: rgb(28, 52, 34);
+    border-color: rgb(140, 220, 150);
+    background-color: rgb(56, 104, 66);
 }
 
 .node--ready {
@@ -165,35 +169,38 @@
     border-color: rgb(255, 255, 255);
 }
 
-/* ---- detail ---- */
+/* ---- tooltip ----
+   Hung off the node itself rather than parked in a column down the side. A panel over there makes you look
+   away from the thing you clicked and back again to check it was the right one; here what a node does is
+   written where the node is.
 
-.detail {
-    width: 460px;
-    padding: 28px;
-    background-color: rgba(0, 0, 0, 0.4);
-    border-left-width: 1px;
-    border-left-color: rgba(255, 255, 255, 0.08);
+   Code places it at the node's top edge; the translate pulls it back half its own width and its whole height,
+   so it sits centred ABOVE the node without this file ever having to know how big it turned out to be. Above
+   rather than below because the thing you press next is the node itself, and a panel under it lands where the
+   finger already is. */
+.tip {
+    position: absolute;
+    display: none;   /* code shows it for the selected node */
+    width: 340px;
+    padding: 18px 20px;
+    translate: -50% -100%;
+    background-color: rgba(16, 18, 24, 0.97);
+    border-width: 2px;
+    border-color: rgba(235, 200, 90, 0.5);
+    border-radius: 12px;
 }
 
-.detail-title {
-    font-size: 34px;
+.tip-text {
+    font-size: 26px;
     -unity-font-style: bold;
     color: rgb(240, 240, 245);
     white-space: normal;
 }
 
-.detail-blurb {
-    font-size: 22px;
-    color: rgb(190, 192, 200);
+.tip-buy {
+    height: 52px;
     margin-top: 14px;
-    white-space: normal;
-}
-
-.detail-state {
-    font-size: 21px;
-    color: rgb(160, 162, 172);
-    margin-top: 22px;
-    white-space: normal;
+    font-size: 22px;
 }
 
 .btn {

@@ -25,4 +25,23 @@ public static class StatId
         MoveSpeed, AttackSpeed, AttackPower, AttackCooldown,
         MaxHp, MaxHunger, HungerDrain, Mass, PickupRadius,
     };
+
+    // What a stat is CALLED where a player can see it. Beside the ids because the two have to grow together:
+    // a stat that gains an id without a name shows up in the game spelled the way a programmer typed it.
+    //
+    // English in code is a placeholder, the same one the upgrade labels are — when a string table exists this
+    // is the one place that has to change.
+    public static string Display(string id) => id switch
+    {
+        MoveSpeed => "move speed",
+        AttackSpeed => "attack speed",
+        AttackPower => "attack",
+        AttackCooldown => "attack cooldown",
+        MaxHp => "HP",
+        MaxHunger => "max fullness",
+        HungerDrain => "hunger drain",
+        Mass => "mass",
+        PickupRadius => "pickup radius",
+        _ => id,
+    };
 }

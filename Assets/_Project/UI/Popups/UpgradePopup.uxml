@@ -21,16 +21,17 @@
                         <ui:VisualElement name="tree-edges" class="tree-edges" picking-mode="Ignore" />
                     </ui:VisualElement>
                 </ui:ScrollView>
-
-                <ui:VisualElement name="detail" class="detail">
-                    <ui:Label name="detail-title" text="" class="detail-title" />
-                    <ui:Label name="detail-blurb" text="" class="detail-blurb" />
-                    <ui:Label name="detail-state" text="" class="detail-state" />
-                    <ui:Button name="buy-button" text="Unlock" class="btn" />
-                </ui:VisualElement>
             </ui:VisualElement>
 
             <ui:Label name="empty" text="No upgrade tree authored for this character yet." class="empty" />
+
+            <!-- OUTSIDE the tree, and last, so it draws over the header and is not clipped by the scroll view
+                 the way it was while it lived in the canvas. Code places it over the selected node, in this
+                 element's coordinates, and re-places it whenever the tree scrolls under it. -->
+            <ui:VisualElement name="tip" class="tip">
+                <ui:Label name="tip-text" text="" class="tip-text" />
+                <ui:Button name="buy-button" text="Unlock" class="btn tip-buy" />
+            </ui:VisualElement>
 
         </ui:VisualElement>
     </ui:VisualElement>

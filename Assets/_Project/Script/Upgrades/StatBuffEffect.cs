@@ -24,6 +24,28 @@ public class StatBuffEffect : IUpgradeEffect
         foreach (var buff in buffs)
             context.Stats.Modifiable(buff.stat)?.Add(new StatModifier(buff.amount, buff.kind, context.Source));
     }
+
+    // A line per buff, for the same reason the list exists: a node that is two numbers has to say both, or it
+    // is selling the good half and hiding the other.
+    public string Describe()
+    {
+        if (buffs == null || buffs.Count == 0) return "";
+
+        var lines = new List<string>();
+        foreach (var buff in buffs)
+            if (!string.IsNullOrEmpty(buff.stat)) lines.Add(Describe(buff));
+
+        return string.Join("\n", lines);
+    }
+
+    // Add is the number itself, a share is the number as a percentage — the same distinction the stat makes
+    // when it applies them, so the wording cannot drift from the arithmetic. See StatModifier.
+    static string Describe(StatBuff buff)
+        => buff.kind == StatModKind.Add
+            ? $"{Signed(buff.amount)} {StatId.Display(buff.stat)}"
+            : $"{Signed(buff.amount * 100f)}% {StatId.Display(buff.stat)}";
+
+    static string Signed(float value) => value >= 0f ? $"+{value:0.##}" : value.ToString("0.##");
 }
 
 [Serializable]
@@ -32,8 +54,8 @@ public struct StatBuff
     [Tooltip("Which stat. Picked from StatId in the inspector rather than typed — see the tree editor.")]
     public string stat;
 
-    [Tooltip("Add is summed with other Adds. Mul and FinalMul are MULTIPLIED, so the neutral value is 1 and " +
-             "1.5 means x1.5 — typing 0.5 halves the stat rather than raising it by half.")]
+    [Tooltip("Every kind is what it ADDS, so 0 always means 'no change'. Add is flat; Mul and FinalMul are a " +
+             "share — 0.1 is +10%, -0.5 takes half away. They stack by adding up: two 0.1s make +20%, not +21%.")]
     public StatModKind kind;
 
     public float amount;

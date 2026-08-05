@@ -10,6 +10,12 @@
 public interface IUpgradeEffect
 {
     void Apply(UpgradeContext context);
+
+    // The line the player reads before buying: "+10% attack". Written by the EFFECT, because the effect is the
+    // only thing that knows what it does — a description assembled by the popup would need a branch per kind
+    // of upgrade, which is the thing [SerializeReference] is here to avoid. It is also the only wording that
+    // cannot lie: it is built from the same numbers Apply uses.
+    string Describe();
 }
 
 // What an effect is allowed to touch. A struct passed by value, so an effect cannot hold onto it past the
