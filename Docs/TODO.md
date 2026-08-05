@@ -191,6 +191,56 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 
 ## 🌳 Content systems
 
+- [ ] **Exp — trả cho "lần đầu", không trả cho "lặp lại".** `CharacterLevels.AddExp` đã có curve, đã có save,
+  HUD đã bind — **thiếu đúng phần ai trả exp**. Call site duy nhất hiện tại là nút cheat.
+
+  Luật chọn nguồn đến từ pillar: level = điểm nâng cấp = sức mạnh, mà `DESIGN.md` nói *"ngày một map an toàn
+  farm ngon hơn frontier là drop table hỏng"*. Nên exp phải chịu đúng luật đó.
+
+  | Hành động | Kiểu | Số nằm ở đâu |
+  |---|---|---|
+  | Vào một map **lần đầu** | one-shot, lớn | field mới trên `Map` — giá trị khám phá là của chính map đó |
+  | Giết **lần đầu** một *loài* | one-shot, vừa | `EnemyConfig.firstKillExp` |
+  | Mở xong một `PayGate` | one-shot, vừa | field trên `PayGate` (đã có id + save sẵn) |
+  | **Mỗi con quái** giết được | lặp lại, nhỏ | `EnemyConfig.exp` — con frontier đáng gấp nhiều lần con sân nhà |
+  | *(sau)* ghi nhớ một bệ đá | one-shot, lớn | cùng đường `AwardOnce`, dựng khi có bệ đá |
+
+  - **Prop (cây, đá) KHÔNG cho exp.** Nguồn vô hạn, không rủi ro, đứng một chỗ chặt được cả buổi — cho exp là
+    biến cái rìu thành build tối ưu và biến thanh level thành cái đếm gỗ. Nó đã trả bằng tài nguyên rồi. Cưỡng
+    chế bằng **interface**: `PropConfig` không implement `IDeathExpConfig`, nên "cây không cho exp" là một sự
+    thật của config chứ không phải một câu `if` nằm đâu đó.
+  - **⚠️ Chỗ khó nhất: level là PER CHARACTER** (xem `CharacterLevels`). Nếu "firsts" cũng khoá theo nhân vật
+    thì mở nhân vật 2 → level 1 → phải đi lại toàn bộ map để lên level, đúng thứ backtracking pillar từ chối.
+    Nếu firsts là toàn cục và chỉ trả cho người đang chơi thì nhân vật 2 vĩnh viễn không đuổi kịp.
+    **Cách giải:** discovery exp là **một tổng của THẾ GIỚI**; mỗi nhân vật lưu "đã hấp thụ tới đâu" và được kéo
+    lên bằng tổng đó lúc được chơi. Nhân vật mới mở ra là đã đủ level để chơi ở chỗ đang chơi. Riêng exp giết
+    quái thì thật sự của cái thân đang chơi → chênh lệch nhỏ giữa các nhân vật, và đó là chênh lệch đúng.
+  - **Tổng phải được LƯU, không tính lại từ danh sách key.** Tính lại nghĩa là tra từng first ngược về config,
+    nên ngày ông chỉnh giá trị khám phá của một map là mọi save đang tồn tại âm thầm nhảy level. Cùng lý do
+    `CharacterLevels` lưu tiến độ-trong-level chứ không lưu tổng: chỉnh số chỉ được đổi thứ **tiếp theo** đáng
+    bao nhiêu, không được đổi chỗ người chơi đang đứng.
+
+  **Implement:**
+  - `Script/Progress/ExperienceSystem.cs` — entry point trong `GameScope`, `ISavable`, ngồi trên
+    `CharacterLevels`. State: `HashSet<string> _firsts` + `int _discovery` (tổng toàn cục) +
+    `Dictionary<string,int> _absorbed`. API: `Award(amount)` (lặp lại, vào nhân vật đang chơi),
+    `AwardOnce(key, amount)` (firsts, gộp vào tổng), `CatchUp(characterId)`. Key kiểu `map:Map_2`,
+    `kind:mewfrog`, `gate:bridge_1`. Lấy id nhân vật qua `IPlayer.Current.Id` + nghe `Spawned`, **không**
+    depend `PlayerSystem` (vòng tròn).
+  - `ExpOnDeath` (`Script/World/`) — **cùng pattern `DropOnDeath`**, nghe `Damageable.Died`. Chính comment của
+    `Damageable` đã khai chỗ này: *"a DropOnDeath (or anything else — sound, XP, break FX) listens"*. Khác duy
+    nhất: exp đi vào một service nên component cần `[Inject]` (enemy đã được inject qua scope của
+    `EnemySpawner`). **Không** hook trong `EnemySpawner` — ngày mai thêm âm thanh chết, đếm kill cho quest,
+    bestiary là spawner thành cái túi đựng subscription.
+  - **Lọc kẻ giết**: `Died` mang `source` là component đánh trúng (`ShapeAttack` truyền `this`, `SoulFire`
+    truyền caster) → `GetComponentInParent<MCController>()`. Sói cắn chết thỏ thì không ai được exp.
+  - `IDeathExpConfig { int Exp; int FirstKillExp; }` trên `EnemyConfig`, đọc bằng
+    `_unit.DamageableConfig as IDeathExpConfig` y như `Dropable` đọc drops.
+  - Thứ tự: **làm cho quái trước**, map/gate sau (cùng `AwardOnce`, chỉ là thêm call site).
+  - **⚠️ Cẩn thận khi nối vào:** `CharacterLevels.Write` gọi `_save.Save` mỗi lần `AddExp`, tức là **ghi file
+    mỗi con quái chết**. Vừa là mùi hiệu năng trên mobile, vừa trái luật save của `DESIGN.md` (chỉ ghi khi về
+    nhà và khi chết). Chốt cái này trước khi exp có nguồn thật.
+
 - [x] **`Map_3` — đảo, sông, cỏ, zone quái, sinh bằng script.** ✅ Một hòn đảo, **bốn bề là nước**, bờ cách rìa
   grid **8 ô** (yêu cầu ≥5) nên còn dư đất cho lối sang map khác, và dải sương viền map nằm **hoàn toàn trên mặt
   nước** — đúng cảm giác "thế giới tan vào sương mù ngoài khơi".
@@ -807,6 +857,12 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
   editor/test (gate bằng `#if UNITY_EDITOR` hoặc cờ debug). Chưa làm.
 
 ## 🧹 Tech debt / cleanup
+
+- [ ] **`PlayerSystem.SwitchTo` áp cây upgrade của nhân vật CŨ lên thân MỚI.** `SwitchTo` gọi `Spawn(id)` rồi
+  mới gán `_currentId`, mà bên trong `Spawn` đã gọi `ApplyUpgrades()` — hàm này đọc `_currentId`. Nên đổi nhân
+  vật một lần là thân mới mang buff của cây cũ; tới lần dựng lại sau (mua node, respec, respawn) mới đúng.
+  Sửa: gán `_currentId = id` **bên trong** `Spawn`, ngay sau khi mọi kiểm tra đã qua, `SwitchTo` chỉ còn việc
+  lưu. Phát hiện lúc đọc code, **chưa test** — với một nhân vật thì đường này chưa chạy bao giờ.
 
 - [ ] **`ViewDir8` / `ViewDir2` cần manager + culling khi map to.** Chưa làm, **cố ý**: hiện mỗi map có đúng một
   cây cầu. Nhưng đây là loại component sẽ nhân lên rất nhanh — mặt cầu, cầu tàu, đường, bục, decal, mọi thứ nằm
