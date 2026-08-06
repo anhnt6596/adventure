@@ -16,6 +16,9 @@ using VContainer;
 // player can feel match the number in the config, keeps HP moving in readable steps rather than in noise
 // below a decimal place, and drops the HUD from a refresh every frame to one a second.
 //
+// THE SECOND IS COUNTED ELSEWHERE, by TimeService, and this class has no Update at all. It used to keep its own
+// deltaTime accumulator, which worked but was the first copy of a thing every per-second system would need.
+//
 // IT DRIVES HP AT BOTH ENDS, and that is what makes it a stat rather than a timer:
 //
 //     full            > wellFed   ->  HP regenerates    (being well fed is how you heal)
@@ -27,27 +30,24 @@ using VContainer;
 [DisallowMultipleComponent]
 public class Hunger : MonoBehaviour
 {
-    // One second. Not a knob: the config's numbers are all "per second", so this is the unit they are
-    // written in rather than a tuning value of its own.
-    const float TickInterval = 1f;
-
     // The CONCRETE stats, not the read-only interface, and that is a declaration rather than a convenience:
     // this class puts a modifier on the drain (see DrainPaused), so it is one of the few things allowed to
     // move a stat. Anything that only reads takes ICharacterStats and cannot.
     MainCharStats _stats;
     IHungerConfig _cfg;
+    TimeService _time;
     Damageable _health;
     float _value;
-    float _tick;
     bool _started;
 
     public event System.Action Changed;
 
     [Inject]
-    public void Construct(MainCharStats stats, IHungerConfig cfg)
+    public void Construct(MainCharStats stats, IHungerConfig cfg, TimeService time)
     {
         _stats = stats;
         _cfg = cfg;
+        _time = time;
     }
 
     // Read live off the Stat, never cached: a stomach upgrade has to apply the moment it is equipped, and
@@ -70,55 +70,62 @@ public class Hunger : MonoBehaviour
     public float WellFedFraction => _cfg != null ? _cfg.WellFedFraction : 1f;
 
     // Filled in Start, like Damageable's HP: injection runs after Awake, so Max is not known any earlier.
+    // Subscribing happens here too, and NOT in OnEnable, for exactly that reason: OnEnable runs before the
+    // scope injects this object, so a subscription there would be made against a null service and the stomach
+    // would simply never tick.
     void Start()
     {
         _health = GetComponentInChildren<Damageable>(true);
-        if (_cfg == null || _stats == null)
+        if (_cfg == null || _stats == null || _time == null)
         {
             Debug.LogError($"[{nameof(Hunger)}] not injected — add this GameObject to GameScope's Auto Inject list.", this);
             return;
         }
         _value = Max * Mathf.Clamp01(_cfg.StartFullness);
         _started = true;
+        _time.NewSecond += Step;
         Changed?.Invoke();
     }
 
-    void Update()
-    {
-        if (!_started) return;
-        if (_health != null && !_health.IsAlive) return;   // no digesting while dead
-
-        // The cap can move under us — an upgrade equipped, a buff expiring — so clamp every frame rather
-        // than waiting for a tick to notice.
-        float max = Max;
-        if (_value > max) { _value = max; Changed?.Invoke(); }
-
-        _tick += Time.deltaTime;
-        if (_tick < TickInterval) return;
-
-        // A loop, not an if: a stalled frame must not swallow the seconds it spanned. Time.deltaTime is
-        // capped by Time.maximumDeltaTime, so in practice this runs once.
-        while (_tick >= TickInterval)
-        {
-            _tick -= TickInterval;
-            Step();
-        }
-    }
+    // Guarded by _started so these cannot subscribe before Start has run — see there. Together they keep the
+    // old behaviour of a disabled Hunger not digesting, which used to come free from Update not running.
+    void OnEnable()  { if (_started) _time.NewSecond += Step; }
+    void OnDisable() { if (_started) _time.NewSecond -= Step; }
 
     void Step()
     {
+        if (_health != null && !_health.IsAlive) return;   // no digesting while dead
+
+        // The cap can move under us — an upgrade equipped, a buff expiring — so clamp on the way in. This was
+        // once done every frame; a stomach that shrank stayed over-full for up to a second, which nothing can
+        // see because Fraction is clamped and the only way to shrink one is a buff ending.
+        bool moved = false;
+        float max = Max;
+        if (_value > max) { _value = max; moved = true; }
+
         if (_value > 0f)
         {
             _value = Mathf.Max(0f, _value - DrainRate);
-            Changed?.Invoke();
+            moved = true;
         }
 
-        if (_health == null) return;
+        if (_health != null)
+        {
+            // Starving outranks well fed, and they cannot both be true anyway — this is just the order that
+            // reads. Draining first means the tick that empties you is also the tick that starts hurting.
+            if (_value <= 0f)
+            {
+                _health.TakeDamage(_health.MaxHp * _cfg.StarveShare, this);
+            }
+            else if (IsWellFed)
+            {
+                _health.Heal(_health.MaxHp * RegenShare);
+            }
+        }
 
-        // Starving outranks well fed, and they cannot both be true anyway — this is just the order that reads.
-        // Draining first means the tick that empties you is also the tick that starts hurting.
-        if (_value <= 0f) _health.TakeDamage(_health.MaxHp * _cfg.StarveShare, this);
-        else if (IsWellFed) _health.Heal(_health.MaxHp * RegenShare);
+        // One notification for the whole tick, not one per thing that moved inside it — the HUD only ever wants
+        // to know that the number is different now.
+        if (moved) Changed?.Invoke();
     }
 
     // Eat. Takes what fits and says how much that was; the rest is the caller's problem, which for a pickup

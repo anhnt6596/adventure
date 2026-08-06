@@ -47,6 +47,12 @@ public class App : LifetimeScope
 
         builder.Register<ISceneService, SceneService>(Lifetime.Singleton);
         builder.Register<IInputGate, InputGate>(Lifetime.Singleton);
+
+        // App scope, so the beat survives a scene load: what is counting seconds is the game running, not the
+        // level that happens to be loaded. AsSelf because subscribers name the concrete service — there is one
+        // heartbeat and nothing would ever swap it.
+        builder.RegisterEntryPoint<TimeService>().AsSelf();
+
         builder.RegisterEntryPoint<LoadingFlow>();
     }
 
