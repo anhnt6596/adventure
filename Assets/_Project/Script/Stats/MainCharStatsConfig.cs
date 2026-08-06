@@ -19,9 +19,12 @@ public class MainCharStatsConfig : Config, IHungerConfig, IDamageableConfig
     [Tooltip("BASE stomach size. Nothing carries food, so this is the whole food budget for a trip. " +
              "A Stat at runtime — level and gear will raise it.")]
     public float maxHunger = 100f;
-    [Tooltip("BASE fullness lost per second. Slow and generous: the player should rarely look at the bar. " +
-             "A Stat at runtime — gear and traits will move it either way.")]
+    [Tooltip("BASE fullness lost per second AT LEVEL 1. Slow and generous: the player should rarely look at " +
+             "the bar. A Stat at runtime — gear and traits will move it either way.")]
     public float hungerDrain = 0.35f;
+    [Tooltip("How much faster the stomach empties per level, COMPOUNDING. 0.01 = +1% a level, which is 2.7x " +
+             "the drain at level 100. Careful: 3% here is 18x, not 'a few percent'.")]
+    [Min(0f)] public float hungerDrainPerLevel = 0.01f;
     // Sliders, because every value from 0 to 1 is a sensible answer: both are a POSITION on the bar.
     [Tooltip("How full the character starts, as a fraction of the stomach.")]
     [Range(0f, 1f)] public float startFullness = 0.5f;
@@ -37,6 +40,17 @@ public class MainCharStatsConfig : Config, IHungerConfig, IDamageableConfig
     [Min(0f)] public float wellFedHealPercent = 0.75f;
     [Tooltip("PERCENT of max HP lost per second while completely empty. Type 1 for 1%/s.")]
     [Min(0f)] public float starvePercent = 1f;
+
+    // The drain a character of this kind has AT a level, and the only place the curve is written. A BASE, not a
+    // modifier: levelling up changes what the character IS, so it moves Stat.BaseValue and leaves the modifier
+    // list to gear and buffs. That also keeps Hunger.DrainPaused absolute — it pauses with a -100% Mul, which
+    // zeroes any base at all, where a level modifier added into the same sum would have left part of the drain
+    // running (the warning DrainPaused already carries).
+    //
+    // COMPOUNDING, chosen against the level ceiling the way CharacterLevels.Growth is: 99 steps is a long lever,
+    // so the per-level number has to be small to land somewhere sane at the top. See the tooltip.
+    public float HungerDrainAt(int level)
+        => hungerDrain * Mathf.Pow(1f + hungerDrainPerLevel, Mathf.Max(0, level - CharacterLevels.StartLevel));
 
     public float StartFullness => startFullness;   // IHungerConfig
     public float WellFedFraction => wellFed;

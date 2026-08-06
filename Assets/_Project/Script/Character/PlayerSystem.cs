@@ -18,10 +18,12 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
     readonly SaveService _save;
     readonly IGetUpgradeTree _trees;
     readonly UpgradeSystem _upgrades;
+    readonly CharacterLevels _levels;
 
     string _currentId = DefaultId;
     IScopedObjectResolver _scope;   // per-spawn scope holding this body's stats/config; disposed on the next spawn
     MainCharStats _stats;           // the live set, kept so a node bought mid-game can land on it now
+    MainCharStatsConfig _cfg;       // the current body's config, kept for the same reason: re-basing on a level-up
 
     public MCController Current { get; private set; }
     public bool Exists => Current != null;
@@ -32,7 +34,7 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
 
     [Inject]
     public PlayerSystem(IGetMCConfig mcConfig, PrefabRegistry prefabs, IObjectResolver container, SaveService save,
-                        IGetUpgradeTree trees, UpgradeSystem upgrades)
+                        IGetUpgradeTree trees, UpgradeSystem upgrades, CharacterLevels levels)
     {
         _mcConfig = mcConfig;
         _prefabs = prefabs;
@@ -40,11 +42,22 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         _save = save;
         _trees = trees;
         _upgrades = upgrades;
+        _levels = levels;
         _save.Register(this);   // runs Load() now → _currentId from save (DefaultId on a fresh game)
 
         // Buying a node has to show up NOW — the popup is open, nothing respawns, and an upgrade you cannot
         // feel until you next die is a bug nobody reports for a month.
         _upgrades.Changed += ApplyUpgrades;
+
+        // Same argument for the level: hunger drain is priced off it, and a level gained mid-trip has to bite
+        // on that trip. Filtered to the body actually out there — every character banks its own level, and the
+        // ones sitting at home have no stats to re-base.
+        _levels.Changed += OnLevelChanged;
+    }
+
+    void OnLevelChanged(string characterId)
+    {
+        if (characterId == _currentId) ApplyLevelScaling();
     }
 
     public void Start()
@@ -107,6 +120,7 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         _scope?.Dispose();
 
         _stats = new MainCharStats(cfg);
+        _cfg = cfg;
         _scope = _container.CreateScope(b =>
         {
             // Both faces of ONE registration: everything that only READS a stat asks for ICharacterStats and
@@ -121,7 +135,9 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
             b.RegisterInstance<IDamageableConfig>(cfg);   // MC's HP — MCController exposes it to its Damageable
         });
 
-        // Before the body is built, so Damageable's Start reads a maximum that already includes them.
+        // Both before the body is built, so Damageable's Start reads a maximum that already includes them.
+        // Level first: it moves bases, and the upgrades that land on top are shares OF those bases.
+        ApplyLevelScaling();
         ApplyUpgrades();
 
         // NOTE: _scope.Instantiate() would re-route injection through the parent LifetimeScope (which lacks
@@ -131,6 +147,21 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         Current = go.GetComponent<MCController>();   // guaranteed by the prefab check above
         Spawned?.Invoke(Current);
         return true;
+    }
+
+    // What the character's level does to its own numbers, written into the BASES rather than added as
+    // modifiers — see MainCharStatsConfig.HungerDrainAt for why that is the shape. Idempotent, because it
+    // ASSIGNS rather than accumulates: calling it twice at the same level lands on the same number, so spawn,
+    // level-up and any later caller can all use the one path without keeping track of each other.
+    //
+    // Only hunger drain today. Anything else that should grow with level joins this method, and gets its curve
+    // next to the number it scales in the config.
+    void ApplyLevelScaling()
+    {
+        if (_stats == null || _cfg == null) return;
+
+        var drain = _stats.Modifiable(StatId.HungerDrain);
+        if (drain != null) drain.BaseValue = _cfg.HungerDrainAt(_levels.Level(_currentId));
     }
 
     // Everything the tree adds is tagged with this one object, so re-applying is "take all of mine off, put
