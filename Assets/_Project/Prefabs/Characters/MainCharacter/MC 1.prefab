@@ -294,6 +294,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2353679818562381336}
   - component: {fileID: 1655918080188345342}
+  - component: {fileID: 564300525290438201}
   m_Layer: 7
   m_Name: spotlight
   m_TagString: Untagged
@@ -375,6 +376,18 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &564300525290438201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8299895054748087226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccd0ac41fecdaed49be268b86153761d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VisionLight
 --- !u!1 &8345341981280732084
 GameObject:
   m_ObjectHideFlags: 0

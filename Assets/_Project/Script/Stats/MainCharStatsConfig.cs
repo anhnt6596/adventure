@@ -9,6 +9,8 @@ public class MainCharStatsConfig : Config, IHungerConfig, IDamageableConfig
     public float attackCooldown = 0f;     // recovery AFTER the swing ends, at 1x attack speed; one attack costs swing + this (0 = swing back-to-back)
     public float mass = 1f;             // how hard to shove aside in collisions (not physics)
     public float pickupRadius = 1.5f;   // how close a pickable must be for the character to grab it
+    // Vision has no field here on purpose — see MainCharStats. Its baseline is the spotlight drawn on the
+    // character's own prefab, so the only value this could ever hold is 1.
 
     [Header("Health")]
     public float maxHp = 100f;          // hit radius is NOT here — it's a field on the MC prefab's Damageable, authored against the art

@@ -20,10 +20,21 @@ public static class StatId
     public const string Mass = "Mass";
     public const string PickupRadius = "PickupRadius";
 
+    // How much of the night the character is shown, as a multiple of the light their prefab is drawn with —
+    // 1 is exactly as authored. NOT a radius in world units on purpose: the light is a glow that fades out,
+    // so the distance it "reaches" is a matter of taste that was already settled by eye when somebody set the
+    // sprite's scale. A number in metres here would be that same judgement written down a second time.
+    //
+    // NOT the same thing as PickupRadius, and Docs/DESIGN.md says so outright: "Two different radii — vision
+    // and pickup. Don't let them merge in code or UI." One decides how much of the night is shown to you, the
+    // other how far loot walks to you, and a night where those are one number is a night where a magnet
+    // upgrade lights the map.
+    public const string Vision = "Vision";
+
     public static readonly string[] All =
     {
         MoveSpeed, AttackSpeed, AttackPower, AttackCooldown,
-        MaxHp, MaxHunger, HungerDrain, Mass, PickupRadius,
+        MaxHp, MaxHunger, HungerDrain, Mass, PickupRadius, Vision,
     };
 
     // What a stat is CALLED where a player can see it. Beside the ids because the two have to grow together:
@@ -42,6 +53,7 @@ public static class StatId
         HungerDrain => "hunger drain",
         Mass => "mass",
         PickupRadius => "pickup radius",
+        Vision => "vision",
         _ => id,
     };
 }

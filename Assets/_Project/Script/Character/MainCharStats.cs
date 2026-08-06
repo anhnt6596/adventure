@@ -24,6 +24,7 @@ public class MainCharStats : ICharacterStats
     public IStat HungerDrain => _byId[StatId.HungerDrain];
     public IStat Mass => _byId[StatId.Mass];
     public IStat PickupRadius => _byId[StatId.PickupRadius];
+    public IStat Vision => _byId[StatId.Vision];
 
     public MainCharStats(MainCharStatsConfig config)
     {
@@ -36,6 +37,11 @@ public class MainCharStats : ICharacterStats
         _byId[StatId.HungerDrain] = new Stat(config.hungerDrain);
         _byId[StatId.Mass] = new Stat(config.mass);
         _byId[StatId.PickupRadius] = new Stat(config.pickupRadius);
+        // ALWAYS 1, and not a config field. What one character sees compared to another is already said by
+        // the spotlight drawn on their prefab, so a number here would be a second place to say it — free to
+        // disagree with the art, and with only one value that is ever right. This stat exists to be MODIFIED:
+        // 1 is "the light this character was drawn with", and gear, upgrades and buffs move it from there.
+        _byId[StatId.Vision] = new Stat(1f);
     }
 
     public IStat Get(string id) => Modifiable(id);
