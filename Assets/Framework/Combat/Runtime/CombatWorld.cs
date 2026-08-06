@@ -20,14 +20,41 @@ public class CombatWorld
     public CombatWorld(float cellSize = 4f)
         => _hash = new SpatialHash<IDamageable>(d => d.Position, cellSize);
 
+    // Joining or leaving forces the next rebuild to be real, and that is not only about freshness: the hash's
+    // buckets hold INDICES into its item list, so taking one out shifts every index behind it and the buckets
+    // stop describing the world at all — they point at the wrong targets, or past the end of the list. That
+    // was invisible while every caller rebuilt immediately before querying. The moment a rebuild can be
+    // skipped it stops being invisible: something dying mid-frame would leave the next attack of that same
+    // frame reading a scrambled index.
     public void Add(IDamageable target)
     {
-        if (target != null) _hash.Add(target);
+        if (target == null) return;
+        _hash.Add(target);
+        _builtFrame = -1;
     }
 
-    public void Remove(IDamageable target) => _hash.Remove(target);
+    public void Remove(IDamageable target)
+    {
+        _hash.Remove(target);
+        _builtFrame = -1;
+    }
 
-    public void Rebuild() => _hash.Rebuild();
+    // ONCE A FRAME, however many times it is asked for. Rebuilding costs everything hittable in the map, and
+    // the AI asks once PER ENEMY — so a fight of thirty used to rebuild the whole index thirty times a frame,
+    // which made the cost of a fight grow with the square of its size. Nothing at the call sites changes: they
+    // still ask before they query, and asking is free after the first one.
+    //
+    // A FRAME NUMBER RATHER THAN A DIRTY FLAG, because what goes out of date is POSITION and everything moves
+    // every frame — there is no event to hang a flag on. Once a frame is also exactly as fresh as the callers
+    // were already getting: they all run after the same frame's movement.
+    int _builtFrame = -1;
+
+    public void Rebuild()
+    {
+        if (_builtFrame == Time.frameCount) return;
+        _builtFrame = Time.frameCount;
+        _hash.Rebuild();
+    }
 
     // Targets whose hit circle overlaps the given one. Team 0 is neutral and hits everyone (including
     // other team-0 targets); any other attacker team spares its own team (no friendly fire).
