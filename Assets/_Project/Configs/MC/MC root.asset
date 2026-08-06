@@ -131,6 +131,14 @@ MonoBehaviour:
       rid: 1851184076541919314
     cost: 1
     position: {x: 1.5, y: 0}
+  - id: full-regen-1
+    key: full-regen
+    requires:
+    - health-2
+    effect:
+      rid: 1851184096931217481
+    cost: 1
+    position: {x: 1.5, y: -0.75}
   - id: speed-3
     key: speed
     requires:
@@ -299,3 +307,10 @@ MonoBehaviour:
         - stat: Vision
           kind: 1
           amount: 0.4
+    - rid: 1851184096931217481
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: Regen
+          kind: 0
+          amount: 20

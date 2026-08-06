@@ -22,7 +22,7 @@ MonoBehaviour:
   maxHp: 50
   maxHunger: 50
   hungerDrain: 0.1
-  startFullness: 0.5
+  startFullness: 1
   wellFed: 0.75
-  wellFedHealPercent: 0.2
+  wellFedHealPercent: 0
   starvePercent: 1

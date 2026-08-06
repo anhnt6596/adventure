@@ -27,4 +27,6 @@ MonoBehaviour:
   - prefab: {fileID: 9176653165436844561, guid: 7b4e0b56a48e8ab41a0be1f47405ea9a, type: 3}
     min: 1
     max: 1
+  exp: 80
+  firstKillExp: 200
   brain: {fileID: 11400000, guid: 3a7e6c5d4f8b2091c3d6e9f2a5b8c1d4, type: 2}

@@ -147,6 +147,7 @@ GameObject:
   - component: {fileID: 5538935722000754509}
   - component: {fileID: 905355796874017787}
   - component: {fileID: 8570089574709778018}
+  - component: {fileID: 2941969613597078626}
   m_Layer: 0
   m_Name: Mewfrog
   m_TagString: Untagged
@@ -297,6 +298,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c5b8d79f01cb7d4c89d7ff56dbfbddd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DropOnDeath
+--- !u!114 &2941969613597078626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4b18823bf174df498318bcafec16efe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ExpOnDeath
 --- !u!1 &8299895054748087226
 GameObject:
   m_ObjectHideFlags: 0
