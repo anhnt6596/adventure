@@ -40,9 +40,13 @@ public class StatBuffEffect : IUpgradeEffect
 
     // Add is the number itself, a share is the number as a percentage — the same distinction the stat makes
     // when it applies them, so the wording cannot drift from the arithmetic. See StatModifier.
+    //
+    // The unit rides along on Add only, because on Add the number is in the stat's own units and some stats are
+    // not a bare count (Regen is a percent per second). On Mul the percent printed here is already the share,
+    // and a stat unit on top of it would read as a second, different percent. See StatId.Unit.
     static string Describe(StatBuff buff)
         => buff.kind == StatModKind.Add
-            ? $"{Signed(buff.amount)} {StatId.Display(buff.stat)}"
+            ? $"{Signed(buff.amount)}{StatId.Unit(buff.stat)} {StatId.Display(buff.stat)}"
             : $"{Signed(buff.amount * 100f)}% {StatId.Display(buff.stat)}";
 
     static string Signed(float value) => value >= 0f ? $"+{value:0.##}" : value.ToString("0.##");

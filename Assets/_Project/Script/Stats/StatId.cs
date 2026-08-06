@@ -57,10 +57,30 @@ public static class StatId
         MaxHp => "HP",
         MaxHunger => "max fullness",
         HungerDrain => "hunger drain",
-        Regen => "regen",
+        // WITH THE CONDITION ATTACHED, not just "regen": this stat does nothing below the well-fed line, and a
+        // node that promises "+20% regen" sells healing the player will not see until they eat. "well fed"
+        // rather than "full" because the line sits at 75% fullness — see MainCharStatsConfig.wellFed.
+        Regen => "regen when well fed",
         Mass => "mass",
         PickupRadius => "pickup radius",
         Vision => "vision",
         _ => id,
+    };
+
+    // What the stat's OWN number is measured in, for a flat change to it. Most stats are a bare count — 20 HP,
+    // 3 mass — and say nothing here. Regen is not: it is a percent of max HP, so printing the bare number
+    // leaves the player reading "+0.5" with nothing to say what of.
+    //
+    // JUST THE PERCENT, no "/s", even though the stat really is a rate: the sign is there to give the number a
+    // scale, and "+0.5%/s" spends three characters of punctuation on a detail no player is doing arithmetic
+    // with. If a tooltip ever has to teach the mechanic, that is a sentence about regen, not a suffix.
+    //
+    // FOR Add ONLY, and StatBuffEffect is careful about it: on Mul the percent already in the line is the SHARE
+    // of the stat ("+20% regen"), so appending this too would print two different percents in one line, one of
+    // which is not what was bought.
+    public static string Unit(string id) => id switch
+    {
+        Regen => "%",
+        _ => "",
     };
 }
