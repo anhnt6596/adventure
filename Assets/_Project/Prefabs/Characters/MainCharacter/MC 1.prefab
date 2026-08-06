@@ -252,7 +252,7 @@ MonoBehaviour:
   radius: 0.5
   size: {x: 1.5, y: 3}
   forwardOffset: 0.2
-  knockback: 1.5
+  knockback: 1
   animatorSource: {fileID: 1003609662157716418}
 --- !u!114 &349107934453197144
 MonoBehaviour:

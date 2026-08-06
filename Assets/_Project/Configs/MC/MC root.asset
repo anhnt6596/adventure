@@ -235,6 +235,38 @@ MonoBehaviour:
       rid: 1851184076541919315
     cost: 2
     position: {x: 0, y: 3}
+  - id: speed-5
+    key: speed
+    requires:
+    - speed-4
+    effect:
+      rid: 7000115694874394710
+    cost: 1
+    position: {x: 0, y: 3.75}
+  - id: speed-6
+    key: speed
+    requires:
+    - speed-5
+    effect:
+      rid: 7000115694874394711
+    cost: 1
+    position: {x: 0, y: 4.5}
+  - id: speed-7
+    key: speed
+    requires:
+    - speed-6
+    effect:
+      rid: 7000115694874394712
+    cost: 1
+    position: {x: -0, y: 5.25}
+  - id: speed-8
+    key: speed
+    requires:
+    - speed-7
+    effect:
+      rid: 7000115694874394713
+    cost: 2
+    position: {x: 0, y: 6}
   - id: health-3
     key: health
     requires:
@@ -362,21 +394,21 @@ MonoBehaviour:
         buffs:
         - stat: AttackSpeed
           kind: 1
-          amount: 0.05
+          amount: 0.06
     - rid: 1851184076541919320
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: AttackSpeed
           kind: 1
-          amount: 0.05
+          amount: 0.06
     - rid: 1851184076541919322
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: AttackSpeed
           kind: 1
-          amount: 0.05
+          amount: 0.06
     - rid: 1851184076541919323
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
@@ -502,25 +534,53 @@ MonoBehaviour:
         buffs:
         - stat: AttackSpeed
           kind: 1
-          amount: 0.05
+          amount: 0.06
     - rid: 7000115694874394706
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: AttackSpeed
           kind: 1
-          amount: 0.05
+          amount: 0.06
     - rid: 7000115694874394707
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: AttackSpeed
           kind: 1
-          amount: 0.05
+          amount: 0.06
     - rid: 7000115694874394709
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: AttackSpeed
+          kind: 1
+          amount: 0.16
+    - rid: 7000115694874394710
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MoveSpeed
+          kind: 1
+          amount: 0.05
+    - rid: 7000115694874394711
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MoveSpeed
+          kind: 1
+          amount: 0.05
+    - rid: 7000115694874394712
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MoveSpeed
+          kind: 1
+          amount: 0.05
+    - rid: 7000115694874394713
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MoveSpeed
           kind: 1
           amount: 0.15

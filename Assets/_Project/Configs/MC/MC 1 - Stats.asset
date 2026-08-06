@@ -21,7 +21,8 @@ MonoBehaviour:
   pickupRadius: 0.3
   maxHp: 80
   maxHunger: 50
-  hungerDrain: 0.1
+  hungerDrain: 0.2
+  hungerDrainPerLevel: 0.01
   startFullness: 1
   wellFed: 0.75
   wellFedHealPercent: 0
