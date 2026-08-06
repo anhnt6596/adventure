@@ -403,7 +403,16 @@ public class UpgradePopup : BasePopup
     void Buy()
     {
         if (_selected == null) return;
-        _upgrades?.Buy(_characterId, _tree, _selected);   // fires Changed -> Refresh
+
+        // Only dismiss on a buy that actually happened: a refused one leaves the tooltip standing, because the
+        // reason it was refused is on the node the player is still looking at.
+        if (_upgrades?.Buy(_characterId, _tree, _selected) != true) return;   // fires Changed -> Refresh
+
+        // Bought, so the tooltip has nothing left to offer — the Unlock button hides itself once a node is
+        // owned (see RefreshTip), and a box with no action in it is just something covering the tree. Closing
+        // it also puts the player back where the next click wants them: on the nodes this one just opened.
+        _selected = null;
+        Refresh();
     }
 
     void ResetTree()
