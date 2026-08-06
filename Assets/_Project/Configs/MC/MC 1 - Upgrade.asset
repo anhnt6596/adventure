@@ -91,6 +91,30 @@ MonoBehaviour:
       rid: 1851184076541919240
     cost: 1
     position: {x: 0, y: 1.5}
+  - id: vision-1
+    key: vision
+    requires:
+    - speed-2
+    effect:
+      rid: 1851184096931217408
+    cost: 1
+    position: {x: 0.75, y: 1.5}
+  - id: vision-2
+    key: vision
+    requires:
+    - vision-1
+    effect:
+      rid: 1851184096931217409
+    cost: 2
+    position: {x: 0.75, y: 2.25}
+  - id: vision-3
+    key: vision
+    requires:
+    - vision-2
+    effect:
+      rid: 1851184096931217480
+    cost: 3
+    position: {x: 0.75, y: 3}
   - id: health-1
     key: health
     requires: []
@@ -147,21 +171,21 @@ MonoBehaviour:
         buffs:
         - stat: MoveSpeed
           kind: 1
-          amount: 0.02
+          amount: 0.05
     - rid: 1851184076541919240
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: MoveSpeed
           kind: 1
-          amount: 0.02
+          amount: 0.05
     - rid: 1851184076541919241
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: MoveSpeed
           kind: 1
-          amount: 0.02
+          amount: 0.05
     - rid: 1851184076541919242
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
@@ -189,7 +213,7 @@ MonoBehaviour:
         buffs:
         - stat: MoveSpeed
           kind: 1
-          amount: 0.05
+          amount: 0.12
     - rid: 1851184076541919316
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
@@ -243,13 +267,34 @@ MonoBehaviour:
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
-        - stat: MoveSpeed
+        - stat: AttackPower
           kind: 1
           amount: 0.1
     - rid: 1851184076541919325
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
-        - stat: MoveSpeed
+        - stat: AttackPower
           kind: 1
           amount: 0.25
+    - rid: 1851184096931217408
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: Vision
+          kind: 1
+          amount: 0.2
+    - rid: 1851184096931217409
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: Vision
+          kind: 1
+          amount: 0.2
+    - rid: 1851184096931217480
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: Vision
+          kind: 1
+          amount: 0.3

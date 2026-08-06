@@ -19,7 +19,7 @@ MonoBehaviour:
   attackCooldown: 0.2
   mass: 1
   pickupRadius: 0.3
-  maxHp: 200
+  maxHp: 50
   maxHunger: 50
   hungerDrain: 0.1
   startFullness: 0.5
