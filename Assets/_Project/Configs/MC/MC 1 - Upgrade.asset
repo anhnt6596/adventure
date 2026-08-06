@@ -105,7 +105,7 @@ MonoBehaviour:
     - vision-1
     effect:
       rid: 1851184096931217409
-    cost: 2
+    cost: 1
     position: {x: 0.75, y: 2.25}
   - id: vision-3
     key: vision
@@ -113,8 +113,8 @@ MonoBehaviour:
     - vision-2
     effect:
       rid: 1851184096931217480
-    cost: 3
-    position: {x: 0.75, y: 3}
+    cost: 1
+    position: {x: 1.5, y: 2.25}
   - id: health-1
     key: health
     requires: []
@@ -219,8 +219,8 @@ MonoBehaviour:
       data:
         buffs:
         - stat: MaxHp
-          kind: 0
-          amount: 50
+          kind: 2
+          amount: 0.1
     - rid: 1851184076541919317
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
@@ -283,18 +283,18 @@ MonoBehaviour:
         buffs:
         - stat: Vision
           kind: 1
-          amount: 0.2
+          amount: 0.3
     - rid: 1851184096931217409
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: Vision
           kind: 1
-          amount: 0.2
+          amount: 0.3
     - rid: 1851184096931217480
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: Vision
           kind: 1
-          amount: 0.3
+          amount: 0.4
