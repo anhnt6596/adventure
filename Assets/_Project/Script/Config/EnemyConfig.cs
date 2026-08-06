@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Config/Enemy")]
-public class EnemyConfig : Config, IDamageableConfig, IDeathDropableConfig
+public class EnemyConfig : Config, IDamageableConfig, IDeathDropableConfig, IDeathExpConfig
 {
     // Which side this KIND is on — one team per kind, not one team for "enemies". That is what lets a predator
     // hunt a critter and two monsters maul each other; a shared enemy team made every one of them allies by
@@ -37,6 +37,18 @@ public class EnemyConfig : Config, IDamageableConfig, IDeathDropableConfig
     [Header("Drops — what it provides on death")]
     public DeathDrop[] drops;
 
+    // Scale this with how DANGEROUS the kind is, not with how long it takes to kill. The pillar wants the
+    // frontier to out-pay a cleared field by a distance (Docs/DESIGN.md), and the only thing that says
+    // "frontier" in a number is what the thing can do to you.
+    [Header("Experience — what killing it is worth")]
+    [Tooltip("Paid every kill, and only when the PLAYER lands the blow.")]
+    [Min(0)] public int exp = 1;
+
+    [Tooltip("Paid ONCE for the whole save, the first time this kind is killed at all — a bestiary first. " +
+             "0 = this kind is not a discovery. It goes into the world's discovery total, so every character " +
+             "eventually receives it, not only the one that made the kill.")]
+    [Min(0)] public int firstKillExp = 0;
+
     [Header("AI")]
     public EnemyBrainConfig brain;
 
@@ -46,4 +58,6 @@ public class EnemyConfig : Config, IDamageableConfig, IDeathDropableConfig
     public float MaxHp => hp;
     public int Team => team;
     public DeathDrop[] Drops => drops;   // IDeathDropableConfig
+    public int Exp => exp;               // IDeathExpConfig
+    public int FirstKillExp => firstKillExp;
 }

@@ -89,11 +89,18 @@ public class CharacterLevels : ISavable
         Write(characterId, Mathf.Max(StartLevel, level), 0);
     }
 
+    // NOT WRITTEN TO DISK HERE, and that is the one thing to know before wiring anything else into AddExp.
+    // Experience moves on every kill, and a save is a file write — one per corpse is I/O nobody asked for,
+    // and worst on the platform least able to afford it. Docs/DESIGN.md already names the only two things
+    // that write: arriving home, and dying.
+    //
+    // Until those exist the numbers still survive a normal quit, because SaveService.SaveAll runs when the
+    // scope is disposed. What a crash mid-run costs is the run — which is exactly what leaving home was
+    // always supposed to cost.
     void Write(string characterId, int level, int exp)
     {
         _level[characterId] = level;
         _exp[characterId] = exp;
-        _save.Save(SaveKey);
         Changed?.Invoke(characterId);
     }
 

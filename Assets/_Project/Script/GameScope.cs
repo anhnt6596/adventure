@@ -23,6 +23,10 @@ public class GameScope : LifetimeScope
         builder.Register<IGetUpgradeTree, UpgradeTreeProvider>(Lifetime.Singleton);   // wall over ConfigRegistry, like IGetMCConfig
         builder.Register<CharacterLevels>(Lifetime.Singleton);   // level + exp per character; one level = one upgrade point
         builder.Register<UpgradeSystem>(Lifetime.Singleton);     // which nodes each character has bought
+
+        // An entry point, and registered BEFORE PlayerSystem: it catches up the character being played, so it
+        // has to exist before the first body is spawned. AsSelf so ExpOnDeath can inject it on an enemy.
+        builder.RegisterEntryPoint<ExperienceSystem>().AsSelf();   // what pays experience, and for what
         builder.Register<IMapService, MapService>(Lifetime.Singleton);
 
         // AsSelf too: IPlayer is deliberately read-only, so switching character (cheat panel now, character
