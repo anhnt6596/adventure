@@ -24,6 +24,11 @@ public class GameScope : LifetimeScope
         builder.Register<CharacterLevels>(Lifetime.Singleton);   // level + exp per character; one level = one upgrade point
         builder.Register<UpgradeSystem>(Lifetime.Singleton);     // which nodes each character has bought
 
+        // What wears a (!), and the one rule feeding it today. The notifier is an entry point registered AFTER
+        // PlayerSystem so its Start runs once a body exists — see UpgradeNotifier.Report, which deliberately
+        // says nothing until there is a character to say it about.
+        builder.Register<NotificationService>(Lifetime.Singleton);
+
         // An entry point, and registered BEFORE PlayerSystem: it catches up the character being played, so it
         // has to exist before the first body is spawned. AsSelf so ExpOnDeath can inject it on an enemy.
         builder.RegisterEntryPoint<ExperienceSystem>().AsSelf();   // what pays experience, and for what
@@ -33,6 +38,7 @@ public class GameScope : LifetimeScope
         // select later) needs the concrete system.
         builder.RegisterEntryPoint<PlayerSystem>().As<IPlayer>().AsSelf();   // owns + spawns the MC; runs before GameController warps
         builder.Register<EnemySpawner>(Lifetime.Singleton);                 // makes enemies by id (spawn zones call it)
+        builder.RegisterEntryPoint<UpgradeNotifier>();               // unspent points -> the (!) on the avatar and its tab
         builder.RegisterEntryPoint<CameraFollowsPlayer>();          // aims CameraRig at the spawned body
 
         builder.RegisterInstance(_dayNightConfig);
