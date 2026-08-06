@@ -12,6 +12,10 @@ using UnityEngine;
 // from the requirements for anyone who would rather not place a tree by hand, and is a starting point rather
 // than a mode: drag anything afterwards and it stays dragged.
 //
+// TWO TIERS, ONE PICTURE. A tree that inherits another draws the trunk in grey behind its own nodes: you can
+// see it, aim requirements at it, and lay leaves out against it — but nothing here writes to it, because it
+// belongs to a different asset and every character is standing on it. Edit the trunk by opening the trunk.
+//
 // The raw array stays one toggle away. A custom inspector that hides the truth is worse than none, and the
 // day this drawer has a bug the array is how you get past it.
 [CustomEditor(typeof(UpgradeTreeConfig))]
@@ -36,7 +40,11 @@ public class UpgradeTreeConfigEditor : Editor
     // The canvas size a drag began at — see DrawGraph, where it is what stops a drag fighting itself.
     Vector2 _latchedSize;
 
-    static GUIStyle _caption;
+    // The trunk's nodes, refreshed each pass. Drawn but never editable from here: they belong to another
+    // asset, and letting them be dragged in this window would be editing every character at once by accident.
+    IReadOnlyList<UpgradeNode> _inherited = Array.Empty<UpgradeNode>();
+
+    static GUIStyle _caption, _inheritedCaption;
     static ArtProvider _art;
 
     // ArtProvider caches misses so a missing file costs one failed load rather than one per repaint — which
@@ -65,6 +73,16 @@ public class UpgradeTreeConfigEditor : Editor
             new GUIContent("Id", "The character this tree belongs to — 'MC 1'. Empty falls back to the " +
                                  "asset's name, which is usually not what you want."));
 
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("inherits"),
+            new GUIContent("Inherits", "The shared trunk this tree grows out of. Its nodes are drawn here in " +
+                                       "grey and cannot be touched from this window — they belong to that " +
+                                       "asset, and editing them there changes every character built on it."));
+
+        var config = (UpgradeTreeConfig)target;
+        _inherited = config.inherits != null && config.inherits != config
+            ? config.inherits.Nodes
+            : Array.Empty<UpgradeNode>();
+
         var nodes = serializedObject.FindProperty("nodes");
 
         // Only for "what can be reached" and for Auto Arrange — the drawing itself reads the authored
@@ -84,7 +102,7 @@ public class UpgradeTreeConfigEditor : Editor
 
     void DrawGraph(SerializedProperty nodes)
     {
-        if (nodes.arraySize == 0)
+        if (nodes.arraySize == 0 && _inherited.Count == 0)
         {
             var box = GUILayoutUtility.GetRect(0, 120f, GUILayout.ExpandWidth(true));
             EditorGUI.DrawRect(box, new Color(0.13f, 0.14f, 0.17f));
@@ -111,6 +129,11 @@ public class UpgradeTreeConfigEditor : Editor
         {
             var p = Field(nodes, i, "position").vector2Value;
             extent = Vector2.Max(extent, new Vector2(Mathf.Abs(p.x), Mathf.Abs(p.y)));
+        }
+        foreach (var node in _inherited)   // the trunk has to fit too, or it is drawn outside the box
+        {
+            if (node == null) continue;
+            extent = Vector2.Max(extent, new Vector2(Mathf.Abs(node.position.x), Mathf.Abs(node.position.y)));
         }
         Vector2 size = extent * (2f * _zoom) + Vector2.one * (margin * 2f);
 
@@ -139,6 +162,7 @@ public class UpgradeTreeConfigEditor : Editor
             var previous = Handles.color;
             DrawEdges(nodes, origin, _zoom);
             DrawCentre(origin, radius);
+            DrawInherited(origin, _zoom, radius);   // under the owned ones: the trunk is context, not the work
             DrawNodes(nodes, origin, _zoom, radius);
             Handles.color = previous;
         }
@@ -163,34 +187,103 @@ public class UpgradeTreeConfigEditor : Editor
 
     void DrawEdges(SerializedProperty nodes, Vector2 origin, float spacing)
     {
+        // The trunk's own links first, dimmer, so they read as the ground this is being drawn on rather than
+        // as part of the work.
+        foreach (var node in _inherited)
+        {
+            if (node == null) continue;
+            DrawEdgesInto(nodes, node.requires, origin + node.position * spacing, origin, spacing, dim: true);
+        }
+
         for (int i = 0; i < nodes.arraySize; i++)
         {
-            Vector2 to = Position(nodes, i, origin, spacing);
             var requires = Field(nodes, i, "requires");
+            var ids = new string[requires.arraySize];
+            for (int r = 0; r < ids.Length; r++) ids[r] = requires.GetArrayElementAtIndex(r).stringValue;
 
-            if (requires.arraySize == 0)
+            DrawEdgesInto(nodes, ids, Position(nodes, i, origin, spacing), origin, spacing, dim: false);
+        }
+    }
+
+    // One node's links in. `requires` is passed as plain ids because the two tiers store them differently —
+    // a SerializedProperty on this asset, a live object on the trunk — and everything past that point is the
+    // same drawing.
+    void DrawEdgesInto(SerializedProperty nodes, string[] requires, Vector2 to, Vector2 origin, float spacing, bool dim)
+    {
+        float alpha = dim ? 0.45f : 1f;
+
+        if (requires == null || requires.Length == 0)
+        {
+            Handles.color = new Color(0.92f, 0.78f, 0.35f, 0.4f * alpha);
+            Handles.DrawAAPolyLine(2f, origin, to);
+            return;
+        }
+
+        foreach (var requiredId in requires)
+        {
+            // A link to a node that is not there gets a red stub rather than nothing: a missing edge looks
+            // like a tree you laid out that way, a red mark looks like the mistake it is. Resolved across
+            // BOTH tiers, so a leaf hanging off the trunk is a real link and not an error.
+            if (!TryUnits(nodes, requiredId, out var from))
             {
-                Handles.color = new Color(0.92f, 0.78f, 0.35f, 0.4f);
-                Handles.DrawAAPolyLine(2f, origin, to);
+                Handles.color = new Color(0.9f, 0.35f, 0.3f, 0.9f);
+                Handles.DrawAAPolyLine(2f, to + Vector2.left * 9f, to + Vector2.right * 9f);
                 continue;
             }
 
-            for (int r = 0; r < requires.arraySize; r++)
+            Handles.color = new Color(1f, 1f, 1f, 0.3f * alpha);
+            Handles.DrawAAPolyLine(2f, origin + from * spacing, to);
+        }
+    }
+
+    // Where a node sits, in tree units, wherever it was authored. Own nodes come off the SerializedProperty so
+    // a drag shows this frame rather than next; the trunk comes off the live asset, which is not being
+    // dragged here and cannot be.
+    bool TryUnits(SerializedProperty nodes, string id, out Vector2 position)
+    {
+        int index = IndexOfId(nodes, id);
+        if (index >= 0)
+        {
+            position = Field(nodes, index, "position").vector2Value;
+            return true;
+        }
+
+        foreach (var node in _inherited)
+            if (node != null && node.id == id)
             {
-                int from = IndexOfId(nodes, requires.GetArrayElementAtIndex(r).stringValue);
-
-                // A link to a node that is not there gets a red stub rather than nothing: a missing edge
-                // looks like a tree you laid out that way, a red mark looks like the mistake it is.
-                if (from < 0)
-                {
-                    Handles.color = new Color(0.9f, 0.35f, 0.3f, 0.9f);
-                    Handles.DrawAAPolyLine(2f, to + Vector2.left * 9f, to + Vector2.right * 9f);
-                    continue;
-                }
-
-                Handles.color = new Color(1f, 1f, 1f, 0.3f);
-                Handles.DrawAAPolyLine(2f, Position(nodes, from, origin, spacing), to);
+                position = node.position;
+                return true;
             }
+
+        position = default;
+        return false;
+    }
+
+    // The trunk, drawn and nothing more: no selection, no drag, no cost badge to argue with. Grey enough to
+    // read as "not yours" at a glance, solid enough to aim a new leaf at.
+    void DrawInherited(Vector2 origin, float spacing, float radius)
+    {
+        var treeId = ((UpgradeTreeConfig)target).Id;
+
+        foreach (var node in _inherited)
+        {
+            if (node == null) continue;
+
+            Vector2 p = origin + node.position * spacing;
+
+            Handles.color = new Color(0.19f, 0.20f, 0.25f);
+            Handles.DrawSolidDisc(p, Vector3.forward, radius);
+
+            // Resolved with THIS tree's id, because that is the character who will be looking at it — a trunk
+            // node can wear a different picture per character, and this shows the one that will be shown.
+            var icon = Art.UpgradeIcon(treeId, node.key);
+            if (icon != null) DrawSprite(icon, p, radius * 1.15f);
+
+            Handles.color = new Color(1f, 1f, 1f, 0.10f);
+            Handles.DrawWireDisc(p, Vector3.forward, radius);
+
+            GUI.Label(new Rect(p.x - 60f, p.y + radius + 2f, 120f, 16f),
+                      string.IsNullOrEmpty(node.id) ? "(no id)" : node.id, InheritedCaption);
         }
     }
 
@@ -310,7 +403,7 @@ public class UpgradeTreeConfigEditor : Editor
             // fresh tree or when an arrangement has got away from you — and anything dragged afterwards
             // stays where it was put.
             using (new EditorGUI.DisabledScope(nodes.arraySize == 0))
-                if (GUILayout.Button("Auto arrange") && Confirm(nodes.arraySize))
+                if (GUILayout.Button("Auto arrange") && Confirm(nodes.arraySize, _inherited.Count > 0))
                     AutoArrange(nodes, layout);
 
             using (new EditorGUI.DisabledScope(_selected < 0 || _selected >= nodes.arraySize))
@@ -335,9 +428,14 @@ public class UpgradeTreeConfigEditor : Editor
         }
     }
 
-    static bool Confirm(int count)
+    // Only this asset's nodes move — the trunk belongs to another asset and is never written from here. That
+    // is worth saying out loud, because the arrangement it computes DOES take the trunk into account, so the
+    // leaves land where they would sit if the whole tree had been arranged at once. Against a trunk that was
+    // placed by hand, that is a starting point and not an answer.
+    static bool Confirm(int count, bool inherits)
         => EditorUtility.DisplayDialog("Auto arrange",
-            $"Reposition all {count} nodes from their requirements? Anything placed by hand is lost.",
+            $"Reposition all {count} nodes from their requirements? Anything placed by hand is lost."
+            + (inherits ? "\n\nThe inherited nodes are not moved, but they are what these are arranged around." : ""),
             "Arrange", "Cancel");
 
     static void AutoArrange(SerializedProperty nodes, UpgradeTreeLayout layout)
@@ -427,14 +525,23 @@ public class UpgradeTreeConfigEditor : Editor
     static Vector2 StepOut(Vector2 from)
         => from.sqrMagnitude > 1e-6f ? from + from.normalized : new Vector2(0f, -1f);
 
-    static string UniqueId(SerializedProperty nodes, int ignore)
+    // Free across the WHOLE chain, not just this asset: an id that clashes with the trunk is two nodes the
+    // save cannot tell apart.
+    string UniqueId(SerializedProperty nodes, int ignore)
     {
         for (int n = 1; n < 999; n++)
         {
             string candidate = $"node{n}";
-            if (IndexOfId(nodes, candidate, ignore) < 0) return candidate;
+            if (IndexOfId(nodes, candidate, ignore) < 0 && !InheritedHas(candidate)) return candidate;
         }
         return Guid.NewGuid().ToString("N");
+    }
+
+    bool InheritedHas(string id)
+    {
+        foreach (var node in _inherited)
+            if (node != null && node.id == id) return true;
+        return false;
     }
 
     void DrawSelected(SerializedProperty nodes)
@@ -484,6 +591,12 @@ public class UpgradeTreeConfigEditor : Editor
             var id = Field(nodes, i, "id").stringValue;
             if (!string.IsNullOrEmpty(id)) choices.Add(id);
         }
+
+        // The trunk's nodes are offered too — hanging a leaf off a shared node is the whole reason the two
+        // tiers exist, and a requirement is resolved across the chain at runtime anyway.
+        foreach (var node in _inherited)
+            if (node != null && !string.IsNullOrEmpty(node.id) && !choices.Contains(node.id))
+                choices.Add(node.id);
 
         EditorGUILayout.LabelField(new GUIContent("Requires",
             "Any ONE of these being bought opens this node. Empty = it grows straight off the centre."));
@@ -571,19 +684,33 @@ public class UpgradeTreeConfigEditor : Editor
         var problems = new List<string>();
         var seen = new HashSet<string>();
 
+        // The trunk's ids are already taken. A leaf reusing one would be two nodes the SAVE cannot tell
+        // apart — buying either would mark both bought — which is silent, permanent, and only shows up as
+        // an upgrade the player never paid for.
+        var inheritedIds = new HashSet<string>();
+        foreach (var node in _inherited)
+            if (node != null && !string.IsNullOrEmpty(node.id)) inheritedIds.Add(node.id);
+
+        if (((UpgradeTreeConfig)target).inherits == target)
+            problems.Add("This tree inherits itself. Clear the Inherits field.");
+
         for (int i = 0; i < nodes.arraySize; i++)
         {
             var id = Field(nodes, i, "id").stringValue;
 
             if (string.IsNullOrWhiteSpace(id)) problems.Add($"Node {i} has no id.");
+            else if (inheritedIds.Contains(id))
+                problems.Add($"'{id}' is already a node in the inherited tree. Ids have to be unique across " +
+                             "the whole chain, or the save cannot tell the two apart.");
             else if (!seen.Add(id)) problems.Add($"Two nodes share the id '{id}'.");
 
             var requires = Field(nodes, i, "requires");
             for (int r = 0; r < requires.arraySize; r++)
             {
-                var target = requires.GetArrayElementAtIndex(r).stringValue;
-                if (IndexOfId(nodes, target) < 0)
-                    problems.Add($"'{id}' requires '{target}', which is not a node in this tree.");
+                var requiredId = requires.GetArrayElementAtIndex(r).stringValue;
+                if (IndexOfId(nodes, requiredId) < 0 && !inheritedIds.Contains(requiredId))
+                    problems.Add($"'{id}' requires '{requiredId}', which is not a node in this tree or the " +
+                                 "one it inherits.");
             }
         }
 
@@ -603,6 +730,12 @@ public class UpgradeTreeConfigEditor : Editor
     {
         alignment = TextAnchor.UpperCenter,
         normal = { textColor = new Color(0.8f, 0.82f, 0.88f) }
+    };
+
+    static GUIStyle InheritedCaption => _inheritedCaption ??= new GUIStyle(EditorStyles.miniLabel)
+    {
+        alignment = TextAnchor.UpperCenter,
+        normal = { textColor = new Color(0.45f, 0.47f, 0.54f) }
     };
 
     static SerializedProperty Field(SerializedProperty nodes, int index, string name)

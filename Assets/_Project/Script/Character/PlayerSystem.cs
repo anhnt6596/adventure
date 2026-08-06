@@ -152,10 +152,10 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
             _stats.RemoveBySource(UpgradeSource);
 
             var tree = _trees?.Get(_currentId);
-            if (tree?.nodes == null) return;
+            if (tree == null) return;
 
             var context = new UpgradeContext(_stats, UpgradeSource);
-            foreach (var node in tree.nodes)
+            foreach (var node in tree.Nodes)
                 if (node?.effect != null && _upgrades.IsBought(_currentId, node))
                     node.effect.Apply(context);
         }

@@ -1,0 +1,301 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a89cf200a4eb8e4c808385ceb040fa0, type: 3}
+  m_Name: MC root
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeTreeConfig
+  id: 
+  inherits: {fileID: 0}
+  nodes:
+  - id: attack-2
+    key: attack
+    requires:
+    - attack-1
+    effect:
+      rid: 1851184076541919318
+    cost: 1
+    position: {x: 0, y: -1.5}
+  - id: attack-3
+    key: attack
+    requires:
+    - attack-2
+    effect:
+      rid: 1851184076541919324
+    cost: 1
+    position: {x: 0, y: -2.25}
+  - id: attack-4
+    key: attack
+    requires:
+    - attack-3
+    effect:
+      rid: 1851184076541919325
+    cost: 2
+    position: {x: -0, y: -3}
+  - id: attack-1
+    key: attack
+    requires: []
+    effect:
+      rid: 1851184076541919317
+    cost: 1
+    position: {x: -0, y: -0.75}
+  - id: attack-speed-1
+    key: aspeed
+    requires: []
+    effect:
+      rid: 1851184076541919319
+    cost: 1
+    position: {x: -0.75, y: 0}
+  - id: attack-speed-2
+    key: aspeed
+    requires:
+    - attack-speed-1
+    effect:
+      rid: 1851184076541919320
+    cost: 1
+    position: {x: -1.5, y: 0}
+  - id: attack-speed-3
+    key: aspeed
+    requires:
+    - attack-speed-2
+    effect:
+      rid: 1851184076541919322
+    cost: 1
+    position: {x: -2.25, y: -0}
+  - id: attack-speed-4
+    key: aspeed
+    requires:
+    - attack-speed-3
+    effect:
+      rid: 1851184076541919323
+    cost: 2
+    position: {x: -3, y: 0}
+  - id: speed-1
+    key: speed
+    requires: []
+    effect:
+      rid: 1851184076541919239
+    cost: 1
+    position: {x: -0, y: 0.75}
+  - id: speed-2
+    key: speed
+    requires:
+    - speed-1
+    effect:
+      rid: 1851184076541919240
+    cost: 1
+    position: {x: 0, y: 1.5}
+  - id: vision-1
+    key: vision
+    requires:
+    - speed-2
+    effect:
+      rid: 1851184096931217408
+    cost: 1
+    position: {x: 0.75, y: 1.5}
+  - id: vision-2
+    key: vision
+    requires:
+    - vision-1
+    effect:
+      rid: 1851184096931217409
+    cost: 1
+    position: {x: 0.75, y: 2.25}
+  - id: vision-3
+    key: vision
+    requires:
+    - vision-2
+    effect:
+      rid: 1851184096931217480
+    cost: 1
+    position: {x: 1.5, y: 2.25}
+  - id: health-1
+    key: health
+    requires: []
+    effect:
+      rid: 1851184076541919242
+    cost: 1
+    position: {x: 0.75, y: 0}
+  - id: health-2
+    key: health
+    requires:
+    - health-1
+    effect:
+      rid: 1851184076541919314
+    cost: 1
+    position: {x: 1.5, y: 0}
+  - id: speed-3
+    key: speed
+    requires:
+    - speed-2
+    effect:
+      rid: 1851184076541919241
+    cost: 1
+    position: {x: 0, y: 2.25}
+  - id: speed-4
+    key: speed
+    requires:
+    - speed-3
+    effect:
+      rid: 1851184076541919315
+    cost: 2
+    position: {x: 0, y: 3}
+  - id: health-3
+    key: health
+    requires:
+    - health-2
+    effect:
+      rid: 1851184076541919313
+    cost: 1
+    position: {x: 2.25, y: 0}
+  - id: health-4
+    key: health
+    requires:
+    - health-3
+    effect:
+      rid: 1851184076541919316
+    cost: 2
+    position: {x: 3, y: 0}
+  references:
+    version: 2
+    RefIds:
+    - rid: 1851184076541919239
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MoveSpeed
+          kind: 1
+          amount: 0.05
+    - rid: 1851184076541919240
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MoveSpeed
+          kind: 1
+          amount: 0.05
+    - rid: 1851184076541919241
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MoveSpeed
+          kind: 1
+          amount: 0.05
+    - rid: 1851184076541919242
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHp
+          kind: 0
+          amount: 20
+    - rid: 1851184076541919313
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHp
+          kind: 0
+          amount: 20
+    - rid: 1851184076541919314
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHp
+          kind: 0
+          amount: 20
+    - rid: 1851184076541919315
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MoveSpeed
+          kind: 1
+          amount: 0.12
+    - rid: 1851184076541919316
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHp
+          kind: 2
+          amount: 0.1
+    - rid: 1851184076541919317
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackPower
+          kind: 1
+          amount: 0.1
+    - rid: 1851184076541919318
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackPower
+          kind: 1
+          amount: 0.1
+    - rid: 1851184076541919319
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackSpeed
+          kind: 1
+          amount: 0.03
+    - rid: 1851184076541919320
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackSpeed
+          kind: 1
+          amount: 0.03
+    - rid: 1851184076541919322
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackSpeed
+          kind: 1
+          amount: 0.03
+    - rid: 1851184076541919323
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackSpeed
+          kind: 1
+          amount: 0.08
+    - rid: 1851184076541919324
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackPower
+          kind: 1
+          amount: 0.1
+    - rid: 1851184076541919325
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackPower
+          kind: 1
+          amount: 0.25
+    - rid: 1851184096931217408
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: Vision
+          kind: 1
+          amount: 0.3
+    - rid: 1851184096931217409
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: Vision
+          kind: 1
+          amount: 0.3
+    - rid: 1851184096931217480
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: Vision
+          kind: 1
+          amount: 0.4

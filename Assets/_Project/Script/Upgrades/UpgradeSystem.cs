@@ -65,10 +65,10 @@ public class UpgradeSystem : ISavable
     // for itself and a reprice takes effect without anybody having to migrate a save.
     public int Spent(string characterId, UpgradeTreeConfig tree)
     {
-        if (tree?.nodes == null) return 0;
+        if (tree == null) return 0;
 
         int spent = 0;
-        foreach (var node in tree.nodes)
+        foreach (var node in tree.Nodes)
             if (node != null && IsBought(characterId, node)) spent += Mathf.Max(1, node.cost);
         return spent;
     }

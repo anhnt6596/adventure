@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 // One character's upgrade tree, as data: nodes radiating from a centre, and which nodes lead into which.
@@ -20,19 +21,89 @@ using UnityEngine;
 //
 // WHAT A NODE DOES lives in its effect, behind [SerializeReference] — see IUpgradeEffect. A node with no
 // effect is a junction: it costs a point and opens what comes after it, which is a real thing to want.
+//
+// TREES ARE DRAWN ON TOP OF ONE ANOTHER. `inherits` names a tree whose nodes come first, so the trunk every
+// character shares is authored ONCE and a character's own asset carries only the leaves that are its. Change
+// the trunk and every character built on it changes with it — which is the entire point, and the reason this
+// is a reference rather than a copy anybody could forget to re-copy.
+//
+// NOTHING ELSE IN THE GAME KNOWS THERE ARE TWO TIERS. Ask for `Nodes` and the answer is the whole tree,
+// trunk first. Points are points, a bought id is a bought id, and the save does not change — a character's
+// bought set already only ever held ids, and where an id was authored is not something it needs to know.
 [CreateAssetMenu(menuName = "Upgrades/Upgrade Tree")]
 public class UpgradeTreeConfig : Config
 {
+    [Tooltip("Optional. The tree this one grows out of — the trunk every character shares. Its nodes appear " +
+             "here but cannot be edited from here: change them in that asset and everyone follows.\n\n" +
+             "Ids must stay unique across the whole chain; the tree editor reports it when they are not.")]
+    public UpgradeTreeConfig inherits;
+
+    [Tooltip("The nodes THIS asset owns. Inherited ones are not in here — see Nodes for the whole tree.")]
     public UpgradeNode[] nodes = Array.Empty<UpgradeNode>();
 
-    public UpgradeNode Find(string id)
+    // The whole tree, trunk first. Order is not decoration: the layout and the editor walk it, so a node
+    // reading as "after the thing it grew out of" falls out of the order rather than out of a sort.
+    //
+    // NOT CACHED WHILE AUTHORING. The trunk lives in a different asset, so nothing here is told when it is
+    // edited — and an upgrade tree is edited far more often than it is read. A build caches it once, where
+    // the assets can no longer change.
+    public IReadOnlyList<UpgradeNode> Nodes
     {
-        if (nodes == null || string.IsNullOrEmpty(id)) return null;
-        foreach (var n in nodes)
-            if (n != null && n.id == id) return n;
-        return null;
+#if UNITY_EDITOR
+        get => Flatten();
+#else
+        get => _flat ??= Flatten();
+#endif
     }
 
+#if !UNITY_EDITOR
+    UpgradeNode[] _flat;
+#endif
+
+    UpgradeNode[] Flatten()
+    {
+        var list = new List<UpgradeNode>();
+        Collect(this, list, new HashSet<UpgradeTreeConfig>());
+        return list.ToArray();
+    }
+
+    static void Collect(UpgradeTreeConfig tree, List<UpgradeNode> into, HashSet<UpgradeTreeConfig> seen)
+    {
+        if (tree == null) return;
+
+        if (!seen.Add(tree))
+        {
+            Debug.LogError($"[{nameof(UpgradeTreeConfig)}] '{tree.name}' inherits itself, directly or through " +
+                           "a chain. Everything past the loop is dropped.", tree);
+            return;
+        }
+
+        Collect(tree.inherits, into, seen);
+
+        if (tree.nodes == null) return;
+        foreach (var node in tree.nodes)
+            if (node != null) into.Add(node);
+    }
+
+    // Walks the chain rather than the flattened list, because this is asked once per node per repaint and a
+    // lookup that allocates would turn drawing a tree into garbage. Own nodes first; ids are meant to be
+    // unique across the chain and the editor says so when they are not.
+    //
+    // The depth bound is the loop guard: no real tree is sixteen deep, so anything that reaches it is a cycle,
+    // and Nodes reports it properly rather than this method hanging.
+    public UpgradeNode Find(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+
+        var tree = this;
+        for (int depth = 0; tree != null && depth < 16; depth++, tree = tree.inherits)
+        {
+            if (tree.nodes == null) continue;
+            foreach (var n in tree.nodes)
+                if (n != null && n.id == id) return n;
+        }
+        return null;
+    }
 }
 
 [Serializable]

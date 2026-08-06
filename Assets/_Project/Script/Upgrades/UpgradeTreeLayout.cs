@@ -53,13 +53,13 @@ public class UpgradeTreeLayout
     public static UpgradeTreeLayout Build(UpgradeTreeConfig tree)
     {
         var layout = new UpgradeTreeLayout();
-        if (tree?.nodes == null) return layout;
+        if (tree == null) return layout;
 
         // Array order is the only handle anyone has on the arrangement, so every step below walks the nodes
         // in that order and the result is stable: the same tree always lays out the same way.
         var order = new List<UpgradeNode>();
         var byId = new Dictionary<string, UpgradeNode>();
-        foreach (var node in tree.nodes)
+        foreach (var node in tree.Nodes)
         {
             if (node == null || string.IsNullOrEmpty(node.id) || byId.ContainsKey(node.id)) continue;
             byId[node.id] = node;

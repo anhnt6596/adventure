@@ -155,7 +155,9 @@ public class UpgradePopup : BasePopup
                 ? new StyleBackground(avatar)
                 : new StyleBackground(StyleKeyword.None);
 
-        bool hasTree = _tree != null && _tree.nodes != null && _tree.nodes.Length > 0;
+        // Hoisted: Nodes flattens the inherited chain on every call while authoring, and Build asks twice.
+        var nodes = _tree != null ? _tree.Nodes : null;
+        bool hasTree = nodes != null && nodes.Count > 0;
         if (_body != null) _body.style.display = hasTree ? DisplayStyle.Flex : DisplayStyle.None;
         if (_empty != null) _empty.style.display = hasTree ? DisplayStyle.None : DisplayStyle.Flex;
         if (_resetButton != null) _resetButton.style.display = hasTree ? DisplayStyle.Flex : DisplayStyle.None;
@@ -168,7 +170,7 @@ public class UpgradePopup : BasePopup
         // one side — and the centre is the one thing that should always be in the middle. The empty half of
         // a one-sided tree is the price, and it is only scrolling.
         Vector2 extent = Vector2.zero;
-        foreach (var node in _tree.nodes)
+        foreach (var node in nodes)
         {
             if (node == null) continue;
             extent = Vector2.Max(extent, new Vector2(Mathf.Abs(node.position.x), Mathf.Abs(node.position.y)));
@@ -200,7 +202,7 @@ public class UpgradePopup : BasePopup
             : new StyleBackground(StyleKeyword.None);
         _canvas?.Add(_centreElement);
 
-        foreach (var node in _tree.nodes)
+        foreach (var node in nodes)
         {
             if (node == null || string.IsNullOrEmpty(node.id)) continue;
 
@@ -323,7 +325,7 @@ public class UpgradePopup : BasePopup
         int level = _levels?.Level(_characterId) ?? CharacterLevels.StartLevel;
         if (_points != null) _points.text = $"Level {level}   ·   {available} point{(available == 1 ? "" : "s")} to spend";
 
-        foreach (var node in _tree.nodes)
+        foreach (var node in _tree.Nodes)
         {
             if (node == null || !_nodeElements.TryGetValue(node.id, out var element)) continue;
 
@@ -414,13 +416,13 @@ public class UpgradePopup : BasePopup
     // an OR graph can usefully say.
     void PaintEdges(MeshGenerationContext ctx)
     {
-        if (_tree?.nodes == null || _upgrades == null || _nodeCentres.Count == 0) return;
+        if (_tree == null || _upgrades == null || _nodeCentres.Count == 0) return;
 
         var painter = ctx.painter2D;
         painter.lineWidth = 4f;
         painter.lineCap = LineCap.Round;
 
-        foreach (var node in _tree.nodes)
+        foreach (var node in _tree.Nodes)
         {
             if (node == null) continue;
             if (!_nodeCentres.TryGetValue(node.id, out var to)) continue;
