@@ -81,6 +81,9 @@ GameObject:
   - component: {fileID: 6143232455295501188}
   - component: {fileID: 7690705269640586978}
   - component: {fileID: 465975381148652356}
+  - component: {fileID: 837169390879070922}
+  - component: {fileID: 3596386859762903731}
+  - component: {fileID: 3225229470723012105}
   m_Layer: 0
   m_Name: PP1
   m_TagString: Untagged
@@ -208,6 +211,42 @@ MonoBehaviour:
   forwardOffset: 0.35
   knockback: 3
   animatorSource: {fileID: 639855831500468208}
+--- !u!114 &837169390879070922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0da7e644266248148bb0be17d91eb860, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Dropable
+--- !u!114 &3596386859762903731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c5b8d79f01cb7d4c89d7ff56dbfbddd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DropOnDeath
+--- !u!114 &3225229470723012105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4b18823bf174df498318bcafec16efe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ExpOnDeath
 --- !u!1 &8299895054748087226
 GameObject:
   m_ObjectHideFlags: 0

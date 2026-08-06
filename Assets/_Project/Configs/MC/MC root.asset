@@ -69,6 +69,30 @@ MonoBehaviour:
       rid: 1851184076541919322
     cost: 1
     position: {x: -2.25, y: -0}
+  - id: attack-speed-5
+    key: aspeed
+    requires:
+    - attack-speed-4
+    effect:
+      rid: 7000115694874394705
+    cost: 1
+    position: {x: -3.75, y: 0}
+  - id: attack-speed-6
+    key: aspeed
+    requires:
+    - attack-speed-3
+    effect:
+      rid: 7000115694874394706
+    cost: 1
+    position: {x: -4.5, y: 0}
+  - id: attack-speed-7
+    key: aspeed
+    requires:
+    - attack-speed-5
+    effect:
+      rid: 7000115694874394707
+    cost: 1
+    position: {x: -5.25, y: 0}
   - id: attack-speed-4
     key: aspeed
     requires:
@@ -77,6 +101,14 @@ MonoBehaviour:
       rid: 1851184076541919323
     cost: 2
     position: {x: -3, y: 0}
+  - id: attack-speed-8
+    key: aspeed
+    requires:
+    - attack-speed-7
+    effect:
+      rid: 7000115694874394709
+    cost: 2
+    position: {x: -6, y: -0}
   - id: speed-1
     key: speed
     requires: []
@@ -107,7 +139,7 @@ MonoBehaviour:
     effect:
       rid: 1851184096931217409
     cost: 1
-    position: {x: 0.75, y: 2.25}
+    position: {x: 1.5, y: 1.5}
   - id: vision-3
     key: vision
     requires:
@@ -115,7 +147,7 @@ MonoBehaviour:
     effect:
       rid: 1851184096931217480
     cost: 1
-    position: {x: 1.5, y: 2.25}
+    position: {x: 2.25, y: 1.5}
   - id: health-1
     key: health
     requires: []
@@ -131,14 +163,62 @@ MonoBehaviour:
       rid: 1851184076541919314
     cost: 1
     position: {x: 1.5, y: 0}
-  - id: full-regen-1
-    key: full-regen
+  - id: stomach-1
+    key: stomach
     requires:
     - health-2
     effect:
-      rid: 1851184096931217481
+      rid: 7000115694874394695
     cost: 1
     position: {x: 1.5, y: -0.75}
+  - id: stomach-2
+    key: stomach
+    requires:
+    - stomach-1
+    effect:
+      rid: 7000115694874394696
+    cost: 1
+    position: {x: 2.25, y: -0.75}
+  - id: stomach-3
+    key: stomach
+    requires:
+    - stomach-2
+    effect:
+      rid: 7000115694874394697
+    cost: 1
+    position: {x: 3, y: -0.75}
+  - id: stomach-4
+    key: stomach
+    requires:
+    - stomach-3
+    effect:
+      rid: 7000115694874394700
+    cost: 1
+    position: {x: 3.75, y: -0.75}
+  - id: stomach-5
+    key: stomach
+    requires:
+    - stomach-4
+    effect:
+      rid: 7000115694874394702
+    cost: 1
+    position: {x: 4.5, y: -0.75}
+  - id: full-regen-1
+    key: full-regen
+    requires:
+    - health-5
+    effect:
+      rid: 1851184096931217481
+    cost: 2
+    position: {x: 3.75, y: 0.75}
+  - id: full-regen-2
+    key: full-regen
+    requires:
+    - full-regen-1
+    effect:
+      rid: 7000115694874394624
+    cost: 2
+    position: {x: 3.75, y: 1.5}
   - id: speed-3
     key: speed
     requires:
@@ -171,6 +251,38 @@ MonoBehaviour:
       rid: 1851184076541919316
     cost: 2
     position: {x: 3, y: 0}
+  - id: health-5
+    key: health
+    requires:
+    - health-4
+    effect:
+      rid: 7000115694874394698
+    cost: 1
+    position: {x: 3.75, y: 0}
+  - id: health-6
+    key: health
+    requires:
+    - health-5
+    effect:
+      rid: 7000115694874394699
+    cost: 1
+    position: {x: 4.5, y: 0}
+  - id: health-7
+    key: health
+    requires:
+    - health-6
+    effect:
+      rid: 7000115694874394703
+    cost: 1
+    position: {x: 5.25, y: 0}
+  - id: health-8
+    key: health
+    requires:
+    - health-7
+    effect:
+      rid: 7000115694874394704
+    cost: 2
+    position: {x: 6, y: 0}
   references:
     version: 2
     RefIds:
@@ -250,28 +362,28 @@ MonoBehaviour:
         buffs:
         - stat: AttackSpeed
           kind: 1
-          amount: 0.03
+          amount: 0.05
     - rid: 1851184076541919320
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: AttackSpeed
           kind: 1
-          amount: 0.03
+          amount: 0.05
     - rid: 1851184076541919322
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: AttackSpeed
           kind: 1
-          amount: 0.03
+          amount: 0.05
     - rid: 1851184076541919323
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: AttackSpeed
           kind: 1
-          amount: 0.08
+          amount: 0.15
     - rid: 1851184076541919324
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
@@ -313,4 +425,102 @@ MonoBehaviour:
         buffs:
         - stat: Regen
           kind: 0
-          amount: 20
+          amount: 0.5
+    - rid: 7000115694874394624
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: Regen
+          kind: 0
+          amount: 0.5
+    - rid: 7000115694874394695
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHunger
+          kind: 0
+          amount: 10
+    - rid: 7000115694874394696
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHunger
+          kind: 0
+          amount: 10
+    - rid: 7000115694874394697
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHunger
+          kind: 0
+          amount: 10
+    - rid: 7000115694874394698
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHp
+          kind: 0
+          amount: 30
+    - rid: 7000115694874394699
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHp
+          kind: 0
+          amount: 30
+    - rid: 7000115694874394700
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHunger
+          kind: 0
+          amount: 10
+    - rid: 7000115694874394702
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHunger
+          kind: 0
+          amount: 10
+    - rid: 7000115694874394703
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHp
+          kind: 0
+          amount: 30
+    - rid: 7000115694874394704
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: MaxHp
+          kind: 2
+          amount: 0.1
+    - rid: 7000115694874394705
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackSpeed
+          kind: 1
+          amount: 0.05
+    - rid: 7000115694874394706
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackSpeed
+          kind: 1
+          amount: 0.05
+    - rid: 7000115694874394707
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackSpeed
+          kind: 1
+          amount: 0.05
+    - rid: 7000115694874394709
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackSpeed
+          kind: 1
+          amount: 0.15

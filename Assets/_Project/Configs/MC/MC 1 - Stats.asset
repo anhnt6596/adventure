@@ -16,10 +16,10 @@ MonoBehaviour:
   moveSpeed: 2
   attackSpeed: 0.8
   attackPower: 5
-  attackCooldown: 0.2
+  attackCooldown: 0.1
   mass: 1
   pickupRadius: 0.3
-  maxHp: 50
+  maxHp: 80
   maxHunger: 50
   hungerDrain: 0.1
   startFullness: 1
