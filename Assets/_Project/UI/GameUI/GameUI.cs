@@ -374,7 +374,9 @@ public class GameUI : MonoBehaviour
         var id = CurrentMcId;
         if (string.IsNullOrEmpty(id) || _levels == null) { _levelReadout.text = "—"; return; }
 
-        _levelReadout.text = $"{id}   Lv {_levels.Level(id)}   {_levels.Exp(id)}/{_levels.ExpToNext(id)}";
+        _levelReadout.text = _levels.IsMaxLevel(id)
+            ? $"{id}   Lv {_levels.Level(id)}   MAX"
+            : $"{id}   Lv {_levels.Level(id)}   {_levels.Exp(id)}/{_levels.ExpToNext(id)}";
     }
 
     // Bag cheat: list each resource kind held, with a button to wipe that kind. The remove path is a real

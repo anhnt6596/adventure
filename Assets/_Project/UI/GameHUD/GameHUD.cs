@@ -163,7 +163,11 @@ public class GameHUD : UIView
         int need = _levels.ExpToNext(_levelCharacterId);
 
         if (_levelText != null) _levelText.text = level.ToString();   // a number on a face needs no "Lv"
-        if (_levelExp != null) _levelExp.text = $"{exp}/{need}";
+
+        // At the ceiling the count stops being a count — there is no next level to be part of the way
+        // towards, and "x/0" reads as a bug. The bar beside it is full, which says the same thing again.
+        if (_levelExp != null)
+            _levelExp.text = _levels.IsMaxLevel(_levelCharacterId) ? "MAX" : $"{exp}/{need}";
         if (_levelFill != null) _levelFill.style.width = Length.Percent(_levels.Fraction(_levelCharacterId) * 100f);
     }
 
