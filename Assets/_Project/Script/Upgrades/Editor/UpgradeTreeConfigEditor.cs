@@ -25,7 +25,7 @@ public class UpgradeTreeConfigEditor : Editor
 
     // How much of a tree unit a node takes up, taken from the popup so the two cannot drift. This is what
     // makes the preview worth trusting: if two nodes touch here they touch in game.
-    static float NodeUnits => UpgradePopup.NodeSize / UpgradePopup.RingSpacing;
+    static float NodeUnits => UpgradeTab.NodeSize / UpgradeTab.RingSpacing;
 
     bool _raw;
     int _selected = -1;
@@ -116,7 +116,7 @@ public class UpgradeTreeConfigEditor : Editor
             GUILayout.Label("Zoom", EditorStyles.miniLabel, GUILayout.Width(38));
             _zoom = GUILayout.HorizontalSlider(_zoom, 50f, 260f);
             if (GUILayout.Button("1:1", EditorStyles.miniButton, GUILayout.Width(34)))
-                _zoom = UpgradePopup.RingSpacing;   // exactly what the popup draws at
+                _zoom = UpgradeTab.RingSpacing;   // exactly what the popup draws at
         }
 
         float radius = _zoom * NodeUnits * 0.5f;

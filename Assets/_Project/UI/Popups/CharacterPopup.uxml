@@ -1,0 +1,41 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <!-- The shell's own sheet, plus the badge the HUD also wears. A PAGE's styles are not here: each tab's uxml
+         carries its own, which lands on that page's instance and inherits down. -->
+    <Style src="project://database/Assets/_Project/UI/Badge.uss" />
+    <Style src="project://database/Assets/_Project/UI/Popups/CharacterPopup.uss" />
+
+    <!-- One template per tab. Adding a tab is: a uxml beside this one, a Template line here, an Instance in the
+         content area, a Button in the strip, and one entry in CharacterPopup's _tabs list. -->
+    <ui:Template name="UpgradeTab" src="project://database/Assets/_Project/UI/Popups/UpgradeTab.uxml" />
+    <!-- BasePopup queries "dimmer" and "popup" by name, so those two are not free to be renamed. -->
+    <ui:VisualElement name="dimmer" class="dimmer">
+        <ui:VisualElement name="popup" class="popup">
+
+            <!-- WHO, not what: the face and the name are true on every tab, so they live out here and no tab
+                 draws them. What each tab wants to say about that character it says inside its own page. -->
+            <ui:VisualElement name="head" class="head">
+                <ui:VisualElement name="avatar" class="head-avatar" />
+                <ui:VisualElement class="head-titles">
+                    <ui:Label name="char-name" text="—" class="head-name" />
+                </ui:VisualElement>
+                <ui:Button name="close-button" text="✕" class="close-btn" />
+            </ui:VisualElement>
+
+            <!-- One tab today. The strip is here anyway because a strip that appears when the second tab lands
+                 is a layout the first tab was never tested in. -->
+            <ui:VisualElement name="tabs" class="tabs">
+                <ui:Button name="tab-upgrade-button" class="tab">
+                    <ui:Label text="Upgrades" class="tab-label" picking-mode="Ignore" />
+                    <ui:Label name="tab-upgrade-badge" text="!" class="badge" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="content" class="content">
+                <!-- UpgradeTab is handed this element and queries only inside it, so a later tab may reuse any
+                     of the names in its own markup without the two ever finding each other's. -->
+                <ui:Instance template="UpgradeTab" name="tab-upgrade" class="tab-page" />
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,72 +1,22 @@
-/* Full screen, but not opaque: the world stays faintly visible behind it. The tree is a place you step
-   into for a moment, not a screen you leave the game for.
+/* The upgrade PAGE, not a window: the shell it sits in (.dimmer, .popup, .head, the tab strip) is
+   CharacterPopup.uss, and everything here is furniture only this tab has. Instanced into the window by
+   CharacterPopup.uxml, which is also what gives the page its .tab-page container.
 
    SIZES ARE CHUNKY ON PURPOSE, and match the rest of the game rather than a desktop inspector. PanelSettings
    scales the whole UI with the screen, so anything authored at "looks fine on my monitor" ends up unreadable
    on a phone — the HUD is already built at 28-34px for the same reason. */
-.dimmer {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    background-color: rgba(6, 7, 12, 0.88);
-}
 
-.popup {
-    flex-grow: 1;
-    flex-direction: column;
-}
-
-/* ---- head ---- */
-
-.head {
+/* The row above the tree: points to spend on the left, respec on the right. */
+.upgrade-bar {
     flex-direction: row;
     align-items: center;
-    padding: 22px 28px;
-    background-color: rgba(0, 0, 0, 0.35);
-    border-bottom-width: 1px;
-    border-bottom-color: rgba(255, 255, 255, 0.08);
+    justify-content: space-between;
+    padding: 14px 28px 0 28px;
 }
 
-.head-avatar {
-    width: 96px;
-    height: 96px;
-    border-radius: 48px;
-    background-color: rgba(255, 255, 255, 0.08);
-    -unity-background-scale-mode: scale-to-fit;
-}
-
-.head-titles {
-    flex-grow: 1;
-    margin-left: 20px;
-}
-
-.head-name {
-    font-size: 40px;
-    -unity-font-style: bold;
-    color: rgb(240, 240, 245);
-}
-
-.head-points {
+.upgrade-points {
     font-size: 26px;
     color: rgb(235, 200, 90);
-    margin-top: 4px;
-}
-
-.close-btn {
-    width: 64px;
-    height: 64px;
-    margin-left: 14px;
-    font-size: 30px;
-    color: rgb(230, 230, 235);
-    background-color: rgba(255, 255, 255, 0.1);
-    border-width: 0;
-    border-radius: 32px;
-}
-
-.close-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* ---- body ---- */

@@ -15,9 +15,9 @@ MonoBehaviour:
   entries:
   - viewTypeName: GameHUD, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     asset: {fileID: 9197481963319205126, guid: 1979e3805ab48bb4b9be9d30fd209f9a, type: 3}
+  - viewTypeName: CharacterPopup, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
+    asset: {fileID: 9197481963319205126, guid: ca64525082bac474fbc55b2f4239f840, type: 3}
   - viewTypeName: PausePopup, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
     asset: {fileID: 9197481963319205126, guid: 09323c9fda12962448117f6a0aae4b63, type: 3}
-  - viewTypeName: UpgradePopup, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-      PublicKeyToken=null
-    asset: {fileID: 9197481963319205126, guid: 4125e877afed0e740b037a4c605b447e, type: 3}

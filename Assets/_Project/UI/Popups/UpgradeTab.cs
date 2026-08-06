@@ -1,13 +1,19 @@
 using System.Collections.Generic;
-using Core.UI;
+using Core.UI;   // DragScrollManipulator — the pan-by-dragging the rest of the UI uses
 using UnityEngine;
 using UnityEngine.UIElements;
-using VContainer;
 
 // The upgrade tree for whichever character is currently being played: a centre node with the rest radiating
 // out from it, paid for with points earned by levelling.
 //
-// UXML/USS live next to this file and MUST be named UpgradePopup.* — the UI registry matches by file name.
+// A TAB, NOT A POPUP, and not a UIView either. It drives a subtree of CharacterPopup's markup — the popup owns
+// the window, the head, the tab strip and the close button, and hands each tab the element its content lives
+// in. That is why there is no UpgradeTab.uxml: the markup is a section of CharacterPopup.uxml, and the styles
+// it needs are in UpgradeTab.uss, which that file pulls in beside its own.
+//
+// It follows UIView's shape (OnShow/OnHide) without inheriting it, because everything the popup does to a tab
+// is show it, hide it and bind it — and a tab that WAS a view would be one the UISystem could be asked to open
+// on its own, which is the thing this change exists to stop.
 //
 // THE LAYOUT IS AUTHORED, NOT SOLVED. Each node carries its own ring and angle, and this only turns that into
 // pixels. A radial solver would fight the one thing that makes the shape worth having — nodes that two
@@ -17,16 +23,12 @@ using VContainer;
 // a rotated VisualElement per link: one element repaints in one pass, can colour each link by whether the
 // node behind it is owned, and does not put a hundred throwaway elements in the tree.
 //
-// GAME STATE IS PUSHED IN, ART IS INJECTED, and the split is not arbitrary: UISystem builds its views with
-// the App container, so UpgradeSystem, CharacterLevels and who is being played — all GameScope — would
-// silently resolve to nothing through [Inject] and have to arrive via Bind. IArtProvider is App-scope, so it
-// comes down the normal path. The rule to keep: if it knows about the running game it is pushed, if it only
-// knows about the project it is injected.
-public class UpgradePopup : BasePopup
+// GAME STATE IS PUSHED IN, ART TOO, and the split is not arbitrary: UISystem builds its views with the App
+// container, so UpgradeSystem, CharacterLevels and who is being played — all GameScope — would silently
+// resolve to nothing through [Inject]. A tab is not a view and gets no injection at all, so IArtProvider now
+// arrives through Bind as well, handed down by the popup that does have it injected.
+public class UpgradeTab
 {
-    // A full-screen panel that fades; zoom is for the small centred popups.
-    protected override EffectType AppearFx => EffectType.Fade;
-
     // Public so the tree editor can draw at the same proportions — a node that fits here and overlaps in
     // game is the whole reason to have a preview, and two copies of these numbers would drift apart.
     public const float RingSpacing = 230f;   // one tree unit, in pixels
@@ -40,8 +42,8 @@ public class UpgradePopup : BasePopup
     CharacterLevels _levels;
     IArtProvider _art;
 
-    readonly VisualElement _avatar, _body, _canvas, _edges, _tip;
-    readonly Label _charName, _points, _tipText, _empty;
+    readonly VisualElement _body, _canvas, _edges, _tip;
+    readonly Label _points, _tipText, _empty;
     readonly Button _buyButton, _resetButton;
     readonly ScrollView _scroll;
 
@@ -54,10 +56,14 @@ public class UpgradePopup : BasePopup
     UpgradeNode _selected;
     Vector2 _centre;
 
-    public UpgradePopup(VisualElement root) : base(root)
+    // The element the tab's markup hangs off — CharacterPopup's content slot for this tab, not the popup root.
+    // Everything queried below is inside it, so two tabs can carry an element of the same name without either
+    // finding the other's.
+    readonly VisualElement _root;
+
+    public UpgradeTab(VisualElement root)
     {
-        _avatar = root.Q<VisualElement>("avatar");
-        _charName = root.Q<Label>("char-name");
+        _root = root;
         _points = root.Q<Label>("points");
         _body = root.Q<VisualElement>("body");
         _scroll = root.Q<ScrollView>("tree-scroll");
@@ -69,7 +75,6 @@ public class UpgradePopup : BasePopup
         _buyButton = root.Q<Button>("buy-button");
         _resetButton = root.Q<Button>("reset-button");
 
-        root.Q<Button>("close-button")?.RegisterCallback<ClickEvent>(_ => Close());
         _buyButton?.RegisterCallback<ClickEvent>(_ => Buy());
         _resetButton?.RegisterCallback<ClickEvent>(_ => ResetTree());
 
@@ -95,32 +100,34 @@ public class UpgradePopup : BasePopup
         if (_edges != null) _edges.generateVisualContent += PaintEdges;
     }
 
-    [Inject]
-    public void Construct(IArtProvider art) => _art = art;
-
-    // Called by whoever opened it, straight after Show — Show runs OnShow first, so nothing here may assume
-    // it has been bound yet.
-    public void Bind(IGetUpgradeTree trees, UpgradeSystem upgrades, CharacterLevels levels, string characterId)
+    // Called by the popup, straight after it shows — OnShow runs first, so nothing here may assume it has been
+    // bound yet.
+    public void Bind(IGetUpgradeTree trees, UpgradeSystem upgrades, CharacterLevels levels, IArtProvider art,
+                     string characterId)
     {
         _trees = trees;
         _upgrades = upgrades;
         _levels = levels;
+        _art = art;
         _characterId = characterId;
 
         Subscribe();
         Build();
     }
 
-    public override void OnShow()
+    // The tab owns whether it is on screen as well as what it listens to. The popup only ever says which tab is
+    // the current one; a tab that hid itself but kept its subscriptions, or the other way round, is the kind of
+    // half-state that costs an afternoon.
+    public void OnShow()
     {
-        base.OnShow();
+        if (_root != null) _root.style.display = DisplayStyle.Flex;
         Subscribe();     // a re-open before Bind lands still tracks whatever it was showing last
     }
 
-    public override void OnHide()
+    public void OnHide()
     {
+        if (_root != null) _root.style.display = DisplayStyle.None;
         Unsubscribe();
-        base.OnHide();
     }
 
     void Subscribe()
@@ -147,13 +154,8 @@ public class UpgradePopup : BasePopup
         _tree = _trees?.Get(_characterId);
         _selected = null;
 
-        if (_charName != null) _charName.text = string.IsNullOrEmpty(_characterId) ? "—" : _characterId;
-
-        var avatar = _art?.Avatar(_characterId);
-        if (_avatar != null)
-            _avatar.style.backgroundImage = avatar != null
-                ? new StyleBackground(avatar)
-                : new StyleBackground(StyleKeyword.None);
+        // The name and the portrait are the POPUP's, not this tab's: they say who is being looked at, which is
+        // true on every tab, and two tabs each drawing their own would be the same face twice.
 
         // Hoisted: Nodes flattens the inherited chain on every call while authoring, and Build asks twice.
         var nodes = _tree != null ? _tree.Nodes : null;

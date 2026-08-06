@@ -231,29 +231,11 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
-/* Temporary entry to the upgrade tree. Bottom-right, clear of the player panel top-left and the bag on
-   the right edge. Goes away when the house becomes the place you do this. */
-.hud-actions {
-    position: absolute;
-    right: 24px;
-    bottom: 24px;
-    align-items: flex-end;
-}
-
-.hud-btn {
-    height: 56px;
-    padding: 0 24px;
-    font-size: 22px;
-    -unity-font-style: bold;
-    color: rgb(20, 22, 28);
-    background-color: rgb(235, 200, 90);
-    border-width: 0;
-    border-radius: 10px;
-}
-
-.hud-btn:hover {
-    background-color: rgb(245, 215, 120);
-    scale: 1.03 1.03;
+/* The portrait is pressable now (it opens the character window), so it gets the feedback a button would.
+   Nothing moves: a HUD element that jumps under the cursor while the player is watching two bars next to it is
+   a distraction, and the cursor is already telling them it can be clicked. */
+.avatar-block:hover .level-avatar {
+    border-color: rgb(255, 236, 160);
 }
 
 .fly-layer {

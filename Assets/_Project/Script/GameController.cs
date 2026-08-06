@@ -24,6 +24,11 @@ public class GameController : IStartable, ITickable
         var kb = Keyboard.current;
         if (kb == null || !kb.escapeKey.wasPressedThisFrame) return;
 
+        // Esc means "back out of what is on top", so a window that is already up gets it first. CharacterPopup
+        // closes itself on Esc (CloseOnEscape is true, so UISystem does it), and all this has to do is not open
+        // a pause menu over the top of it in the same frame.
+        if (_ui.Get<CharacterPopup>() != null) return;
+
         // single owner of Esc: toggle (PausePopup.CloseOnEscape is false so UISystem won't also close it)
         var pause = _ui.Get<PausePopup>();
         if (pause != null) pause.Close();

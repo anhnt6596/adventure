@@ -1,0 +1,133 @@
+/* The shared character window: the shell, the head and the tab strip. Nothing a single page uses is in here —
+   each tab's uxml brings its own sheet, which lands on that page's instance and inherits down (see
+   UpgradeTab.uxml). The line between the two files is exactly the line between "true of every tab" and "this
+   tab's furniture", so a page can be moved or deleted without touching this.
+
+   The (!) is in UI/Badge.uss: the HUD portrait wears the same one, and a thing two screens share does not
+   belong to either of them.
+
+   SIZES ARE CHUNKY ON PURPOSE, and match the rest of the game rather than a desktop inspector. PanelSettings
+   scales the whole UI with the screen, so anything authored at "looks fine on my monitor" ends up unreadable
+   on a phone — the HUD is already built at 28-34px for the same reason. */
+
+/* Full screen, but not opaque: the world stays faintly visible behind it. This is a place you step into for a
+   moment, not a screen you leave the game for. */
+.dimmer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(6, 7, 12, 0.88);
+}
+
+.popup {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+/* ---- head ---- */
+
+.head {
+    flex-direction: row;
+    align-items: center;
+    padding: 22px 28px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.head-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 48px;
+    background-color: rgba(255, 255, 255, 0.08);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.head-titles {
+    flex-grow: 1;
+    margin-left: 20px;
+}
+
+.head-name {
+    font-size: 40px;
+    -unity-font-style: bold;
+    color: rgb(240, 240, 245);
+}
+
+.close-btn {
+    width: 64px;
+    height: 64px;
+    margin-left: 14px;
+    font-size: 30px;
+    color: rgb(230, 230, 235);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-width: 0;
+    border-radius: 32px;
+}
+
+.close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ---- tab strip ---- */
+
+.tabs {
+    flex-direction: row;
+    padding: 0 28px;
+    background-color: rgba(0, 0, 0, 0.25);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+/* A tab is a button that does not look like one: no fill, and the current one is marked by the line under it
+   rather than by a slab of colour. With one tab the strip should read as a heading, not as a control the
+   player is being asked to choose with. */
+.tab {
+    height: 74px;
+    padding: 0 26px;
+    margin: 0;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-bottom-width: 4px;
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-radius: 0;
+}
+
+.tab:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.tab--current {
+    border-bottom-color: rgb(235, 200, 90);
+}
+
+.tab-label {
+    font-size: 28px;
+    -unity-font-style: bold;
+    color: rgb(150, 152, 162);
+}
+
+.tab--current .tab-label {
+    color: rgb(240, 240, 245);
+}
+
+/* ---- pages ---- */
+
+.content {
+    flex-grow: 1;
+}
+
+/* Goes on the <ui:Instance> element itself, which is why it lives here and not in the page's own sheet: the
+   instance is created by THIS file's markup, and a page that styled its own container would be styling
+   something it does not own.
+   Column and growing, because every page is a strip of controls above one big area. Without both, an instance
+   element defaults to no growth and the page collapses to nothing — the one real trap in splitting tabs out
+   into their own files. */
+.tab-page {
+    flex-grow: 1;
+    flex-direction: column;
+}

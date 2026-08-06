@@ -55,10 +55,12 @@ public class GameUI : MonoBehaviour
     CharacterLevels _levels;
     IGetUpgradeTree _trees;
     UpgradeSystem _upgrades;
+    NotificationService _notifications;
 
     [Inject]
     public void Construct(IInputGate gate, IUISystem ui, IPlayer player,
-                          CharacterLevels levels, IGetUpgradeTree trees, UpgradeSystem upgrades)
+                          CharacterLevels levels, IGetUpgradeTree trees, UpgradeSystem upgrades,
+                          NotificationService notifications)
     {
         _gate = gate;
         _ui = ui;
@@ -66,6 +68,7 @@ public class GameUI : MonoBehaviour
         _levels = levels;
         _trees = trees;
         _upgrades = upgrades;
+        _notifications = notifications;
     }
 
     void Awake() => _document = GetComponent<UIDocument>();
@@ -103,13 +106,13 @@ public class GameUI : MonoBehaviour
 
     // Show first, then feed it: Show runs the popup's OnShow, and the popup cannot resolve any of this for
     // itself (UISystem builds views with the App container). Same push the HUD gets, for the same reason.
-    void OpenUpgrades()
+    void OpenCharacterPanel()
     {
-        var popup = _ui?.Show<UpgradePopup>();
+        var popup = _ui?.Show<CharacterPopup>();
         if (popup == null) return;
 
         var id = _player?.Current != null ? _player.Current.Id : null;
-        popup.Bind(_trees, _upgrades, _levels, id);
+        popup.Bind(_trees, _upgrades, _levels, _notifications, id);
     }
 
     // Point the HUD at the live body. Before START the HUD isn't shown and Get returns null, so this is a
@@ -120,8 +123,12 @@ public class GameUI : MonoBehaviour
         if (hud == null) return;
 
         // -= first: BindHud runs on every spawn, and the HUD instance is pooled across all of them.
-        hud.UpgradeRequested -= OpenUpgrades;
-        hud.UpgradeRequested += OpenUpgrades;
+        hud.CharacterPanelRequested -= OpenCharacterPanel;
+        hud.CharacterPanelRequested += OpenCharacterPanel;
+
+        // Not per-body — the service is one for the whole game — but bound here anyway, because this is the
+        // method that runs once the HUD exists at all. SetNotifications re-subscribes cleanly.
+        hud.SetNotifications(_notifications);
 
         var mc = _player?.Current;
         var picker = mc != null ? mc.GetComponentInChildren<Picker>() : null;

@@ -28,8 +28,14 @@ public class GameHUD : UIView
     VisualElement _hungerRoot, _hungerFill, _hungerMark, _hungerIcon;
     Label _hungerText;
 
-    // Raised by the UPGRADES button. Whoever can reach GameScope subscribes and does the opening.
-    public event System.Action UpgradeRequested;
+    // Raised by pressing the portrait. Whoever can reach GameScope subscribes and does the opening — the HUD
+    // owns the way in, not what is behind it.
+    public event System.Action CharacterPanelRequested;
+
+    // The (!) on the portrait: something in the character window is waiting and has not been looked at. Stands
+    // for EVERY tab at once, because one face cannot say which — that is what the badges on the tabs are for.
+    NotificationService _notifications;
+    VisualElement _avatarBadge;
 
     // Art is App-scope, so unlike everything else here it can simply be injected rather than pushed in.
     IArtProvider _art;
@@ -83,14 +89,19 @@ public class GameHUD : UIView
         // vitals beside it are a separate question and must not vanish with it.
         _levelRoot = root.Q<VisualElement>("avatar-block");
         _levelAvatar = root.Q<VisualElement>("level-avatar");
+        _avatarBadge = root.Q<VisualElement>("avatar-badge");
         _levelFill = root.Q<VisualElement>("level-fill");
         _levelText = root.Q<Label>("level-text");
         _levelExp = root.Q<Label>("level-exp");
         root.Q<Button>("capacity-button")?.RegisterCallback<ClickEvent>(_ => Toggle());
 
-        // The HUD owns the button but not what it opens: the upgrade popup needs GameScope services, and
-        // nothing built by the App-scope UISystem can reach those. So it asks, and GameUI answers.
-        root.Q<Button>("upgrade-button")?.RegisterCallback<ClickEvent>(_ => UpgradeRequested?.Invoke());
+        // The portrait IS the button now. The HUD owns the way in but not what it opens: the character window
+        // needs GameScope services, and nothing built by the App-scope UISystem can reach those. So it asks,
+        // and GameUI answers.
+        //
+        // On the block rather than on the face, so the level bar under the portrait opens it too — the whole
+        // cluster is one thing that answers "who am I", and a player aiming at their level has hit it.
+        _levelRoot?.RegisterCallback<ClickEvent>(_ => CharacterPanelRequested?.Invoke());
         WarmFlyPool(20);
     }
 
@@ -152,6 +163,24 @@ public class GameHUD : UIView
         if (characterId == _levelCharacterId) RefreshLevel();
     }
 
+    // Pushed like everything else here that knows about the running game. Taking the service rather than a bool
+    // so the badge keeps itself up to date — it has to go out the moment the player opens the window, which is
+    // not a moment the HUD would otherwise hear about.
+    public void SetNotifications(NotificationService notifications)
+    {
+        if (_notifications != null) _notifications.Changed -= RefreshBadge;
+        _notifications = notifications;
+        if (_notifications != null) _notifications.Changed += RefreshBadge;
+        RefreshBadge();
+    }
+
+    void RefreshBadge()
+    {
+        if (_avatarBadge == null) return;
+        bool show = _notifications != null && _notifications.Any;
+        _avatarBadge.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
     void RefreshLevel()
     {
         bool has = _levels != null && !string.IsNullOrEmpty(_levelCharacterId);
@@ -190,7 +219,7 @@ public class GameHUD : UIView
         if (_healthText != null) _healthText.text = $"{Mathf.CeilToInt(hp)}/{Mathf.CeilToInt(max)}";
     }
 
-    public override void OnShow() { Sub(); Refresh(); RefreshHealth(); RefreshHunger(); RefreshLevel(); }
+    public override void OnShow() { Sub(); Refresh(); RefreshHealth(); RefreshHunger(); RefreshLevel(); RefreshBadge(); }
     public override void OnHide() { Unsub(); }
 
     void Sub()
@@ -199,6 +228,7 @@ public class GameHUD : UIView
         if (_hunger != null) { _hunger.Changed -= RefreshHunger; _hunger.Changed += RefreshHunger; }
         if (_health != null) { _health.HealthChanged -= RefreshHealth; _health.HealthChanged += RefreshHealth; }
         if (_levels != null) { _levels.Changed -= OnLevelChanged; _levels.Changed += OnLevelChanged; }
+        if (_notifications != null) { _notifications.Changed -= RefreshBadge; _notifications.Changed += RefreshBadge; }
         PickupFly.Requested -= OnPickup; PickupFly.Requested += OnPickup;
     }
 
@@ -208,6 +238,7 @@ public class GameHUD : UIView
         if (_hunger != null) _hunger.Changed -= RefreshHunger;
         if (_health != null) _health.HealthChanged -= RefreshHealth;
         if (_levels != null) _levels.Changed -= OnLevelChanged;
+        if (_notifications != null) _notifications.Changed -= RefreshBadge;
         PickupFly.Requested -= OnPickup;
     }
 

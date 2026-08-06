@@ -1,0 +1,39 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <!-- One page of CharacterPopup, instanced by it as a <ui:Instance> — not a view of its own. There is no
+         UpgradeTab class implementing IUIElement, so UIRegistryGenerator skips this file (it wants a same-named
+         type that does) and nothing can ask the UISystem to open it. That is on purpose: a page opened outside
+         the window would have no head, no way out and no idea which character it was about.
+
+         NO SINGLE ROOT ELEMENT, deliberately. Everything here becomes a child of the instance element, which
+         CharacterPopup gives .tab-page — so a wrapper of my own would be a second box that also needed
+         flex-grow to stop the page collapsing, for nothing.
+
+         The sheet comes with the page. Styles declared here land on the instance and inherit down, which is
+         what keeps the popup's own sheet free of anything only this page uses. -->
+    <Style src="project://database/Assets/_Project/UI/Popups/UpgradeTab.uss" />
+
+    <!-- What there is to spend on the left, respec on the right. -->
+    <ui:VisualElement name="upgrade-bar" class="upgrade-bar">
+        <ui:Label name="points" text="" class="upgrade-points" />
+        <ui:Button name="reset-button" text="Reset" class="btn btn--ghost" />
+    </ui:VisualElement>
+
+    <!-- The nodes are added to "tree-canvas" from code, over "tree-edges" which paints the links. -->
+    <ui:VisualElement name="body" class="body">
+        <ui:ScrollView name="tree-scroll" class="tree-scroll">
+            <ui:VisualElement name="tree-canvas" class="tree-canvas">
+                <ui:VisualElement name="tree-edges" class="tree-edges" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+
+    <ui:Label name="empty" text="No upgrade tree authored for this character yet." class="empty" />
+
+    <!-- OUTSIDE the tree and last, so it is not clipped by the scroll view and draws over everything before it,
+         the window's head included. Code places it over the selected node in the instance element's coordinates
+         (see PlaceTip) and re-places it whenever the tree scrolls under it. -->
+    <ui:VisualElement name="tip" class="tip">
+        <ui:Label name="tip-text" text="" class="tip-text" />
+        <ui:Button name="buy-button" text="Unlock" class="btn tip-buy" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,31 @@
+/* The (!). Its own sheet because it is worn in two places that share nothing else — the HUD portrait and the
+   tabs inside CharacterPopup — and a badge that drifts between them stops reading as the same signal. Any
+   screen that grows one pulls this in beside its own sheet.
+
+   Hidden by default: NotificationService decides, and code sets display. A badge that showed itself until told
+   otherwise would flash on for the frame between a panel being built and being told what is waiting. */
+
+/* Round, red, and it says "!" rather than a count. A number here would be a number the player has to weigh —
+   "is 3 a lot?" — when the only thing a badge has to do is be noticed. The count belongs on the screen it
+   leads to, where it can be spent. */
+.badge {
+    display: none;
+    width: 34px;
+    height: 34px;
+    margin-left: 12px;   /* in a row of text — a tab label — it sits after the words */
+    font-size: 24px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(255, 255, 255);
+    background-color: rgb(214, 64, 64);
+    border-radius: 17px;
+}
+
+/* On the HUD portrait it is pinned to the corner of the face instead, so it reads as something stuck ON the
+   avatar rather than as part of it. */
+.badge--avatar {
+    position: absolute;
+    right: -6px;
+    top: -6px;
+    margin-left: 0;
+}
