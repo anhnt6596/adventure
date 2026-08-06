@@ -54,6 +54,10 @@ public class Hunger : MonoBehaviour
     // caching it here would be a second copy to keep in step with the one the stat already owns.
     public float Max => _stats != null ? Mathf.Max(0f, _stats.MaxHunger.Value) : 0f;
     public float DrainRate => _stats != null ? Mathf.Max(0f, _stats.HungerDrain.Value) : 0f;
+
+    // Percent per second on the stat, share per second out here — the conversion lives at the one place that
+    // does the arithmetic, so nothing is ever stored already multiplied. See IHungerConfig.
+    public float RegenShare => _stats != null ? Mathf.Max(0f, _stats.Regen.Value) * 0.01f : 0f;
     public float Value => _value;
     public float Fraction => Max > 0f ? Mathf.Clamp01(_value / Max) : 0f;
     public bool IsFull => _value >= Max;
@@ -114,7 +118,7 @@ public class Hunger : MonoBehaviour
         // Starving outranks well fed, and they cannot both be true anyway — this is just the order that reads.
         // Draining first means the tick that empties you is also the tick that starts hurting.
         if (_value <= 0f) _health.TakeDamage(_health.MaxHp * _cfg.StarveShare, this);
-        else if (IsWellFed) _health.Heal(_health.MaxHp * _cfg.WellFedHealShare);
+        else if (IsWellFed) _health.Heal(_health.MaxHp * RegenShare);
     }
 
     // Eat. Takes what fits and says how much that was; the rest is the caller's problem, which for a pickup

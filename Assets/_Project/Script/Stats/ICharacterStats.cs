@@ -19,6 +19,7 @@ public interface ICharacterStats
     IStat MaxHp { get; }
     IStat MaxHunger { get; }
     IStat HungerDrain { get; }
+    IStat Regen { get; }
     IStat Mass { get; }
     IStat PickupRadius { get; }
     IStat Vision { get; }

@@ -32,15 +32,15 @@ public class MainCharStatsConfig : Config, IHungerConfig, IDamageableConfig
     // 0..1 would be useless on them: 1.0 means the whole HP pool every second, so everything usable lives in
     // the first percent of the track. Being a fraction is not what earns a slider - the whole span being
     // meaningful is.
-    [Tooltip("PERCENT of max HP regained per second while above the well-fed line. Type 0.75 for 0.75%/s.")]
+    [Tooltip("BASE percent of max HP regained per second while above the well-fed line. Type 0.75 for " +
+             "0.75%/s. A Stat at runtime (StatId.Regen) — upgrades and gear move it.")]
     [Min(0f)] public float wellFedHealPercent = 0.75f;
     [Tooltip("PERCENT of max HP lost per second while completely empty. Type 1 for 1%/s.")]
     [Min(0f)] public float starvePercent = 1f;
 
     public float StartFullness => startFullness;   // IHungerConfig
     public float WellFedFraction => wellFed;
-    public float WellFedHealShare => wellFedHealPercent * 0.01f;   // percent in, share out
-    public float StarveShare => starvePercent * 0.01f;
+    public float StarveShare => starvePercent * 0.01f;   // percent in, share out
     public float MaxHp => maxHp;               // IDamageableConfig — the HP the MC's Damageable reads
     public int Team => Teams.Player;            // (Damageable actually takes team off MCController)
 }

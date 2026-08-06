@@ -22,6 +22,7 @@ public class MainCharStats : ICharacterStats
     public IStat MaxHp => _byId[StatId.MaxHp];
     public IStat MaxHunger => _byId[StatId.MaxHunger];
     public IStat HungerDrain => _byId[StatId.HungerDrain];
+    public IStat Regen => _byId[StatId.Regen];
     public IStat Mass => _byId[StatId.Mass];
     public IStat PickupRadius => _byId[StatId.PickupRadius];
     public IStat Vision => _byId[StatId.Vision];
@@ -35,6 +36,7 @@ public class MainCharStats : ICharacterStats
         _byId[StatId.MaxHp] = new Stat(config.maxHp);
         _byId[StatId.MaxHunger] = new Stat(config.maxHunger);
         _byId[StatId.HungerDrain] = new Stat(config.hungerDrain);
+        _byId[StatId.Regen] = new Stat(config.wellFedHealPercent);   // percent per second, as authored
         _byId[StatId.Mass] = new Stat(config.mass);
         _byId[StatId.PickupRadius] = new Stat(config.pickupRadius);
         // ALWAYS 1, and not a config field. What one character sees compared to another is already said by

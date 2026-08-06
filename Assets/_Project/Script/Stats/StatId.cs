@@ -17,6 +17,12 @@ public static class StatId
     public const string MaxHp = "MaxHp";
     public const string MaxHunger = "MaxHunger";
     public const string HungerDrain = "HungerDrain";
+
+    // PERCENT of max HP regained per second while above the well-fed line — 0.75 means 0.75%/s, the same
+    // units the config is authored in. Where the line SITS is not this: that is a rule of the mechanic and
+    // the same for everybody, so it stays a plain number on the config. How fast you mend once you are over
+    // it is a property of the character, which is exactly what a stat is for.
+    public const string Regen = "Regen";
     public const string Mass = "Mass";
     public const string PickupRadius = "PickupRadius";
 
@@ -34,7 +40,7 @@ public static class StatId
     public static readonly string[] All =
     {
         MoveSpeed, AttackSpeed, AttackPower, AttackCooldown,
-        MaxHp, MaxHunger, HungerDrain, Mass, PickupRadius, Vision,
+        MaxHp, MaxHunger, HungerDrain, Regen, Mass, PickupRadius, Vision,
     };
 
     // What a stat is CALLED where a player can see it. Beside the ids because the two have to grow together:
@@ -51,6 +57,7 @@ public static class StatId
         MaxHp => "HP",
         MaxHunger => "max fullness",
         HungerDrain => "hunger drain",
+        Regen => "regen",
         Mass => "mass",
         PickupRadius => "pickup radius",
         Vision => "vision",
