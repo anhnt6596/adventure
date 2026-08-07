@@ -26,6 +26,33 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
     cái ý "cách đánh quyết định đồ rơi ở đâu" mà doc đang bán.
   - Knockback thì gần như chắc chắn muốn: đẩy theo **hướng lướt**, không phải hướng toả tròn từ người.
 
+- [ ] **Dash: bật khoá và dựng nhánh nâng cấp cho nó.** Code xong hết rồi, còn lại là **author trong Unity**.
+
+  - **Bật tick `Locked`** trên `DashSkill` của prefab `MC 1`. Hiện đang tắt (prefab lưu trước khi field tồn
+    tại), nên vào game là đã có dash sẵn. Bật xong thì nút biến mất khỏi HUD và bấm K không ăn gì.
+  - **Node mở khoá**: effect `UnlockSkillEffect`, `skill = dash`. Không có node này thì dash khoá vĩnh viễn.
+  - **Node buff**: effect `SkillBuffEffect`, `skill = dash`, `stat = distance` hoặc `duration`
+    (hằng số `DashSkill.Distance` / `DashSkill.Duration`). `Add` là số phẳng, `Mul` là phần trăm.
+  - **Hai icon** vào `Resources/SkillIcons/`: `attack` và `dash`. Thiếu thì nút vẫn chạy, chỉ trống ruột.
+  - `distance` đang để **1** — một bước chân, ngắn hơn cả thân người, gần như không thấy bóng mờ. Chắc là số
+    thử.
+
+  **Nhắc lại mấy quyết định để lúc author khỏi phân vân:**
+  - Stat của skill **không nằm trong `StatId`**. Nó thuộc chính skill, địa chỉ là `(Key, tên tunable)`. Lý do:
+    cùng một `DashSkill` nằm slot 1 ở nhân vật này, slot 2 ở nhân vật kia — đặt tên theo slot là một node
+    nghĩa khác nhau tuỳ nhân vật, và dời slot là rớt hết upgrade. Đúng lý lẽ đã dùng để bỏ `Skill1/Skill2`
+    trong `AnimAction`.
+  - **`Skill1Haste`/`Skill2Haste` thì Ở LẠI trên nhân vật**, vì "chiêu về nhanh hơn" nghĩa như nhau với mọi
+    skill. Node haste dùng **`Add`** (base 0 nên `Mul` chết).
+  - **Tên tunable gõ tay, không có dropdown** — cây không biết nhân vật nào mang skill nào. Gõ sai thì
+    `PlayerSystem` log warning một lần chứ không im.
+
+- [ ] **`DashSkill`: đổi `distance` → `speed`.** Đã chốt "duration dài hơn = lướt xa hơn", nhưng bộ số hiện
+  tại là `distance` + `duration` nên duration dài hơn lại thành **chậm hơn** trên cùng quãng đường — ngược.
+  Author `speed` + `duration`, `distance = speed × duration` suy ra. Lúc đó +duration là đi xa hơn với đúng
+  cảm giác cũ, còn +speed là một trục khác hẳn (né nhanh hơn, không xa hơn). Gizmo vẫn vẽ ra quãng đường nên
+  vẫn canh được trên map. Hai dòng, chưa làm vì đang chờ art dash xong để nhìn cùng lúc.
+
 - [x] **CHIA LẠI PHE (team).** ✅ Thay hẳn quy ước cũ `0 trung lập / 1 player /
   2 địch / 3 prop`. Ý chính: **địch không còn là MỘT phe**. Mỗi loài quái là một phe riêng, nên quái đánh nhau
   được, và "kẻ thù của tôi" không còn suy ra được từ một con số duy nhất.
