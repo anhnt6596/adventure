@@ -147,7 +147,10 @@ public class GameHUD : UIView
             foreach (var skill in skills)
                 if (skill.Which == slot)
                 {
-                    AddAbility(mc.Id, skill.Key, () => skill.CooldownFraction);
+                    // A skill the character has not been given yet has no button at all, rather than a greyed
+                    // one: a dimmed button is a promise, and the tree is where promises are made. The node in
+                    // the tree is what says the skill exists.
+                    if (skill.Unlocked) AddAbility(mc.Id, skill.Key, () => skill.CooldownFraction);
                     break;   // a second skill claiming the same slot has no button, and MCInput has said so
                 }
 

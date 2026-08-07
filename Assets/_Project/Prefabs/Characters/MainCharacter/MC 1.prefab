@@ -300,9 +300,10 @@ MonoBehaviour:
   slot: 1
   key: dash
   cooldown: 8
-  distance: 2
+  distance: 1
   duration: 0.18
   massMultiplier: 5
+  invulnerable: 1
   source: {fileID: 8142573892274122599}
   ghosts: 6
   ghostTint: {r: 0.65, g: 0.85, b: 1, a: 0.55}

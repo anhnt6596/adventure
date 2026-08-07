@@ -89,7 +89,20 @@ public class GameUI : MonoBehaviour
         // pointed at the dead one — re-bind on every spawn, not just at START.
         if (_player != null) _player.Spawned += OnPlayerSpawned;
 
+        // Buying a node can add a button to the bar, and the popup is open when it happens — waiting for the
+        // next spawn to show it would mean unlocking a skill and seeing nothing change. Nothing else on the
+        // HUD is rebuilt by this, so it is the bar and only the bar.
+        if (_upgrades != null) _upgrades.Changed += RefreshAbilities;
+
         SetupCheats(root);
+    }
+
+    // PlayerSystem is subscribed to the same event and is what actually opens the skill, so ordering matters:
+    // it registers in its constructor, at container build, long before this runs in Start. The bar therefore
+    // reads a skill that has already been told.
+    void RefreshAbilities()
+    {
+        _ui?.Get<GameHUD>()?.SetAbilities(_player?.Current);
     }
 
     void OnPlayerSpawned(MCController _)
@@ -472,6 +485,7 @@ public class GameUI : MonoBehaviour
     {
         Release();
         if (_player != null) _player.Spawned -= OnPlayerSpawned;
+        if (_upgrades != null) _upgrades.Changed -= RefreshAbilities;
 #if UNITY_EDITOR
         if (_bagInventory != null) _bagInventory.Changed -= RefreshBag;
         if (_levels != null) _levels.Changed -= OnAnyLevelChanged;

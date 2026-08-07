@@ -44,6 +44,14 @@ public class DashSkill : CharacterSkill
              "the tail then outlives the lunge instead of vanishing with it.")]
     [SerializeField, Min(0.01f)] float ghostFade = 0.25f;
 
+    // The names a node addresses these by. Constants rather than literals typed twice: this is the one place
+    // that can be checked against, and a node still has to spell it right by hand — the tree has no idea which
+    // character will be carrying which skill, so no dropdown can offer them.
+    public const string Distance = "distance";
+    public const string Duration = "duration";
+
+    Stat _distance, _duration;
+
     CollisionBody _body;
     Damageable _damageable;
 
@@ -51,6 +59,7 @@ public class DashSkill : CharacterSkill
     float _left;            // of the dash
     float _nextGhost;
     Vector3 _direction;
+    float _runDistance, _runDuration;   // this dash's numbers, fixed when it started
 
     // Both put back as they were FOUND rather than reset to a config value, so whatever else may be holding
     // them — a cheat toggle, another effect — is not undone by this one finishing.
@@ -65,6 +74,11 @@ public class DashSkill : CharacterSkill
     protected override void Awake()
     {
         base.Awake();
+
+        // The serialized fields are the bases; from here on the dash reads the stats, so a node can move them.
+        _distance = Tunable(Distance, distance);
+        _duration = Tunable(Duration, duration);
+
         if (Owner != null)
         {
             _body = Owner.GetComponentInChildren<CollisionBody>();
@@ -85,11 +99,17 @@ public class DashSkill : CharacterSkill
         if (_direction.sqrMagnitude < 1e-6f) return false;
         _direction.Normalize();
 
+        // READ ONCE, AT THE START. A dash is a committed action, so a buff landing mid-flight must not bend
+        // the arc it is already halfway through — and the hold below is one number that has to agree with the
+        // distance it was worked out against. Floored so a debuff cannot divide by zero.
+        _runDistance = Mathf.Max(0f, _distance.Value);
+        _runDuration = Mathf.Max(0.01f, _duration.Value);
+
         _dashing = true;
-        _left = duration;
+        _left = _runDuration;
         _nextGhost = 0f;
 
-        Owner.Hold(duration, ActionKind.Skill);
+        Owner.Hold(_runDuration, ActionKind.Skill);
 
         // One call is enough: the view stops touching the animator while a skill holds, and Play leaves a
         // looping action that is already running alone. 1x on purpose — the legs move at the speed the art
@@ -122,7 +142,7 @@ public class DashSkill : CharacterSkill
         dt = Mathf.Min(dt, _left);
         _left -= dt;
 
-        Vector3 step = _direction * (distance / duration * dt);
+        Vector3 step = _direction * (_runDistance / _runDuration * dt);
 
         // The same clamp CollisionBody puts on a knockback slide, for the same reason: the world only pushes a
         // body back out of a wall while its centre is within its own radius of one, so a step longer than that
@@ -137,7 +157,7 @@ public class DashSkill : CharacterSkill
         if (_nextGhost <= 0f)
         {
             DropGhost();
-            _nextGhost = duration / Mathf.Max(1, ghosts);
+            _nextGhost = _runDuration / Mathf.Max(1, ghosts);
         }
 
         if (_left > 0f) return;

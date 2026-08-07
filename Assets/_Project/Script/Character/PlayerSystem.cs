@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -145,6 +146,10 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         var go = UnityEngine.Object.Instantiate(ident.gameObject, position, rotation);
         _scope.InjectGameObject(go);
         Current = go.GetComponent<MCController>();   // guaranteed by the prefab check above
+
+        // Worked out above, before this body existed. Now it does, so it can be told.
+        ApplySkillUpgrades();
+
         Spawned?.Invoke(Current);
         return true;
     }
@@ -169,6 +174,12 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
     // paths would be three chances for them to disagree about what is currently on the character.
     static readonly object UpgradeSource = new object();
 
+    // Which skills the tree has opened, rebuilt from nothing on every pass. Held on the system rather than on
+    // the body because the body is thrown away and remade on every spawn, and this outlives that: the answer
+    // belongs to the CHARACTER, the components are just where it lands.
+    readonly HashSet<string> _unlockedSkills = new HashSet<string>();
+    readonly List<SkillModifier> _skillBuffs = new List<SkillModifier>();
+
     void ApplyUpgrades()
     {
         if (_stats == null) return;
@@ -182,10 +193,15 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         {
             _stats.RemoveBySource(UpgradeSource);
 
+            // Emptied first, exactly like the modifiers above: what is open is derived from what is bought,
+            // so a respec has to be able to shut a skill again without anybody tracking that it was opened.
+            _unlockedSkills.Clear();
+            _skillBuffs.Clear();
+
             var tree = _trees?.Get(_currentId);
             if (tree == null) return;
 
-            var context = new UpgradeContext(_stats, UpgradeSource);
+            var context = new UpgradeContext(_stats, UpgradeSource, _unlockedSkills, _skillBuffs);
             foreach (var node in tree.Nodes)
                 if (node?.effect != null && _upgrades.IsBought(_currentId, node))
                     node.effect.Apply(context);
@@ -193,7 +209,60 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
         finally
         {
             _stats.EndBatch();
+            ApplySkillUpgrades();
         }
+    }
+
+    // Onto whatever body is standing, and it may be none: at spawn this pass runs BEFORE the body exists, so
+    // Spawn calls it again once it does. Two calls rather than one because the set has to be finished before
+    // Damageable's Start reads a maximum, and the components only exist after that.
+    //
+    // The same take-it-all-off-and-put-it-back the stats get, for the same reason: what a skill is worth is a
+    // function of what has been bought, so a respec has to be able to undo it without anybody remembering.
+    void ApplySkillUpgrades()
+    {
+        if (Current == null) return;
+
+        foreach (var skill in Current.GetComponentsInChildren<CharacterSkill>(true))
+        {
+            skill.SetUnlocked(_unlockedSkills.Contains(skill.Key));
+
+            skill.BeginBatch();
+            try
+            {
+                skill.RemoveBySource(UpgradeSource);
+
+                foreach (var buff in _skillBuffs)
+                {
+                    if (buff.Skill != skill.Key) continue;
+
+                    var stat = skill.Modifiable(buff.Stat);
+                    if (stat == null)
+                    {
+                        // Said out loud rather than dropped: a mistyped tunable is a node the player paid for
+                        // that does nothing, and nothing else in the game would ever mention it.
+                        Warn($"[{nameof(PlayerSystem)}] upgrade names '{buff.Stat}' on skill '{buff.Skill}', " +
+                             "which has no tunable by that name — that node does nothing.");
+                        continue;
+                    }
+
+                    stat.Add(new StatModifier(buff.Amount, buff.Kind, UpgradeSource));
+                }
+            }
+            finally
+            {
+                skill.EndBatch();
+            }
+        }
+    }
+
+    // Once per message per session. This runs on every purchase and every spawn, so an unguarded log would
+    // fill the console with the same line for one typo.
+    readonly HashSet<string> _warned = new HashSet<string>();
+
+    void Warn(string message)
+    {
+        if (_warned.Add(message)) Debug.LogWarning(message);
     }
 
     public void Save(SaveBag bag) => bag.Set("current", _currentId);

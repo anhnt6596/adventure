@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // One of a character's two skills, living on that character's own prefab — the same shape ShapeAttack has, and
@@ -30,6 +31,10 @@ public abstract class CharacterSkill : MonoBehaviour
              "shortens it, nothing replaces it.")]
     [SerializeField, Min(0f)] float cooldown = 8f;
 
+    [Tooltip("Starts shut, and stays shut until an upgrade node opens it (UnlockSkillEffect, by the Key " +
+             "above). Off means the character has it from the first minute.")]
+    [SerializeField] bool locked;
+
     protected DynamicUnit Owner { get; private set; }
 
     ICharacterStats _stats;   // null on anything that is not a main character — then haste is simply 0
@@ -37,6 +42,57 @@ public abstract class CharacterSkill : MonoBehaviour
 
     public Slot Which => slot;
     public string Key => key;
+
+    // Whether the character actually has this yet. A skill that was never locked is simply always open; one
+    // that was waits to be told, and is told again from scratch on every re-apply of the tree — so a respec
+    // shuts it without anything having to remember that it had been opened.
+    //
+    // PUSHED IN rather than asked for: the skill would otherwise need the upgrade system, the character's id
+    // and the node's id, which is three things a component on a prefab has no business knowing.
+    public bool Unlocked => !locked || _unlocked;
+    bool _unlocked;
+
+    public void SetUnlocked(bool value) => _unlocked = value;
+
+    // ---- the skill's own numbers -------------------------------------------------------------------
+    //
+    // A SKILL OWNS ITS TUNABLES; THEY ARE NOT CHARACTER STATS. A dash has a distance and a duration, a shout
+    // has a radius — put those on the character and every character carries a number for a skill it may not
+    // have, and the list grows with every skill ever written.
+    //
+    // It cannot be keyed by SLOT either, which is the trap worth naming: the same DashSkill sits in slot one
+    // on one character and slot two on another, so a "Skill1Range" would mean something different per
+    // character, and moving a skill between slots would silently detach its upgrades. Exactly why AnimAction
+    // names what the movement IS rather than which button ran it.
+    //
+    // So the pair that addresses a tunable is (this skill's Key, the tunable's name) — the same Key its icon
+    // and its unlock node already use. One name for one skill, everywhere.
+    //
+    // Same Stat class the character uses, so several nodes stack, a respec takes them off by source, and
+    // nothing here re-implements arithmetic that already exists.
+    readonly Dictionary<string, Stat> _tunables = new Dictionary<string, Stat>();
+
+    // Declared in Awake, from whatever the inspector holds. The serialized field stays the BASE — it is what
+    // the skill is worth with no upgrades on it.
+    protected Stat Tunable(string name, float baseValue)
+    {
+        var stat = new Stat(baseValue);
+        if (!string.IsNullOrEmpty(name)) _tunables[name] = stat;
+        return stat;
+    }
+
+    // Null for a name this skill does not have — which is what a mistyped node comes down to, and why the
+    // one applying them says so once rather than failing quietly. See PlayerSystem.
+    public Stat Modifiable(string name)
+        => !string.IsNullOrEmpty(name) && _tunables.TryGetValue(name, out var stat) ? stat : null;
+
+    public void RemoveBySource(object source)
+    {
+        foreach (var stat in _tunables.Values) stat.RemoveBySource(source);
+    }
+
+    public void BeginBatch() { foreach (var stat in _tunables.Values) stat.BeginBatch(); }
+    public void EndBatch()   { foreach (var stat in _tunables.Values) stat.EndBatch(); }
 
     // THE SKILL DRIVES ITS OWN ANIMATION, and this class does not have an opinion about it. There is no "the
     // clip this skill plays", because that is not a shape skills have: some play nothing, some run several
@@ -112,7 +168,7 @@ public abstract class CharacterSkill : MonoBehaviour
 
     public bool TryUse()
     {
-        if (!Ready || Owner == null) return false;
+        if (!Unlocked || !Ready || Owner == null) return false;
 
         // Not while another skill is playing out. A swing, by contrast, is no obstacle — pressing this
         // cancels it, which is the one asymmetry in the rules. See ActionKind.
