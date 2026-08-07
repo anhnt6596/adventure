@@ -249,4 +249,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f273d8b60e5fb304ab084ac21dcde76b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FoodPayload
-  nourishment: 10
+  nourishment: 5

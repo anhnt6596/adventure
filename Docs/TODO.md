@@ -6,6 +6,26 @@ Việc còn nợ, gom theo mảng. Cập nhật dần; đánh dấu `[x]` khi xo
 
 ## 🎮 Core loop / gameplay
 
+- [ ] **Dash gây sát thương khi lướt qua.** Cơ chế thì rõ, **chỉ chưa chốt được sát thương lấy từ đâu** — và
+  đó mới là lý do chưa làm, không phải vì khó.
+
+  - **Câu hỏi mở: nhân theo cái gì?** `AttackPower` (nó là một đòn đánh), **mass** (nó là một cú húc — mà dash
+    đang ×5 mass sẵn, nên con nặng húc đau là tự nhiên), **máu tối đa** (build trâu bò), hay một số phẳng trên
+    component. **Nhiều khả năng tuỳ nhân vật**, nên đừng hard-code: nó muốn là một lựa chọn author trên chính
+    skill đó, kiểu `IUpgradeEffect` chọn loại bằng `[SerializeReference]`. Chốt khi có nhân vật thứ hai có
+    dash, chứ một con thì không nhìn ra hình.
+  - **⚠️ Phải quét theo ĐƯỜNG ĐI, không phải overlap một lần.** `ShapeAttack` overlap tại một khoảnh khắc vì
+    cú vung đứng yên; dash thì di chuyển nhanh nhất game, nên một con quái đứng giữa hai frame sẽ bị bỏ sót
+    hoàn toàn. Cùng đúng cái vấn đề mà bước lướt đang phải kẹp `Radius * 0.9` để khỏi xuyên tường — ở đây là
+    xuyên **qua người**. Quét từng bước một trong `StepDash` là đủ, không cần capsule cast.
+  - **Mỗi mục tiêu chỉ trúng một lần cho cả cú lướt.** `ShapeAttack` đã có mẫu: một `List<IDamageable>` giữ
+    những đứa đã trúng. Của dash thì list sống suốt cú lướt chứ không phải một frame — không thì lướt qua một
+    con là nó ăn một đòn mỗi frame.
+  - **Tâm phát lực là vị trí người lướt tại thời điểm chạm**, không phải điểm bắt đầu. `DESIGN.md` nói loot
+    văng ra theo `targetPos − forceOrigin`, nên làm đúng chỗ này thì đồ rơi tự rải dọc theo đường lướt — đúng
+    cái ý "cách đánh quyết định đồ rơi ở đâu" mà doc đang bán.
+  - Knockback thì gần như chắc chắn muốn: đẩy theo **hướng lướt**, không phải hướng toả tròn từ người.
+
 - [x] **CHIA LẠI PHE (team).** ✅ Thay hẳn quy ước cũ `0 trung lập / 1 player /
   2 địch / 3 prop`. Ý chính: **địch không còn là MỘT phe**. Mỗi loài quái là một phe riêng, nên quái đánh nhau
   được, và "kẻ thù của tôi" không còn suy ra được từ một con số duy nhất.
