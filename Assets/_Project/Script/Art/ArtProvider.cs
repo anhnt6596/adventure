@@ -26,6 +26,7 @@ public class ArtProvider : IArtProvider
     // Public because the tree editor tells the author where it looked when it found nothing, and a second
     // copy of the folder name is a message that goes stale the first time this moves.
     public const string UpgradeFolder = "StatIcons";
+    public const string SkillFolder = "SkillIcons";
 
     readonly Dictionary<string, Sprite> _cache = new Dictionary<string, Sprite>();
     readonly HashSet<string> _warned = new HashSet<string>();
@@ -50,6 +51,24 @@ public class ArtProvider : IArtProvider
             if (own != null) return own;
         }
         return Get($"{UpgradeFolder}/{nodeKey}");
+    }
+
+    // Per character first, then shared — the same two-step UpgradeIcon uses, and for the same reason: most
+    // characters want the same picture for a dash, and the one that wants its own gets it by dropping a file
+    // in.
+    //
+    //     Resources/SkillIcons/MC 1/dash
+    //     Resources/SkillIcons/dash
+    public Sprite SkillIcon(string characterId, string skillKey)
+    {
+        if (string.IsNullOrEmpty(skillKey)) return null;
+
+        if (!string.IsNullOrEmpty(characterId))
+        {
+            var own = Load($"{SkillFolder}/{characterId}/{skillKey}");
+            if (own != null) return own;
+        }
+        return Get($"{SkillFolder}/{skillKey}");
     }
 
     public Sprite Get(string path)

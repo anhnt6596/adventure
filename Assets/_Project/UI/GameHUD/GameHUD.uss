@@ -2,6 +2,57 @@
     flex-grow: 1;
 }
 
+/* ---- ability bar ----
+   Bottom right, and CHUNKY: PanelSettings scales the UI with the screen, and these are the only elements a
+   thumb has to hit under pressure. Left to right in the order the keys sit under the hand — J attack, K, L —
+   so the row on screen and the row on the keyboard are the same row. */
+.ability-bar {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.ability {
+    width: 118px;
+    height: 118px;
+    margin-right: 14px;
+    border-radius: 59px;
+    border-width: 3px;
+    border-color: rgba(235, 200, 90, 0.85);
+    background-color: rgba(12, 14, 20, 0.72);
+    justify-content: center;
+    align-items: center;
+    /* the cooldown wedge is painted as a circle bigger than the button, and this is what trims it to one */
+    overflow: hidden;
+}
+
+.ability-icon {
+    width: 74px;
+    height: 74px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* Painted, not scaled: a wedge is an arc and no amount of width on a rectangle makes one. See GameHUD.Sweep. */
+.ability-sweep {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+/* Ready is the loud state and cooling is the quiet one, said twice — the rim goes out and the icon dims —
+   because the wedge alone is a shape you have to read, and this is a thing you check without looking. */
+.ability--cooling {
+    border-color: rgba(120, 126, 140, 0.6);
+}
+
+.ability--cooling .ability-icon {
+    opacity: 0.4;
+}
+
 /* Portrait, level, experience and both vitals in one block. They answer one question between them —
    who am I and how am I doing — and were previously split across opposite corners, which made the
    player look in two places for it. */

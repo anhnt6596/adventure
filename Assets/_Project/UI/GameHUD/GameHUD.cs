@@ -102,7 +102,137 @@ public class GameHUD : UIView
         // On the block rather than on the face, so the level bar under the portrait opens it too — the whole
         // cluster is one thing that answers "who am I", and a player aiming at their level has hit it.
         _levelRoot?.RegisterCallback<ClickEvent>(_ => CharacterPanelRequested?.Invoke());
+        _abilityBar = root.Q<VisualElement>("ability-bar");
         WarmFlyPool(20);
+    }
+
+    // ---- ability bar ------------------------------------------------------------------------------
+
+    // One button. The fraction is a delegate rather than a stored number because the two things behind these
+    // buttons count time differently — an attack winds a timer down in its Update, a skill compares against
+    // Time.time — and a button that copied either would be a third place that has to agree.
+    class Ability
+    {
+        public VisualElement Root, Icon, Sweep;
+        public System.Func<float> Cooling;   // 1 just spent, 0 ready
+        public float Shown = -1f;            // last painted, so a button standing still repaints nothing
+    }
+
+    VisualElement _abilityBar;
+    readonly List<Ability> _abilities = new();
+    IVisualElementScheduledItem _abilityTicker;
+
+    // Rebuilt per body rather than kept: a character switch brings different skills, and three buttons is
+    // cheaper to make again than to reconcile.
+    public void SetAbilities(MCController mc)
+    {
+        if (_abilityBar == null) return;
+
+        _abilityBar.Clear();
+        _abilities.Clear();
+
+        if (mc == null)
+        {
+            _abilityTicker?.Pause();
+            return;
+        }
+
+        // Attack first, and the bar runs left to right, so it sits leftmost — under J, with the skills after
+        // it under K and L. It has no component of its own; the unit IS the ability, and "attack" is the key
+        // its picture hangs on.
+        AddAbility(mc.Id, "attack", () => mc.AttackCooldownFraction);
+
+        var skills = mc.GetComponentsInChildren<CharacterSkill>(true);
+        foreach (var slot in new[] { CharacterSkill.Slot.One, CharacterSkill.Slot.Two })
+            foreach (var skill in skills)
+                if (skill.Which == slot)
+                {
+                    AddAbility(mc.Id, skill.Key, () => skill.CooldownFraction);
+                    break;   // a second skill claiming the same slot has no button, and MCInput has said so
+                }
+
+        // 30 a second, not every frame: a wedge is a shape the eye reads as continuous long before it is, and
+        // this repaints a mesh each time it moves.
+        _abilityTicker ??= Root.schedule.Execute(StepAbilities).Every(33);
+        _abilityTicker.Resume();
+        StepAbilities();
+    }
+
+    void AddAbility(string characterId, string key, System.Func<float> cooling)
+    {
+        var button = new VisualElement();
+        button.AddToClassList("ability");
+        button.pickingMode = PickingMode.Ignore;   // a readout, not a control — pressing it does nothing
+
+        var icon = new VisualElement();
+        icon.AddToClassList("ability-icon");
+        icon.pickingMode = PickingMode.Ignore;
+        var sprite = _art?.SkillIcon(characterId, key);
+        if (sprite != null) icon.style.backgroundImage = new StyleBackground(sprite);
+
+        var sweep = new VisualElement();
+        sweep.AddToClassList("ability-sweep");
+        sweep.pickingMode = PickingMode.Ignore;
+
+        var ability = new Ability { Root = button, Icon = icon, Sweep = sweep, Cooling = cooling };
+        sweep.generateVisualContent += ctx => PaintSweep(ctx, ability.Shown);
+
+        button.Add(icon);
+        button.Add(sweep);
+        _abilityBar.Add(button);
+        _abilities.Add(ability);
+    }
+
+    // Polled rather than pushed, and it does NOT stop when everything is ready. Stopping would need something
+    // to start it again on the next press, and neither an attack nor a skill announces being spent — so the
+    // saving would be three float reads a tick, bought with a bar that goes dead after the first cooldown.
+    // The repaint is the expensive part, and that is what the guard below actually protects.
+    void StepAbilities()
+    {
+        foreach (var ability in _abilities)
+        {
+            float cooling = Mathf.Clamp01(ability.Cooling?.Invoke() ?? 0f);
+
+            // A whole degree of the dial is the smallest change worth a repaint; below that a mesh is rebuilt
+            // for something nobody can see.
+            if (Mathf.Abs(cooling - ability.Shown) < 1f / 360f) continue;
+
+            bool wasReady = ability.Shown <= 0f;
+            ability.Shown = cooling;
+            ability.Sweep.MarkDirtyRepaint();
+
+            if (wasReady == (cooling <= 0f)) continue;   // the ready/cooling state did not turn over
+            ability.Root.EnableInClassList("ability--cooling", cooling > 0f);
+        }
+    }
+
+    // A pie wedge over the icon, shrinking anticlockwise as the wait runs out — the fan opening back up.
+    // Painted rather than styled because UI Toolkit has no radial fill: a rectangle cannot be made into an
+    // arc by any amount of width, and a rotating mask needs an element per degree of precision.
+    //
+    // The radius overshoots the button on purpose. The wedge has to reach the CORNERS of a square element to
+    // cover it, and .ability clips to its own border radius, which is what trims the overshoot back to a
+    // circle for free.
+    static void PaintSweep(MeshGenerationContext ctx, float fraction)
+    {
+        if (fraction <= 0f) return;
+
+        var rect = ctx.visualElement.contentRect;
+        if (rect.width <= 0f || rect.height <= 0f) return;
+
+        var centre = rect.center;
+        float radius = new Vector2(rect.width, rect.height).magnitude * 0.5f;
+
+        var painter = ctx.painter2D;
+        painter.fillColor = new Color(0.02f, 0.03f, 0.05f, 0.78f);
+        painter.BeginPath();
+        painter.MoveTo(centre);
+        // From twelve o'clock, clockwise: the direction a clock hand sweeps is the one people read as time.
+        painter.Arc(centre, radius,
+                    new Angle(-90f, AngleUnit.Degree),
+                    new Angle(-90f + 360f * fraction, AngleUnit.Degree));
+        painter.ClosePath();
+        painter.Fill();
     }
 
     public void SetInventory(Inventory inv)

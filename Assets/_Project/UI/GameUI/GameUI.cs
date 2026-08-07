@@ -132,6 +132,7 @@ public class GameUI : MonoBehaviour
 
         var mc = _player?.Current;
         var picker = mc != null ? mc.GetComponentInChildren<Picker>() : null;
+        hud.SetAbilities(mc);   // attack + whichever skills this body carries
         hud.SetInventory(picker?.Inventory);
         hud.SetHealth(mc != null ? mc.GetComponentInChildren<Damageable>() : null);
         hud.SetHunger(mc != null ? mc.GetComponentInChildren<Hunger>() : null);

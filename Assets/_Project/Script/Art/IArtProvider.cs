@@ -22,6 +22,11 @@ public interface IArtProvider
     // "body" node without them all having to look the same.
     Sprite UpgradeIcon(string characterId, string nodeKey);
 
+    // A skill button's icon, by the same pair and the same fallback. The basic attack asks for one too, under
+    // the key "attack" — it is a button on the same bar, so it is a picture looked up the same way rather
+    // than a special case with its own field somewhere.
+    Sprite SkillIcon(string characterId, string skillKey);
+
     // Anything else, by its path under a Resources folder. The typed helpers above are the ones to prefer —
     // this exists so a new kind of art does not have to wait for a new method.
     Sprite Get(string path);

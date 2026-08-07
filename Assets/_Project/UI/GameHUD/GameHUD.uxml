@@ -44,6 +44,10 @@
             </ui:Button>
             <ui:VisualElement name="item-list" class="item-list" picking-mode="Ignore" />
         </ui:VisualElement>
+        <!-- Attack and the two skills, bottom right, filled from code: a character with one skill shows two
+             buttons rather than an empty third. Each is a circle with the icon inside and a wedge painted
+             over it while it cools. -->
+        <ui:VisualElement name="ability-bar" class="ability-bar" picking-mode="Ignore" />
         <ui:VisualElement name="fly-layer" class="fly-layer" picking-mode="Ignore" />
     </ui:VisualElement>
 </ui:UXML>
