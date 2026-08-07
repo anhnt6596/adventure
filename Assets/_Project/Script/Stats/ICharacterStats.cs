@@ -23,6 +23,8 @@ public interface ICharacterStats
     IStat Mass { get; }
     IStat PickupRadius { get; }
     IStat Vision { get; }
+    IStat Skill1Haste { get; }
+    IStat Skill2Haste { get; }
 
     // By name, for anything authored as data. Null for a name that is not a stat — see StatId.
     IStat Get(string id);

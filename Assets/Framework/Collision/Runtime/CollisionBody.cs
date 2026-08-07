@@ -27,6 +27,11 @@ public class CollisionBody : MonoBehaviour, ICollisionBody
     // Circle: its radius. Rect: bounding radius (half-diagonal) — used for broad-phase + terrain.
     public float Radius => shape == CollisionShape.Rect ? (size * 0.5f).magnitude : radius;
 
+    // Readable as well as settable, so something that raises mass for a moment (a dash going heavy) can put
+    // back what it found rather than what a config says — which is what lets two such things overlap without
+    // one of them undoing the other on the way out.
+    public float Mass => mass;
+
     public float InvMass => mass > 0f ? 1f / mass : 0f;
     public int PassMask { get; private set; } = ~0;
 

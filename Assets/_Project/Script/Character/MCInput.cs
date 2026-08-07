@@ -20,6 +20,11 @@ public class MCInput : MonoBehaviour
 
     readonly Dictionary<Key, ICharacterCommand> _held = new Dictionary<Key, ICharacterCommand>();
     readonly Dictionary<Key, ICharacterCommand> _pressed = new Dictionary<Key, ICharacterCommand>();
+
+    // Kept apart from _pressed so the gate can allow one and refuse the other. They are two different
+    // permissions — a scripted moment may well want you able to swing where you stand but not to dash out of
+    // it — and one dictionary could only ever be allowed or refused as a whole.
+    readonly Dictionary<Key, ICharacterCommand> _skills = new Dictionary<Key, ICharacterCommand>();
     Vector2 _localMove;
 
     void Awake()
@@ -40,7 +45,33 @@ public class MCInput : MonoBehaviour
         _held[Key.LeftArrow] = left;
         _held[Key.RightArrow] = right;
 
-        _pressed[Key.Space] = new AttackCommand(character);
+        // J as well as Space, and J is the one that matters: it puts attack beside K and L so the three
+        // abilities sit under three fingers in the order the HUD draws them. Space stays because it is what
+        // hands already reach for, and one command object answers both — the same press either way.
+        var attack = new AttackCommand(character);
+        _pressed[Key.Space] = attack;
+        _pressed[Key.J] = attack;
+
+        BindSkills();
+    }
+
+    // Bound by SLOT, not by which component happens to be there: every character carries its own skills, so
+    // the key has to mean "your first skill" rather than "the dash". Found on the body rather than dragged in,
+    // because a character with no second skill yet must simply have nothing on that key — a serialized slot
+    // would be an empty reference to explain instead.
+    void BindSkills()
+    {
+        foreach (var skill in character.GetComponentsInChildren<CharacterSkill>(true))
+        {
+            var key = skill.Which == CharacterSkill.Slot.One ? Key.K : Key.L;
+            if (_skills.ContainsKey(key))
+            {
+                Debug.LogError($"[{nameof(MCInput)}] two skills claim slot {skill.Which} on '{character.name}' — " +
+                               "the second one can never be pressed.", skill);
+                continue;
+            }
+            _skills[key] = new SkillCommand(skill);
+        }
     }
 
     public void AccumulateMove(Vector2 direction) => _localMove += direction;
@@ -68,6 +99,12 @@ public class MCInput : MonoBehaviour
         if (_gate == null || _gate.Allows(InputKind.Attack))
         {
             foreach (var b in _pressed)
+                if (kb[b.Key].wasPressedThisFrame) b.Value.Execute();
+        }
+
+        if (_gate == null || _gate.Allows(InputKind.Skill))
+        {
+            foreach (var b in _skills)
                 if (kb[b.Key].wasPressedThisFrame) b.Value.Execute();
         }
     }

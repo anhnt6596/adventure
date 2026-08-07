@@ -26,6 +26,8 @@ public class MainCharStats : ICharacterStats
     public IStat Mass => _byId[StatId.Mass];
     public IStat PickupRadius => _byId[StatId.PickupRadius];
     public IStat Vision => _byId[StatId.Vision];
+    public IStat Skill1Haste => _byId[StatId.Skill1Haste];
+    public IStat Skill2Haste => _byId[StatId.Skill2Haste];
 
     public MainCharStats(MainCharStatsConfig config)
     {
@@ -44,6 +46,13 @@ public class MainCharStats : ICharacterStats
         // disagree with the art, and with only one value that is ever right. This stat exists to be MODIFIED:
         // 1 is "the light this character was drawn with", and gear, upgrades and buffs move it from there.
         _byId[StatId.Vision] = new Stat(1f);
+
+        // ALWAYS 0, for the same reason Vision is always 1: the number a character starts with is already
+        // said elsewhere. How long a skill takes to come back is the SKILL's number, authored on the prefab
+        // that carries it (see CharacterSkill), so what is left here is only what upgrades and gear add on
+        // top. Zero haste is "exactly the cooldown this skill was built with".
+        _byId[StatId.Skill1Haste] = new Stat(0f);
+        _byId[StatId.Skill2Haste] = new Stat(0f);
     }
 
     public IStat Get(string id) => Modifiable(id);

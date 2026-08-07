@@ -1,7 +1,17 @@
 using System;
 using UnityEngine;
 
-public enum AnimAction { Idle = 0, Move = 1, Attack = 2 }
+// BY WHAT THE MOVEMENT IS, not by which button triggered it. Naming these Skill1/Skill2 after the slots would
+// tie the art to the binding: the same DashSkill component sits in slot one on one character and slot two on
+// another, and the same lunge would have to be authored twice under two names. A skill says which of these it
+// plays (see CharacterSkill.Anim), so two skills can share a clip and a skill can reuse Attack outright.
+//
+// It grows once per KIND of movement, which is slow — Docs/DESIGN.md wants the count of attacks and skills
+// small — and a character without that skill simply has no clip for it rather than an empty slot to fill.
+//
+// APPEND ONLY, WITH EXPLICIT NUMBERS. These are serialized inside every CharacterAnimSet asset, so inserting
+// a value in the middle silently slides every authored clip onto a different action.
+public enum AnimAction { Idle = 0, Move = 1, Attack = 2, Dash = 3 }
 
 // How many screen directions the art actually covers.
 public enum DirCount { Two = 2, Four = 4, Eight = 8 }

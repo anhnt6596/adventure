@@ -37,10 +37,28 @@ public static class StatId
     // upgrade lights the map.
     public const string Vision = "Vision";
 
+    // ABILITY HASTE, one per skill slot, and it is POINTS rather than a percentage off:
+    //
+    //     cooldown = base / (1 + haste / 100)
+    //
+    // so 100 halves it, 200 thirds it, and it never reaches zero. That is the whole reason to prefer it over
+    // "-X% cooldown", which has to be capped or the last points before 100% are worth infinity — every point
+    // of haste is worth the same increase in USES PER MINUTE, at any amount, forever.
+    //
+    // Named Haste and not Cooldown deliberately. A stat you want to go UP, named after the thing that goes
+    // DOWN, is a trap: somebody adds +10 expecting a longer cooldown and gets a shorter one.
+    //
+    // Per slot rather than one for everything, because "your dash comes back faster" is a better node than
+    // "everything comes back faster" — and with two slots that is two stats, not an open-ended list. The BASE
+    // cooldown is not here at all: it belongs to the skill, on the prefab. See CharacterSkill.
+    public const string Skill1Haste = "Skill1Haste";
+    public const string Skill2Haste = "Skill2Haste";
+
     public static readonly string[] All =
     {
         MoveSpeed, AttackSpeed, AttackPower, AttackCooldown,
         MaxHp, MaxHunger, HungerDrain, Regen, Mass, PickupRadius, Vision,
+        Skill1Haste, Skill2Haste,
     };
 
     // What a stat is CALLED where a player can see it. Beside the ids because the two have to grow together:
@@ -64,6 +82,10 @@ public static class StatId
         Mass => "mass",
         PickupRadius => "pickup radius",
         Vision => "vision",
+        // "haste" and not "cooldown", for the same reason the id is: the number goes up and the wait goes
+        // down, and a label naming the wait would read as the opposite of what was bought.
+        Skill1Haste => "skill 1 haste",
+        Skill2Haste => "skill 2 haste",
         _ => id,
     };
 

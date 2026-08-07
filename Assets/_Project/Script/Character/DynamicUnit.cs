@@ -1,6 +1,15 @@
 using System;
 using UnityEngine;
 
+// What a unit is in the middle of. The DURATION of an action, not its cooldown — a cooldown gates the one
+// thing that is cooling and nothing else, while this is the window where the unit is committed.
+//
+// The two are not equally interruptible, and that asymmetry is the rule:
+//
+//     Attack  — a skill may cut it short. Cancelling into a dash is a move, not an exploit.
+//     Skill   — nothing cuts it short. Once it starts it finishes.
+public enum ActionKind { None, Attack, Skill }
+
 // Base for a DYNAMIC unit — one that moves and attacks. The control surface a view/animator reads (Velocity,
 // IsBusy, Attacked, Facing) lives here, so ONE view drives the player and an enemy alike. Whatever FEEDS Move
 // stays external (player input, enemy AI). Subclasses supply the stat numbers by overriding the accessors. A
@@ -13,11 +22,29 @@ public abstract class DynamicUnit : Unit
     float _busyTimer;       // the swing itself — locks the unit out of moving and attacking
     float _cooldownTimer;   // gates the NEXT attack only; the unit is free to move while it runs
 
-    // Two nested windows. IsBusy is the commitment: the swing is playing and nothing else can happen. The
-    // cooldown starts at the same moment but RUNS PAST it — swing first, then recovery — so it always outlives
-    // the lock and on its own says everything about when the next attack may start.
+    ActionKind _busyKind;
+    float _cooldownTotal;   // what _cooldownTimer started from, so a dial can be drawn from the pair
+
+    // Two nested windows. IsBusy is the commitment: something is playing out. The cooldown starts at the same
+    // moment but RUNS PAST it — swing first, then recovery — so it always outlives the lock and on its own
+    // says everything about when the next attack may start.
     public bool IsBusy => _busyTimer > 0f;
-    public bool CanAttack => _cooldownTimer <= 0f;
+
+    // WHAT it is in the middle of, which is what decides who may interrupt whom. See ActionKind.
+    public ActionKind Busy => _busyTimer > 0f ? _busyKind : ActionKind.None;
+
+    // A skill locks attacking out; a swing does not (its own cooldown already covers the swing, so there is
+    // nothing left for a second check to add).
+    public bool CanAttack => _cooldownTimer <= 0f && Busy != ActionKind.Skill;
+
+    // ...and the other direction is deliberately NOT symmetric: a swing can be cancelled into a skill, a
+    // skill cannot be cancelled into anything.
+    public bool CanUseSkill => Busy != ActionKind.Skill;
+
+    // How much of the attack's recovery is left, 1 at the moment it is spent and 0 when it is ready. For a
+    // dial on the HUD; the same shape CharacterSkill.CooldownFraction has, so one button can draw either.
+    public float AttackCooldownFraction
+        => _cooldownTotal > 0f ? Mathf.Clamp01(_cooldownTimer / _cooldownTotal) : 0f;
     public Vector3 Velocity { get; private set; }
     public event Action Attacked;
 
@@ -110,6 +137,20 @@ public abstract class DynamicUnit : Unit
         return new Vector3(Mathf.Sin(rad), 0f, Mathf.Cos(rad));
     }
 
+    // Take the unit over for a moment. A skill that moves the body itself needs the unit to stop steering
+    // while it does, or both write the same transform in the same frame and the dash is fought by the walk;
+    // and the view has to be told to stop drawing whatever was playing. Busy already means exactly that for a
+    // swing, so a skill borrows it rather than inventing a second word for it.
+    //
+    // A SKILL REPLACES the window rather than extending it, and that is what makes the cancel real: starting
+    // one mid-swing must end the swing NOW, not leave the longer of the two locks running past the thing that
+    // interrupted it.
+    public void Hold(float seconds, ActionKind kind)
+    {
+        _busyTimer = kind == ActionKind.Skill ? seconds : Mathf.Max(_busyTimer, seconds);
+        _busyKind = kind;
+    }
+
     public void Attack()
     {
         if (!CanAttack) return;
@@ -121,11 +162,16 @@ public abstract class DynamicUnit : Unit
         float duration = _swingDuration / rate;
 
         _busyTimer = duration;
+        _busyKind = ActionKind.Attack;
 
         // The cooldown is the recovery that begins where the SWING ENDS, so the timer spans both: one attack
         // costs duration + cooldown. Carrying the swing inside it is what lets a single countdown express that
         // — and it is why the cooldown can never expire mid-swing, with no clamp needed to promise it.
+        //
+        // Cancelling the swing into a skill does NOT refund it. The attack was spent the moment it was thrown;
+        // what a cancel buys is the time back, not the attack back.
         _cooldownTimer = duration + AttackCooldown / rate;
+        _cooldownTotal = _cooldownTimer;
         Attacked?.Invoke();
     }
 

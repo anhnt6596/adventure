@@ -43,6 +43,21 @@ public class UnitView : MonoBehaviour
         // this only ever changes which side of the swing is drawn, never how far along it is.
         PushDir();
 
+        // A skill cut the swing short, so the clip has to go with it — and that is not cosmetic. ShapeAttack
+        // lands its damage on the animator's Hit frame, so a swing replaced before it reaches that frame never
+        // connects. Leaving the old clip playing would let a cancelled attack still hit, from inside a dash.
+        //
+        // HANDS OFF WHILE A SKILL HOLDS THE UNIT. The skill owns the animation for that window and drives the
+        // animator itself — see CharacterSkill — because skills do not share one shape: some play nothing,
+        // some run several clips in order, some pick by what is going on. Anything this method played would
+        // be fighting whichever of those the skill is doing.
+        //
+        // Aim above still goes out, so the sprite keeps turning; only the ACTION is left alone.
+        //
+        // This is also what makes cancelling a swing real rather than cosmetic: ShapeAttack lands its damage
+        // on the animator's Hit frame, so when the skill replaces the clip the hit never arrives.
+        if (character.Busy == ActionKind.Skill) return;
+
         if (character.IsBusy) return;   // mid-swing: leave the action alone, don't let idle/move claim it back
         characterAnimator.PlaybackSpeed = 1f;   // swing over — idle/move play at their authored rate
 
