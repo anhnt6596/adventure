@@ -14,7 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeTreeConfig
   id: MC 1
   inherits: {fileID: 11400000, guid: 726357f6690e32c4d92d43ed10b43937, type: 2}
-  nodes: []
+  nodes:
+  - id: unlock-dash
+    key: dash
+    requires:
+    - speed-4
+    effect:
+      rid: 1851184096931217482
+    cost: 1
+    maxRank: 1
+    position: {x: 0.75, y: 3}
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 1851184096931217482
+      type: {class: UnlockSkillEffect, ns: , asm: Assembly-CSharp}
+      data:
+        skill: dash
+        description: unlock-dash

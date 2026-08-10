@@ -43,11 +43,12 @@ public class UpgradeTab
     IArtProvider _art;
 
     readonly VisualElement _body, _canvas, _edges, _tip;
-    readonly Label _points, _tipText, _empty;
+    readonly Label _points, _tipText, _tipTotal, _empty;
     readonly Button _buyButton, _resetButton;
     readonly ScrollView _scroll;
 
     readonly Dictionary<string, VisualElement> _nodeElements = new Dictionary<string, VisualElement>();
+    readonly Dictionary<string, Label> _nodeBadges = new Dictionary<string, Label>();
     readonly Dictionary<string, Vector2> _nodeCentres = new Dictionary<string, Vector2>();
     VisualElement _centreElement;
 
@@ -71,6 +72,7 @@ public class UpgradeTab
         _edges = root.Q<VisualElement>("tree-edges");
         _tip = root.Q<VisualElement>("tip");
         _tipText = root.Q<Label>("tip-text");
+        _tipTotal = root.Q<Label>("tip-total");
         _empty = root.Q<Label>("empty");
         _buyButton = root.Q<Button>("buy-button");
         _resetButton = root.Q<Button>("reset-button");
@@ -253,13 +255,15 @@ public class UpgradeTab
             button.Add(icon);
         }
 
-        // On every node, not only the dear ones: a price that appears just above one point makes the player
-        // work out what the ordinary price is, and this is the one screen where that should never take
-        // working out. Same reason the tooltip no longer spells the cost in a sentence.
-        var cost = new Label(Mathf.Max(1, node.cost).ToString());
-        cost.AddToClassList("node-cost");
-        cost.pickingMode = PickingMode.Ignore;
-        button.Add(cost);
+        // HOW FAR THIS ONE IS TAKEN, on every node — "0/1" on a plain one just as much as "2/5" on a deep
+        // one. The price used to live here, and it moved to the button in the tooltip: a price is what you
+        // want to know once, while deciding, and progress is what you want to see from across the tree
+        // without opening anything. Filled in by Refresh, which is where it changes.
+        var badge = new Label();
+        badge.AddToClassList("node-cost");
+        badge.pickingMode = PickingMode.Ignore;
+        button.Add(badge);
+        _nodeBadges[node.id] = badge;
 
         return button;
     }
@@ -268,6 +272,7 @@ public class UpgradeTab
     {
         foreach (var element in _nodeElements.Values) element.RemoveFromHierarchy();
         _nodeElements.Clear();
+        _nodeBadges.Clear();
         _nodeCentres.Clear();
         _centreElement?.RemoveFromHierarchy();
     }
@@ -340,15 +345,20 @@ public class UpgradeTab
 
             element.AddToClassList(StateClass(node, available));
             if (_selected != null && _selected.id == node.id) element.AddToClassList("node--selected");
+
+            if (_nodeBadges.TryGetValue(node.id, out var badge))
+                badge.text = $"{_upgrades.RankOf(_characterId, node)}/{node.MaxRank}";
         }
 
         _edges?.MarkDirtyRepaint();
         RefreshTip();
     }
 
+    // MAXED is the finished state, not "owned at all": a node with two of five ranks still wants to read as
+    // something to spend on, and the badge under it is what says how far along it is.
     string StateClass(UpgradeNode node, int available)
     {
-        if (_upgrades.IsBought(_characterId, node)) return "node--bought";
+        if (_upgrades.IsMaxed(_characterId, node)) return "node--bought";
         if (!_upgrades.IsUnlocked(_characterId, _tree, node)) return "node--locked";
         return available >= Mathf.Max(1, node.cost) ? "node--ready" : "node--short";
     }
@@ -382,23 +392,44 @@ public class UpgradeTab
         var node = _selected;
         PlaceTip();
 
-        // What it DOES, asked of the effect. A node with none is not a mistake — it is the branch-opener the
-        // tree needs to reach the ones past it, and saying so is better than an empty box.
+        int rank = _upgrades.RankOf(_characterId, node);
+        bool ranked = node.MaxRank > 1;
+
+        // WHAT ONE POINT BUYS, which is the question being asked at the moment this opens — not what has been
+        // spent so far. The rank rides on the end of it rather than on a line of its own, because "+20 HP
+        // (2/5)" is one fact read in one glance. A node with no effect is not a mistake: it is the
+        // branch-opener the tree needs to reach the ones past it, and saying so beats an empty box.
         if (_tipText != null)
         {
-            var described = node.effect?.Describe();
-            _tipText.text = string.IsNullOrEmpty(described) ? "Opens the nodes after it." : described;
+            var described = node.effect?.Describe(1);
+            if (string.IsNullOrEmpty(described)) described = "Opens the nodes after it.";
+            _tipText.text = ranked ? $"{described}  ({rank}/{node.MaxRank})" : described;
         }
 
-        // No sentence explaining the price or why it is locked. The button carries the price, and a button
-        // you can see but cannot press already says "not yet" — a paragraph saying it again is something the
-        // player reads once and skips forever after.
+        // The running total, and only where it says something new: on a one-rank node it would repeat the
+        // line above word for word, and on an untouched one there is no total to report.
+        if (_tipTotal != null)
+        {
+            var total = ranked && rank > 0 ? node.effect?.Describe(rank) : null;
+            bool show = !string.IsNullOrEmpty(total);
+
+            _tipTotal.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+            if (show) _tipTotal.text = $"total: {total.Replace("\n", ", ")}";
+        }
+
+        // The button carries the price and nothing else — no verb, because "unlock" and "upgrade" are the
+        // same press and the difference is already written above it as a rank. It STAYS at the ceiling rather
+        // than vanishing: a tooltip whose action disappears reads as a box that failed to load, and the
+        // player has nowhere to look to confirm the node is finished.
         if (_buyButton != null)
         {
-            bool bought = _upgrades.IsBought(_characterId, node);
-            _buyButton.style.display = bought ? DisplayStyle.None : DisplayStyle.Flex;
-            _buyButton.text = $"Unlock ({Mathf.Max(1, node.cost)})";
-            _buyButton.SetEnabled(_upgrades.CanBuy(_characterId, _tree, node));
+            bool maxed = _upgrades.IsMaxed(_characterId, node);
+            _buyButton.text = maxed ? "MAX" : Mathf.Max(1, node.cost).ToString();
+            _buyButton.SetEnabled(!maxed && _upgrades.CanBuy(_characterId, _tree, node));
+
+            // Both states are disabled, and they mean opposite things — one is "not yet", the other "nothing
+            // left". Without a class of its own a finished node looks exactly like one you cannot afford.
+            _buyButton.EnableInClassList("tip-buy--max", maxed);
         }
     }
 
@@ -410,10 +441,11 @@ public class UpgradeTab
         // reason it was refused is on the node the player is still looking at.
         if (_upgrades?.Buy(_characterId, _tree, _selected) != true) return;   // fires Changed -> Refresh
 
-        // Bought, so the tooltip has nothing left to offer — the Unlock button hides itself once a node is
-        // owned (see RefreshTip), and a box with no action in it is just something covering the tree. Closing
-        // it also puts the player back where the next click wants them: on the nodes this one just opened.
-        _selected = null;
+        // Closed only once there is nothing left to buy here. A node with ranks to spare still has an action
+        // in it, and shutting the box after each rank would make taking a node to five a matter of finding it
+        // again five times. Maxed, the button hides itself (see RefreshTip) and what is left is a box
+        // covering the very nodes it just opened.
+        if (_upgrades.IsMaxed(_characterId, _selected)) _selected = null;
         Refresh();
     }
 
@@ -457,8 +489,10 @@ public class UpgradeTab
                 if (string.IsNullOrEmpty(requiredId)) continue;
                 if (!_nodeCentres.TryGetValue(requiredId, out var from)) continue;
 
+                // MAXED opens the way, not merely owned — that is the rule the line has to tell the truth
+                // about, or a player takes one rank, sees the road light up, and finds the far end still shut.
                 var required = _tree.Find(requiredId);
-                bool open = required != null && _upgrades.IsBought(_characterId, required);
+                bool open = required != null && _upgrades.IsMaxed(_characterId, required);
                 bool taken = open && _upgrades.IsBought(_characterId, node);
 
                 painter.strokeColor = taken ? new Color(0.47f, 0.78f, 0.51f, 0.95f)

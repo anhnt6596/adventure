@@ -24,7 +24,10 @@ public class UnlockSkillEffect : IUpgradeEffect
 
     public void Apply(UpgradeContext context) => context.Unlock(skill);
 
-    public string Describe()
+    // The rank is ignored: opening a thing twice opens it once. A node carrying this has no reason to have
+    // more than one rank, and if somebody gives it more the wording stays honest rather than claiming a
+    // second unlock.
+    public string Describe(int rank)
         => !string.IsNullOrWhiteSpace(description) ? description
          : !string.IsNullOrWhiteSpace(skill) ? $"Unlocks {skill}"
          : "";

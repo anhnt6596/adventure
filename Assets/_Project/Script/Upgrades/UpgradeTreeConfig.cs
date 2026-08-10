@@ -129,9 +129,19 @@ public class UpgradeNode
              "a junction, which is a real thing to want.")]
     [SerializeReference] public IUpgradeEffect effect;
 
-    [Tooltip("Upgrade points. One is the usual answer and the one the UI stays quiet about; raise it for a " +
-             "node that is worth several levels on its own.")]
+    [Tooltip("Upgrade points, PER RANK. One is the usual answer; raise it for a node that is worth several " +
+             "levels on its own.")]
     [Min(1)] public int cost = 1;
+
+    [Tooltip("How many times this can be bought. Every rank costs the same and gives the same again — a rank " +
+             "is the SAME upgrade once more, not a bigger one.\n\n" +
+             "A node that leads on is only opened by a FULL one: half a rank is half an argument, and letting " +
+             "one rank open the next ring would make a wide shallow spread strictly better than committing.")]
+    [Min(1)] public int maxRank = 1;
+
+    // Read through this rather than off the field, so a node whose maxRank is lowered in the inspector does
+    // not keep charging for ranks it no longer has — the same reason cost is summed off the tree.
+    public int MaxRank => Mathf.Max(1, maxRank);
 
     [Tooltip("Where the node sits, in TREE UNITS: 1 is one step out from the centre, y grows downward. Not " +
              "pixels — both the editor and the popup scale it, so the same tree reads the same at any size.\n\n" +

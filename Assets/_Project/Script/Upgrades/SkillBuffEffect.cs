@@ -36,16 +36,18 @@ public class SkillBuffEffect : IUpgradeEffect
     // A line per buff, the same shape StatBuffEffect prints. No unit and no display table: a skill's tunables
     // are its own names, and the tree has no way to know what a given skill calls things — so the node says
     // the name as typed. Ugly on purpose, like the placeholder labels elsewhere: it will not quietly ship.
-    public string Describe()
+    public string Describe(int rank)
     {
         if (buffs == null || buffs.Count == 0) return "";
+
+        int times = Mathf.Max(1, rank);
 
         var lines = new List<string>();
         foreach (var buff in buffs)
             if (!string.IsNullOrEmpty(buff.stat))
                 lines.Add(buff.kind == StatModKind.Add
-                    ? $"{Signed(buff.amount)} {buff.stat}"
-                    : $"{Signed(buff.amount * 100f)}% {buff.stat}");
+                    ? $"{Signed(buff.amount * times)} {buff.stat}"
+                    : $"{Signed(buff.amount * times * 100f)}% {buff.stat}");
 
         return string.Join("\n", lines);
     }

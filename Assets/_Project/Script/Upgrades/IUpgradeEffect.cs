@@ -23,7 +23,12 @@ public interface IUpgradeEffect
     // only thing that knows what it does — a description assembled by the popup would need a branch per kind
     // of upgrade, which is the thing [SerializeReference] is here to avoid. It is also the only wording that
     // cannot lie: it is built from the same numbers Apply uses.
-    string Describe();
+    //
+    // AT A GIVEN RANK, because the tooltip asks the same effect twice: once at 1 for what a point buys, and
+    // once at the rank owned for what has been bought so far. The effect scales itself rather than the caller
+    // multiplying a string — only the effect knows which of its numbers are amounts and which are shares, and
+    // an unlock does not scale at all.
+    string Describe(int rank);
 }
 
 // What an effect is allowed to touch. A struct passed by value, so an effect cannot hold onto it past the

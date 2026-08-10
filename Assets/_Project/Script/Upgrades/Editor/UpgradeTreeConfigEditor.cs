@@ -459,6 +459,7 @@ public class UpgradeTreeConfigEditor : Editor
         Field(nodes, index, "id").stringValue = id;
         Field(nodes, index, "key").stringValue = "";
         Field(nodes, index, "cost").intValue = 1;
+        Field(nodes, index, "maxRank").intValue = 1;
         Field(nodes, index, "requires").ClearArray();
         Field(nodes, index, "effect").managedReferenceValue = null;
 
@@ -573,7 +574,21 @@ public class UpgradeTreeConfigEditor : Editor
             EditorGUILayout.LabelField($"no icon at Resources/{ArtProvider.UpgradeFolder}/{key.stringValue}",
                                        EditorStyles.miniLabel);
 
-        EditorGUILayout.PropertyField(Field(nodes, _selected, "cost"));
+        // Side by side because they are read together: what one rank costs, and how many there are. The two
+        // multiply into what the whole node is worth in points, which is the number that decides whether a
+        // branch is a detour or a commitment.
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            EditorGUILayout.PropertyField(Field(nodes, _selected, "cost"));
+            EditorGUILayout.PropertyField(Field(nodes, _selected, "maxRank"), new GUIContent("Ranks"));
+        }
+
+        int cost = Mathf.Max(1, Field(nodes, _selected, "cost").intValue);
+        int ranks = Mathf.Max(1, Field(nodes, _selected, "maxRank").intValue);
+        if (ranks > 1)
+            EditorGUILayout.LabelField($"{cost} × {ranks} = {cost * ranks} points to fill, and only a FULL " +
+                                       "one opens what comes after it.", EditorStyles.miniLabel);
+
         DrawRequires(nodes, _selected);
         DrawEffect(nodes, _selected);
     }

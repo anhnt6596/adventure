@@ -34,6 +34,9 @@
          (see PlaceTip) and re-places it whenever the tree scrolls under it. -->
     <ui:VisualElement name="tip" class="tip">
         <ui:Label name="tip-text" text="" class="tip-text" />
-        <ui:Button name="buy-button" text="Unlock" class="btn tip-buy" />
+        <!-- What the ranks already bought add up to. Hidden by code where it would only repeat the line
+             above — a one-rank node, or one nobody has taken yet. -->
+        <ui:Label name="tip-total" text="" class="tip-total" />
+        <ui:Button name="buy-button" text="" class="btn tip-buy" />
     </ui:VisualElement>
 </ui:UXML>

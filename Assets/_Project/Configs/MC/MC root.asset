@@ -22,6 +22,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919318
     cost: 1
+    maxRank: 1
     position: {x: 0, y: -1.5}
   - id: attack-3
     key: attack
@@ -30,6 +31,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919324
     cost: 1
+    maxRank: 1
     position: {x: 0, y: -2.25}
   - id: attack-4
     key: attack
@@ -38,6 +40,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919325
     cost: 2
+    maxRank: 1
     position: {x: -0, y: -3}
   - id: attack-1
     key: attack
@@ -45,6 +48,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919317
     cost: 1
+    maxRank: 1
     position: {x: -0, y: -0.75}
   - id: attack-speed-1
     key: aspeed
@@ -52,6 +56,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919319
     cost: 1
+    maxRank: 1
     position: {x: -0.75, y: 0}
   - id: attack-speed-2
     key: aspeed
@@ -60,6 +65,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919320
     cost: 1
+    maxRank: 1
     position: {x: -1.5, y: 0}
   - id: attack-speed-3
     key: aspeed
@@ -68,6 +74,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919322
     cost: 1
+    maxRank: 1
     position: {x: -2.25, y: -0}
   - id: attack-speed-5
     key: aspeed
@@ -76,6 +83,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394705
     cost: 1
+    maxRank: 1
     position: {x: -3.75, y: 0}
   - id: attack-speed-6
     key: aspeed
@@ -84,6 +92,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394706
     cost: 1
+    maxRank: 1
     position: {x: -4.5, y: 0}
   - id: attack-speed-7
     key: aspeed
@@ -92,6 +101,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394707
     cost: 1
+    maxRank: 1
     position: {x: -5.25, y: 0}
   - id: attack-speed-4
     key: aspeed
@@ -100,6 +110,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919323
     cost: 2
+    maxRank: 1
     position: {x: -3, y: 0}
   - id: attack-speed-8
     key: aspeed
@@ -108,6 +119,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394709
     cost: 2
+    maxRank: 1
     position: {x: -6, y: -0}
   - id: speed-1
     key: speed
@@ -115,6 +127,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919239
     cost: 1
+    maxRank: 1
     position: {x: -0, y: 0.75}
   - id: speed-2
     key: speed
@@ -123,6 +136,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919240
     cost: 1
+    maxRank: 1
     position: {x: 0, y: 1.5}
   - id: vision-1
     key: vision
@@ -131,6 +145,7 @@ MonoBehaviour:
     effect:
       rid: 1851184096931217408
     cost: 1
+    maxRank: 1
     position: {x: 0.75, y: 1.5}
   - id: vision-2
     key: vision
@@ -139,6 +154,7 @@ MonoBehaviour:
     effect:
       rid: 1851184096931217409
     cost: 1
+    maxRank: 1
     position: {x: 1.5, y: 1.5}
   - id: vision-3
     key: vision
@@ -147,6 +163,7 @@ MonoBehaviour:
     effect:
       rid: 1851184096931217480
     cost: 1
+    maxRank: 1
     position: {x: 2.25, y: 1.5}
   - id: health-1
     key: health
@@ -154,6 +171,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919242
     cost: 1
+    maxRank: 5
     position: {x: 0.75, y: 0}
   - id: health-2
     key: health
@@ -162,6 +180,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919314
     cost: 1
+    maxRank: 1
     position: {x: 1.5, y: 0}
   - id: stomach-1
     key: stomach
@@ -170,6 +189,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394695
     cost: 1
+    maxRank: 1
     position: {x: 1.5, y: -0.75}
   - id: stomach-2
     key: stomach
@@ -178,6 +198,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394696
     cost: 1
+    maxRank: 1
     position: {x: 2.25, y: -0.75}
   - id: stomach-3
     key: stomach
@@ -186,6 +207,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394697
     cost: 1
+    maxRank: 1
     position: {x: 3, y: -0.75}
   - id: stomach-4
     key: stomach
@@ -194,6 +216,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394700
     cost: 1
+    maxRank: 1
     position: {x: 3.75, y: -0.75}
   - id: stomach-5
     key: stomach
@@ -202,6 +225,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394702
     cost: 1
+    maxRank: 1
     position: {x: 4.5, y: -0.75}
   - id: full-regen-1
     key: full-regen
@@ -210,6 +234,7 @@ MonoBehaviour:
     effect:
       rid: 1851184096931217481
     cost: 2
+    maxRank: 1
     position: {x: 3.75, y: 0.75}
   - id: full-regen-2
     key: full-regen
@@ -218,6 +243,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394624
     cost: 2
+    maxRank: 1
     position: {x: 3.75, y: 1.5}
   - id: speed-3
     key: speed
@@ -226,6 +252,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919241
     cost: 1
+    maxRank: 1
     position: {x: 0, y: 2.25}
   - id: speed-4
     key: speed
@@ -234,6 +261,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919315
     cost: 2
+    maxRank: 1
     position: {x: 0, y: 3}
   - id: speed-5
     key: speed
@@ -242,6 +270,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394710
     cost: 1
+    maxRank: 1
     position: {x: 0, y: 3.75}
   - id: speed-6
     key: speed
@@ -250,6 +279,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394711
     cost: 1
+    maxRank: 1
     position: {x: 0, y: 4.5}
   - id: speed-7
     key: speed
@@ -258,6 +288,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394712
     cost: 1
+    maxRank: 1
     position: {x: -0, y: 5.25}
   - id: speed-8
     key: speed
@@ -266,6 +297,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394713
     cost: 2
+    maxRank: 1
     position: {x: 0, y: 6}
   - id: health-3
     key: health
@@ -274,6 +306,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919313
     cost: 1
+    maxRank: 1
     position: {x: 2.25, y: 0}
   - id: health-4
     key: health
@@ -282,6 +315,7 @@ MonoBehaviour:
     effect:
       rid: 1851184076541919316
     cost: 2
+    maxRank: 1
     position: {x: 3, y: 0}
   - id: health-5
     key: health
@@ -290,6 +324,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394698
     cost: 1
+    maxRank: 1
     position: {x: 3.75, y: 0}
   - id: health-6
     key: health
@@ -298,6 +333,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394699
     cost: 1
+    maxRank: 1
     position: {x: 4.5, y: 0}
   - id: health-7
     key: health
@@ -306,6 +342,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394703
     cost: 1
+    maxRank: 1
     position: {x: 5.25, y: 0}
   - id: health-8
     key: health
@@ -314,6 +351,7 @@ MonoBehaviour:
     effect:
       rid: 7000115694874394704
     cost: 2
+    maxRank: 1
     position: {x: 6, y: 0}
   references:
     version: 2

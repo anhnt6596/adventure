@@ -201,10 +201,18 @@ public class PlayerSystem : IPlayer, IStartable, ISavable
             var tree = _trees?.Get(_currentId);
             if (tree == null) return;
 
+            // APPLIED ONCE PER RANK. A rank is the same upgrade again, so three ranks of "+10% attack" is
+            // three modifiers of ten percent — which is exactly what the rebuild-from-scratch model makes
+            // free: nothing has to know how much a node was worth last time, because everything came off
+            // first. It is also why an effect has to be safe to apply repeatedly (see IUpgradeEffect).
             var context = new UpgradeContext(_stats, UpgradeSource, _unlockedSkills, _skillBuffs);
             foreach (var node in tree.Nodes)
-                if (node?.effect != null && _upgrades.IsBought(_currentId, node))
-                    node.effect.Apply(context);
+            {
+                if (node?.effect == null) continue;
+
+                int rank = _upgrades.RankOf(_currentId, node);
+                for (int i = 0; i < rank; i++) node.effect.Apply(context);
+            }
         }
         finally
         {

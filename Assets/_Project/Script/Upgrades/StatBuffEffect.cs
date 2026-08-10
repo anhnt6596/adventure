@@ -27,13 +27,17 @@ public class StatBuffEffect : IUpgradeEffect
 
     // A line per buff, for the same reason the list exists: a node that is two numbers has to say both, or it
     // is selling the good half and hiding the other.
-    public string Describe()
+    public string Describe(int rank)
     {
         if (buffs == null || buffs.Count == 0) return "";
 
+        // A rank is the same buff again, so a rank's worth is the amount times the count — the same
+        // arithmetic PlayerSystem does by applying the effect that many times.
+        int times = Mathf.Max(1, rank);
+
         var lines = new List<string>();
         foreach (var buff in buffs)
-            if (!string.IsNullOrEmpty(buff.stat)) lines.Add(Describe(buff));
+            if (!string.IsNullOrEmpty(buff.stat)) lines.Add(Describe(buff, times));
 
         return string.Join("\n", lines);
     }
@@ -44,10 +48,10 @@ public class StatBuffEffect : IUpgradeEffect
     // The unit rides along on Add only, because on Add the number is in the stat's own units and some stats are
     // not a bare count (Regen is a percent per second). On Mul the percent printed here is already the share,
     // and a stat unit on top of it would read as a second, different percent. See StatId.Unit.
-    static string Describe(StatBuff buff)
+    static string Describe(StatBuff buff, int times)
         => buff.kind == StatModKind.Add
-            ? $"{Signed(buff.amount)}{StatId.Unit(buff.stat)} {StatId.Display(buff.stat)}"
-            : $"{Signed(buff.amount * 100f)}% {StatId.Display(buff.stat)}";
+            ? $"{Signed(buff.amount * times)}{StatId.Unit(buff.stat)} {StatId.Display(buff.stat)}"
+            : $"{Signed(buff.amount * times * 100f)}% {StatId.Display(buff.stat)}";
 
     static string Signed(float value) => value >= 0f ? $"+{value:0.##}" : value.ToString("0.##");
 }

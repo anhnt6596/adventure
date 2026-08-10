@@ -147,10 +147,27 @@
     white-space: normal;
 }
 
+/* Quieter than the line above it on purpose: what a point buys is the decision, and the running total is
+   only there to check it against. */
+.tip-total {
+    font-size: 20px;
+    color: rgb(160, 165, 178);
+    margin-top: 4px;
+    white-space: normal;
+}
+
 .tip-buy {
     height: 52px;
     margin-top: 14px;
     font-size: 22px;
+}
+
+/* FINISHED, which is not the same as unaffordable — and both are disabled, so the state needs a class of its
+   own or the two read identically. A dimmed gold button says "not yet"; this one says "nothing left here". */
+.tip-buy--max {
+    opacity: 1;
+    color: rgb(180, 186, 200);
+    background-color: rgba(255, 255, 255, 0.09);
 }
 
 .btn {
