@@ -156,22 +156,7 @@ public class ProjectileSkill : CharacterSkill
         // stutter or slow frame can lengthen — while the caster still authors the flight as the duration it
         // actually reads as. Every buff to the speed lands in the reach for free.
         float shotRange = _life.Value * shotSpeed;
-        Vector3 facing = Owner.FacingDir, from = Muzzle;
-        int team = Owner.Team;
-
-        int shots = Mathf.Max(1, Mathf.RoundToInt(_count.Value));
-        float step = _spread.Value;
-
-        // CENTRED ON THE FACING, spaced by step: at 3 and 22.5 that is -22.5, 0, +22.5 — the aimed one plus a
-        // pair either side. The first offset is half the total width back, which lands an odd count on the
-        // facing exactly and an even one symmetrically astride it, with no branch on parity.
-        float offset = -step * (shots - 1) * 0.5f;
-
-        for (int i = 0; i < shots; i++)
-        {
-            Vector3 dir = Quaternion.Euler(0f, offset + step * i, 0f) * facing;
-            LeanPool.Spawn(projectile, from, Quaternion.identity)
-                    .Launch(new Shot(dir, team, damage, shotSpeed, shotRange, shove, Owner));
-        }
+        var centre = new Shot(Owner.FacingDir, Owner.Team, damage, shotSpeed, shotRange, shove, Owner);
+        Projectile.Fan(projectile, Muzzle, centre, Mathf.RoundToInt(_count.Value), _spread.Value);
     }
 }

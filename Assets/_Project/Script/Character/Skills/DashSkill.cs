@@ -15,7 +15,11 @@ using UnityEngine;
 // you are to push aside, so a heavy dash ploughs through a crowd instead of bouncing off it. It is multiplied
 // from whatever the body is carrying at that moment and put back afterwards, rather than assigned from a stat,
 // so it composes with anything else that may be moving mass.
-[DisallowMultipleComponent]
+// SEVERAL ARE ALLOWED on one body, the same as ProjectileSkill. This used to be DisallowMultipleComponent,
+// back when two lunges on one character could only be a mistake — but a subclass counts as the same component
+// to that attribute, so it also refused a character who dashes forward AND backsteps, which is two different
+// skills with two cooldowns and every right to sit on one body. What stops a real duplicate is the slot: two
+// skills claiming one button is what MCInput refuses, out loud, naming both.
 public class DashSkill : CharacterSkill
 {
     [Header("Dash")]
@@ -94,11 +98,16 @@ public class DashSkill : CharacterSkill
                              "nothing behind. Drag the character's SpriteRenderer in.", this);
     }
 
+    // WHICH WAY THE LUNGE GOES, and the only thing about it a variant has ever needed to change. Off the
+    // FACING and not the velocity: where a dash takes you is something the player aims, not something the legs
+    // decide from wherever they last carried the body.
+    protected virtual Vector3 LungeDir => Owner.FacingDir;
+
     protected override bool Run()
     {
         if (_dashing || Owner == null || _body == null) return false;
 
-        _direction = Owner.FacingDir;
+        _direction = LungeDir;
         _direction.y = 0f;
         if (_direction.sqrMagnitude < 1e-6f) return false;
         _direction.Normalize();
