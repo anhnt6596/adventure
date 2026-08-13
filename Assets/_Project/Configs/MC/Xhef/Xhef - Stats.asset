@@ -15,7 +15,7 @@ MonoBehaviour:
   id: xhef
   moveSpeed: 2
   attackSpeed: 0.8
-  attackPower: 5
+  attackPower: 4
   attackCooldown: 0.1
   mass: 1
   pickupRadius: 0.3

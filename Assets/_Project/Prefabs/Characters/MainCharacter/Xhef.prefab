@@ -365,7 +365,7 @@ MonoBehaviour:
   speed: 5
   speedFromAttackRate: 1
   life: 0.6
-  power: 0.8
+  power: 0.6
   knockback: 1
   count: 3
   spread: 22.5
