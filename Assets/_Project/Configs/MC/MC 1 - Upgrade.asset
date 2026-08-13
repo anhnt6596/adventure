@@ -18,12 +18,12 @@ MonoBehaviour:
   - id: unlock-dash
     key: dash
     requires:
-    - speed-4
+    - speed-2
     effect:
       rid: 1851184096931217482
     cost: 1
     maxRank: 1
-    position: {x: 0.75, y: 3}
+    position: {x: -0.75, y: 1.5}
   references:
     version: 2
     RefIds:
