@@ -129,4 +129,4 @@ MonoBehaviour:
         buffs:
         - stat: distance
           kind: 0
-          amount: 0.5
+          amount: 0.25

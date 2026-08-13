@@ -332,7 +332,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BackstepSkill
   slot: 2
   key: throw-knives
-  cooldown: 12
+  cooldown: 20
   locked: 1
   anim: 3
   distance: 1.2
@@ -347,7 +347,7 @@ MonoBehaviour:
   projectile: {fileID: 3059785840995378781, guid: 31c383d68ad568042a7260c6ee7ce4e5, type: 3}
   speed: 3
   life: 1
-  power: 1
+  power: 1.5
   knockback: 0.5
   count: 3
   spread: 22.5
@@ -365,11 +365,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DashSkill
   slot: 1
   key: dash
-  cooldown: 8
+  cooldown: 6
   locked: 1
   anim: 3
-  distance: 1.5
-  duration: 0.4
+  distance: 1
+  duration: 0.2
   massMultiplier: 1
   invulnerable: 1
   source: {fileID: 8142573892274122599}
