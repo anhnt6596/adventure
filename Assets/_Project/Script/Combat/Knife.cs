@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using Lean.Pool;
 
-// A thrown knife: straight, no seeking, until it runs out of range or something stops it.
+// A thrown knife: straight, no seeking, until it runs out of range or hits something.
 //
-// WHO IT STOPS ON IS THE RULE THAT MAKES IT A KNIFE. It carves through what it kills and is caught by what it
-// does not — one blow each, and the first survivor takes it out of the air. So a line of weak things is a lane
-// and one tough thing is a wall, which is a decision the player makes when aiming rather than a number.
+// ONE BLOW AND IT IS GONE, whatever that blow did. It does not carve through what it kills, which makes the
+// fan the answer to a crowd rather than aiming one knife down a queue — three knives are three hits and never
+// more, so what the skill is worth can be read off the count and does not swing on how the enemies lined up.
 //
 // A CIRCLE, and it is the tumble that earns it: a blade spinning end over end has no long side for more than
 // an instant, so an oriented box would be claiming a precision the drawing does not show. One radius is also
@@ -39,11 +39,9 @@ public class Knife : Projectile
     Quaternion _artRest;
     float _spun;      // degrees of yaw laid over that rest pose so far this throw
 
+    // No memory of who has been hit: the knife dies on the contact, so there is never a second one to check
+    // against. That was needed while it could fly on through a kill.
     readonly List<IDamageable> _found = new List<IDamageable>();
-
-    // ONE HIT EACH, and the memory is per throw. Two frames of overlap on the same body is the normal case at
-    // any speed the box is wider than a step, so without this a knife grazing something would saw it.
-    readonly HashSet<IDamageable> _bitten = new HashSet<IDamageable>();
 
     void Awake()
     {
@@ -60,11 +58,7 @@ public class Knife : Projectile
         _team = shot.Team;
         _source = shot.Source;
         _traveled = 0f;
-        _bitten.Clear();
 
-        // POINTED ONCE, HERE. The flight is straight, so the heading it is thrown at is the heading it keeps —
-        // turning it every frame would be recomputing an answer that cannot have changed. Whatever the caster
-        // spawned it with is overwritten: the muzzle's rotation is where the hand is, not where the throw goes.
         // THE ROOT IS NOT TURNED TO FACE THE THROW, and nothing else may turn it either. What the knife
         // catches on is a circle, so pointing it costs a frame and buys nothing — while a root swung round to
         // the flight direction would drag the blade's authored lie with it, and the same knife would land flat
@@ -120,28 +114,25 @@ public class Knife : Projectile
         if (spent) LeanPool.Despawn(gameObject);
     }
 
-    // Everything the blade is touching where it now stands. Returns true if the knife is stopped.
+    // Everything the blade is touching where it now stands. Returns true if the knife is spent.
     bool Bite()
     {
         CombatWorld.Instance.Overlap(transform.position, radius, _team, _found);
+        if (_found.Count == 0) return false;
 
-        bool blocked = false;
+        // EVERYTHING IN THE CIRCLE, then gone. It stops on contact whatever the blow did, but it stops at the
+        // END of the circle it is standing in rather than on the first name out of the list — two things
+        // shoulder to shoulder are one contact, and which of them the query happened to return first is not
+        // something the player can see or aim at.
         for (int i = 0; i < _found.Count; i++)
         {
             var victim = _found[i];
-            if (!_bitten.Add(victim)) continue;        // already had its share of this throw
-
             victim.TakeDamage(_damage, _source != null ? (object)_source : this);
             if (_knockback > 0f) victim.ApplyKnockback(_dir * _knockback);
-
-            // Asked AFTER the blow, which is the whole rule: what dies is passed through, what survives catches
-            // it. The rest of this hop still gets hit — the knife stops at the end of the circle it is standing
-            // in, not in the middle of it, so two things side by side both take it.
-            if (victim.IsAlive) blocked = true;
         }
 
-        if (blocked) LeanPool.Despawn(gameObject);
-        return blocked;
+        LeanPool.Despawn(gameObject);
+        return true;
     }
 
     // On the ground plane, not facing the scene camera: what it catches is a circle laid flat over the world,
