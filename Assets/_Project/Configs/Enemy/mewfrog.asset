@@ -18,7 +18,7 @@ MonoBehaviour:
   moveSpeed: 3
   attackDamage: 5
   attackSpeed: 1
-  attackCooldown: 0.8
+  attackCooldown: 1
   mass: 0.5
   drops:
   - prefab: {fileID: 9176653165436844561, guid: 7b4e0b56a48e8ab41a0be1f47405ea9a, type: 3}

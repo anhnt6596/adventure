@@ -209,8 +209,9 @@ MonoBehaviour:
   radius: 1
   size: {x: 0.5, y: 0.7}
   forwardOffset: 0.35
-  knockback: 3
+  knockback: 1
   animatorSource: {fileID: 639855831500468208}
+  anim: 2
 --- !u!114 &837169390879070922
 MonoBehaviour:
   m_ObjectHideFlags: 0

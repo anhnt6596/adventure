@@ -21,8 +21,8 @@ MonoBehaviour:
   attack:
     rid: 7311000000000000004
   attackRange: 2.5
-  leashRadius: 6
-  reEngageRadius: 4
+  leashRadius: 10
+  reEngageRadius: 6
   forgetTime: 3
   recognizeTime: 1
   retaliateRadius: 4
@@ -48,3 +48,6 @@ MonoBehaviour:
         restMin: 1.5
         restMax: 3.5
         activeHoursOnly: 0
+        personalSpace: 0
+        stepAside: 2.5
+        settleTime: 0.5

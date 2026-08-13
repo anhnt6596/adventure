@@ -24,15 +24,6 @@ MonoBehaviour:
     cost: 1
     maxRank: 1
     position: {x: -0.75, y: 1.5}
-  - id: dash-distance
-    key: dash
-    requires:
-    - unlock-dash
-    effect:
-      rid: 1851184252042870861
-    cost: 1
-    maxRank: 3
-    position: {x: -1.5, y: 1.5}
   - id: dash-cooldown
     key: dash
     requires:
@@ -41,7 +32,7 @@ MonoBehaviour:
       rid: 1851184252042870859
     cost: 1
     maxRank: 3
-    position: {x: -0.75, y: 2.25}
+    position: {x: -1.5, y: 1.5}
   - id: throw-knives
     key: throw-knives
     requires:
@@ -78,6 +69,15 @@ MonoBehaviour:
     cost: 1
     maxRank: 3
     position: {x: -1.5, y: 0.75}
+  - id: dash-distance
+    key: dash-distance
+    requires:
+    - unlock-dash
+    effect:
+      rid: 1851184256934215750
+    cost: 1
+    maxRank: 3
+    position: {x: -0.75, y: 2.25}
   references:
     version: 2
     RefIds:
@@ -94,14 +94,6 @@ MonoBehaviour:
         - stat: cooldown
           kind: 0
           amount: -1
-    - rid: 1851184252042870861
-      type: {class: SkillBuffEffect, ns: , asm: Assembly-CSharp}
-      data:
-        skill: dash
-        buffs:
-        - stat: distance
-          kind: 1
-          amount: 0.2
     - rid: 1851184252042870862
       type: {class: UnlockSkillEffect, ns: , asm: Assembly-CSharp}
       data:
@@ -122,11 +114,19 @@ MonoBehaviour:
         buffs:
         - stat: cooldown
           kind: 0
-          amount: -2
+          amount: -1.5
     - rid: 1851184252042870866
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
         buffs:
         - stat: PickupRadius
           kind: 1
+          amount: 0.5
+    - rid: 1851184256934215750
+      type: {class: SkillBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        skill: dash
+        buffs:
+        - stat: distance
+          kind: 0
           amount: 0.5

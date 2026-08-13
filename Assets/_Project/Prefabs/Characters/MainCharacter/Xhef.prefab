@@ -148,8 +148,8 @@ GameObject:
   - component: {fileID: 3429398652169516405}
   - component: {fileID: 349107934453197144}
   - component: {fileID: 5942486055440083867}
-  - component: {fileID: 4788757150013078582}
-  - component: {fileID: 5628763828061930233}
+  - component: {fileID: 7265794382236970313}
+  - component: {fileID: 6752807109447648016}
   m_Layer: 0
   m_Name: Xhef
   m_TagString: Untagged
@@ -229,7 +229,7 @@ MonoBehaviour:
   shape: 0
   radius: 0.15
   size: {x: 1, y: 1}
-  mass: 1.5
+  mass: 1
   knockbackDrag: 8
 --- !u!114 &6555081437869580352
 MonoBehaviour:
@@ -255,7 +255,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e681c6d85851ac744b69b525c2a5a485, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Picker
-  pickHeight: 0.3
+  pickHeight: 0.4
   inventoryId: main_char
 --- !u!114 &7100000000000000001
 MonoBehaviour:
@@ -285,7 +285,7 @@ MonoBehaviour:
   radius: 0.5
   size: {x: 1.5, y: 3}
   forwardOffset: 0.2
-  knockback: 1
+  knockback: 0.5
   animatorSource: {fileID: 1003609662157716418}
   anim: 2
 --- !u!114 &349107934453197144
@@ -318,7 +318,40 @@ MonoBehaviour:
   duration: 0.15
   renderers:
   - {fileID: 8142573892274122599}
---- !u!114 &4788757150013078582
+--- !u!114 &7265794382236970313
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea8dbf8997f38ed45beeb754a0b1e196, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BackstepSkill
+  slot: 2
+  key: throw-knives
+  cooldown: 12
+  locked: 1
+  anim: 3
+  distance: 1.2
+  duration: 0.3
+  massMultiplier: 1
+  invulnerable: 0
+  source: {fileID: 0}
+  ghosts: 0
+  ghostTint: {r: 0.65, g: 0.85, b: 1, a: 0.55}
+  ghostFade: 0.25
+  muzzle: {fileID: 3272892749715934541}
+  projectile: {fileID: 3059785840995378781, guid: 31c383d68ad568042a7260c6ee7ce4e5, type: 3}
+  speed: 3
+  life: 1
+  power: 1
+  knockback: 0.5
+  count: 3
+  spread: 22.5
+--- !u!114 &6752807109447648016
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -332,43 +365,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DashSkill
   slot: 1
   key: dash
-  cooldown: 6
+  cooldown: 8
   locked: 1
   anim: 3
-  distance: 1.2
-  duration: 0.18
-  massMultiplier: 5
+  distance: 1.5
+  duration: 0.4
+  massMultiplier: 1
   invulnerable: 1
   source: {fileID: 8142573892274122599}
   ghosts: 6
   ghostTint: {r: 0.65, g: 0.85, b: 1, a: 0.55}
   ghostFade: 0.25
---- !u!114 &5628763828061930233
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5431757174141155505}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 53d23237f2a977141b27b369f4319fba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectileSkill
-  slot: 2
-  key: throw-knives
-  cooldown: 8
-  locked: 1
-  anim: 4
-  muzzle: {fileID: 8670942038637264622}
-  projectile: {fileID: 3059785840995378781, guid: 31c383d68ad568042a7260c6ee7ce4e5, type: 3}
-  speed: 5
-  speedFromAttackRate: 1
-  life: 0.6
-  power: 0.6
-  knockback: 1
-  count: 3
-  spread: 22.5
 --- !u!1 &8299895054748087226
 GameObject:
   m_ObjectHideFlags: 0

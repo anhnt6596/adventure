@@ -270,8 +270,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoulFireAttack
   range: 5
-  knockback: 1
+  speed: 6
+  knockback: 0.3
   animatorSource: {fileID: 639855831500468208}
+  anim: 2
   muzzle: {fileID: 194829221086538142}
   flamePrefab: {fileID: 2475285664741214988, guid: d229363f7430b724b820ffda4755e083, type: 3}
 --- !u!114 &905355796874017787

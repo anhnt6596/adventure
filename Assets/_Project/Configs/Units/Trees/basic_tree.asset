@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: basic_tree
   m_EditorClassIdentifier: Assembly-CSharp::DamageableConfig
   id: basic_tree
-  maxHp: 20
+  maxHp: 50
   drops:
   - prefab: {fileID: 9176653165436844561, guid: af26f63897f537841aca1e3dbaa7331e, type: 3}
     min: 2
