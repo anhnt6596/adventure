@@ -42,6 +42,42 @@ MonoBehaviour:
     cost: 1
     maxRank: 3
     position: {x: -0.75, y: 2.25}
+  - id: throw-knives
+    key: throw-knives
+    requires:
+    - attack-2
+    effect:
+      rid: 1851184252042870862
+    cost: 1
+    maxRank: 1
+    position: {x: -0.75, y: -1.5}
+  - id: throw-knives-power
+    key: throw-knives-power
+    requires:
+    - throw-knives
+    effect:
+      rid: 1851184252042870864
+    cost: 1
+    maxRank: 3
+    position: {x: -1.5, y: -1.5}
+  - id: throw-knives-cooldown
+    key: throw-knives-cooldown
+    requires:
+    - throw-knives
+    effect:
+      rid: 1851184252042870865
+    cost: 1
+    maxRank: 3
+    position: {x: -0.75, y: -2.25}
+  - id: pick-radius
+    key: pick-radius
+    requires:
+    - attack-speed-2
+    effect:
+      rid: 1851184252042870866
+    cost: 1
+    maxRank: 3
+    position: {x: -1.5, y: 0.75}
   references:
     version: 2
     RefIds:
@@ -66,3 +102,31 @@ MonoBehaviour:
         - stat: distance
           kind: 1
           amount: 0.2
+    - rid: 1851184252042870862
+      type: {class: UnlockSkillEffect, ns: , asm: Assembly-CSharp}
+      data:
+        skill: throw-knives
+        description: throw-knives unlock
+    - rid: 1851184252042870864
+      type: {class: SkillBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        skill: throw-knives
+        buffs:
+        - stat: power
+          kind: 0
+          amount: 0.2
+    - rid: 1851184252042870865
+      type: {class: SkillBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        skill: throw-knives
+        buffs:
+        - stat: cooldown
+          kind: 0
+          amount: -2
+    - rid: 1851184252042870866
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: PickupRadius
+          kind: 1
+          amount: 0.5

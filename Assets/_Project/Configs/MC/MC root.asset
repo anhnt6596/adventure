@@ -24,6 +24,15 @@ MonoBehaviour:
     cost: 2
     maxRank: 1
     position: {x: 0, y: -1.5}
+  - id: attack-3
+    key: attack
+    requires:
+    - attack-2
+    effect:
+      rid: 1851184252042870867
+    cost: 2
+    maxRank: 5
+    position: {x: -0, y: -2.25}
   - id: attack-1
     key: attack
     requires: []
@@ -231,6 +240,13 @@ MonoBehaviour:
         - stat: MoveSpeed
           kind: 1
           amount: 0.05
+    - rid: 1851184252042870867
+      type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
+      data:
+        buffs:
+        - stat: AttackPower
+          kind: 1
+          amount: 0.1
     - rid: 7000115694874394695
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:

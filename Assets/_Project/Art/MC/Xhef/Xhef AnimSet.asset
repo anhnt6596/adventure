@@ -74,3 +74,17 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 7826ad5e154d689408663ef74773d8bb, type: 3}
       - {fileID: 21300000, guid: 7826ad5e154d689408663ef74773d8bb, type: 3}
       - {fileID: 21300000, guid: 7826ad5e154d689408663ef74773d8bb, type: 3}
+  - action: 4
+    fps: 18
+    loop: 0
+    hitFrame: 3
+    dirs:
+    - frames:
+      - {fileID: 21300000, guid: 61ec24978d5c54040b25ad79a912a642, type: 3}
+      - {fileID: 21300000, guid: 3d7d2e54d7340f74a901a17af3581cb7, type: 3}
+      - {fileID: 21300000, guid: 2f7c9e63bdcd0eb4f83d2aac193c95c9, type: 3}
+      - {fileID: 21300000, guid: 955fb186c71e9ff42858529b1b26cf03, type: 3}
+      - {fileID: 21300000, guid: 89fd7ca4519b37a429d48dbafb914974, type: 3}
+      - {fileID: 21300000, guid: b74dbfcac1f681f4ca14141f30def73f, type: 3}
+      - {fileID: 21300000, guid: a6fe51f243e957c4baa98ebfad0c3c22, type: 3}
+      - {fileID: 21300000, guid: c3ac0cb7938fc944ebb62f56a9865e78, type: 3}
