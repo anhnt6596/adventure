@@ -151,9 +151,12 @@ public abstract class DynamicUnit : Unit
         _busyKind = kind;
     }
 
-    public void Attack()
+    // Returns whether the swing actually started, the same promise CharacterSkill.TryUse makes. A refused
+    // press is not a silent nothing to whoever asked: it is what the input layer holds on to and offers again
+    // when the recovery ends.
+    public bool Attack()
     {
-        if (!CanAttack) return;
+        if (!CanAttack) return false;
 
         // Attack speed scales the swing AND the recovery by the same factor, the way action games have always
         // done it: the ratio between them holds at every rate, so a fast attacker feels like the same attack
@@ -173,6 +176,7 @@ public abstract class DynamicUnit : Unit
         _cooldownTimer = duration + AttackCooldown / rate;
         _cooldownTotal = _cooldownTimer;
         Attacked?.Invoke();
+        return true;
     }
 
     protected virtual void Update()

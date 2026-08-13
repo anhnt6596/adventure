@@ -7,7 +7,23 @@ public class MCInput : MonoBehaviour
 {
     [SerializeField] MCController character;
 
+    // How long a press that could not run is remembered and offered again — the amount a player may press
+    // EARLY and still be heard. Long enough that the last moments of a swing are not a dead zone, short enough
+    // that one press cannot fire an action later than the player would still call "now".
+    //
+    // A CONSTANT, NOT A FIELD. It is one number for the whole game: it describes how forgiving the game is,
+    // which is not something one character should be able to disagree with the next about. Per-prefab it would
+    // be four copies to keep level and three of them wrong the day somebody tunes the fourth.
+    const float BufferWindow = 0.2f;
+
     IInputGate _gate;
+
+    // ONE SLOT, NOT A QUEUE, and it holds the LATEST refused press. A queue would replay a flurry of mashing
+    // as a scripted combo the player never timed — press three times during a swing and watch three actions
+    // come out on their own. One slot says "the thing you last asked for, if it is still nearly now".
+    ICharacterCommand _buffered;
+    InputKind _bufferedKind;   // re-checked at fire time: a cutscene that starts mid-window must still refuse it
+    float _bufferedAt;
 
     [Inject]
     public void Construct(IInputGate gate) => _gate = gate;
@@ -96,16 +112,52 @@ public class MCInput : MonoBehaviour
             }
         }
 
+        // BEFORE this frame's presses, so a press held over from last frame goes out the instant it becomes
+        // possible rather than a frame later. A fresh press that also fails simply replaces it below.
+        RetryBuffered();
+
         if (_gate == null || _gate.Allows(InputKind.Attack))
         {
             foreach (var b in _pressed)
-                if (kb[b.Key].wasPressedThisFrame) b.Value.Execute();
+                if (kb[b.Key].wasPressedThisFrame) Press(b.Value, InputKind.Attack);
         }
 
         if (_gate == null || _gate.Allows(InputKind.Skill))
         {
             foreach (var b in _skills)
-                if (kb[b.Key].wasPressedThisFrame) b.Value.Execute();
+                if (kb[b.Key].wasPressedThisFrame) Press(b.Value, InputKind.Skill);
         }
+    }
+
+    // Try it now; keep it if it would not go. The press is remembered from when it was MADE, not from when it
+    // was last retried — otherwise every failed attempt would renew the window and a button held down against
+    // a long cooldown would fire the moment it ended, however long ago the player asked.
+    void Press(ICharacterCommand command, InputKind kind)
+    {
+        if (command.Execute())
+        {
+            _buffered = null;   // it went; anything older is stale by definition
+            return;
+        }
+
+        _buffered = command;
+        _bufferedKind = kind;
+        _bufferedAt = Time.time;
+    }
+
+    void RetryBuffered()
+    {
+        if (_buffered == null) return;
+
+        // Dropped on expiry whether or not it could have run: a press the player has stopped thinking of as
+        // "now" must not go off, and holding it any longer is the game acting on an intention that has passed.
+        if (Time.time - _bufferedAt > BufferWindow)
+        {
+            _buffered = null;
+            return;
+        }
+
+        if (_gate != null && !_gate.Allows(_bufferedKind)) return;   // still remembered, just not allowed yet
+        if (_buffered.Execute()) _buffered = null;
     }
 }

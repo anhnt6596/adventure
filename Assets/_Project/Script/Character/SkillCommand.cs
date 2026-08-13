@@ -7,5 +7,5 @@ public class SkillCommand : ICharacterCommand
 
     public SkillCommand(CharacterSkill skill) => _skill = skill;
 
-    public void Execute() => _skill.TryUse();
+    public bool Execute() => _skill.TryUse();
 }

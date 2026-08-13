@@ -11,5 +11,12 @@ public class MoveCommand : ICharacterCommand
         _direction = direction;
     }
 
-    public void Execute() => _input.AccumulateMove(_direction);
+    // Always true: a direction held is always taken, there is no state that can refuse it. Movement is never
+    // buffered anyway — it is read from what is HELD this frame, so remembering an old one would be steering
+    // the character by a key nobody has a finger on.
+    public bool Execute()
+    {
+        _input.AccumulateMove(_direction);
+        return true;
+    }
 }

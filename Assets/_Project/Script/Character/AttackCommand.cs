@@ -4,5 +4,5 @@ public class AttackCommand : ICharacterCommand
 
     public AttackCommand(MCController character) => _character = character;
 
-    public void Execute() => _character.Attack();
+    public bool Execute() => _character.Attack();
 }
