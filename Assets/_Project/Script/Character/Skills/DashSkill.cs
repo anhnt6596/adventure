@@ -19,6 +19,10 @@ using UnityEngine;
 public class DashSkill : CharacterSkill
 {
     [Header("Dash")]
+    [Tooltip("Which animation this plays. A roll, a blink and a charge are this same skill with another clip " +
+             "over them, so the clip is authored rather than fixed by the class.")]
+    [SerializeField] AnimAction anim = AnimAction.Dash;
+
     [Tooltip("How far it carries the character, in world units.")]
     [SerializeField, Min(0.01f)] float distance = 4f;
 
@@ -115,7 +119,7 @@ public class DashSkill : CharacterSkill
         // looping action that is already running alone. 1x on purpose — the legs move at the speed the art
         // was drawn for, and lengthening the dash carries the character further rather than more slowly, so
         // stretching the clip to fit the duration would be skating.
-        PlayAnim(AnimAction.Dash);
+        PlayAnim(anim);
 
         _massBefore = _body.Mass;
         _body.SetMass(_massBefore * massMultiplier);

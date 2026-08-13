@@ -16,7 +16,11 @@ public class UnitAnimator : MonoBehaviour
     [SerializeField] Transform scaleNode;      // flipped on X to serve mirrored directions
 
     // Raised as the playhead crosses the current clip's hit frame — once per play of a one-shot clip.
-    public event Action Hit;
+    //
+    // IT SAYS WHICH ACTION FIRED IT, because a hit frame belongs to a clip and there is more than one clip with
+    // one. Without the action every listener hears every hit frame: a throw's connect would swing the melee
+    // weapon too, and the only way out would be for each of them to be the unit's ONLY one. Listeners filter.
+    public event Action<AnimAction> Hit;
 
     // Scales playback without touching the clip. An attack sets this to the unit's attack rate so the swing
     // stretches with its lock window; everything else runs at 1.
@@ -138,7 +142,7 @@ public class UnitAnimator : MonoBehaviour
         if (!_hitFired && !_clip.loop && _clip.hitFrame >= 0 && f >= _clip.hitFrame)
         {
             _hitFired = true;
-            Hit?.Invoke();
+            Hit?.Invoke(_action);
         }
 
         if (f != _frame) Draw(f);

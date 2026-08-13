@@ -10,7 +10,7 @@ using Lean.Pool;
 // direction-blind: anything touching the flame stops it. ONE prefab / particle for everyone. Pooled: every field
 // is (re)set in Launch.
 [DisallowMultipleComponent]
-public class SoulFire : MonoBehaviour
+public class SoulFire : Projectile
 {
     [Header("Refs")]
     [SerializeField] SpriteRenderer glow;      // the light; fades/scales in on spawn, blooms on burst
@@ -19,7 +19,6 @@ public class SoulFire : MonoBehaviour
 
     [Header("Timing")]
     [SerializeField] float spawnTime = 0.1f;   // glow fades + scales in over this
-    [SerializeField] float speed = 6f;         // flight speed — the flame's own, not the caster's
     [SerializeField] float burstTime = 0.35f;  // glow bloom + fade, ~ the explosion length
     [SerializeField] float burstScale = 1.6f;  // glow scale multiplier at the burst peak
     [SerializeField] float hitPadding = 0.15f; // contact reach past the target's hit circle
@@ -36,7 +35,7 @@ public class SoulFire : MonoBehaviour
     Vector3 _glowScale;    // authored glow scale (the "current level" to grow into)
     Color _glowColor;
 
-    float _range, _damage, _knockback;
+    float _range, _speed, _damage, _knockback;
     int _team;             // caster's team — Overlap spares it (no friendly fire / no self-seek)
     Vector3 _dir;          // travel direction
     float _traveled;       // distance covered so far
@@ -54,14 +53,15 @@ public class SoulFire : MonoBehaviour
         }
     }
 
-    public void Launch(float range, int team, float damage, float knockback, Vector3 direction, Component source)
+    public override void Launch(in Shot shot)
     {
-        _range = range;
-        _source = source;
-        _team = team;
-        _damage = damage;
-        _knockback = knockback;
-        _dir = direction.sqrMagnitude > 1e-6f ? direction.normalized : Vector3.forward;
+        _range = shot.Range;
+        _speed = shot.Speed;
+        _source = shot.Source;
+        _team = shot.Team;
+        _damage = shot.Damage;
+        _knockback = shot.Knockback;
+        _dir = shot.Direction;
         _traveled = 0f;
         _phase = Phase.Spawning;
         _t = 0f;
@@ -117,7 +117,7 @@ public class SoulFire : MonoBehaviour
             _dir = Vector3.RotateTowards(_dir, to.normalized, steerRate * Mathf.Deg2Rad * dt, 0f);
         }
 
-        float step = speed * dt;
+        float step = _speed * dt;
         transform.position += _dir * step;
         _traveled += step;
         if (_traveled >= _range) StartBurst(burstScale * 2f);   // ran the full range, hit nothing — wide burst

@@ -20,6 +20,10 @@ public class ShapeAttack : MonoBehaviour
     [SerializeField] float knockback = 5f;                    // shove dealt outward from the owner; 0 = none
     [SerializeField] UnitAnimator animatorSource;             // drag the one on the art child; fires Hit at the connect frame
 
+    [Tooltip("Which animation this lands on. The clip's hit frame is when the blow connects, so a unit that " +
+             "also throws or casts keeps each hit frame to the one thing meant to answer it.")]
+    [SerializeField] AnimAction anim = AnimAction.Attack;
+
     DynamicUnit _owner;                                       // fights for whoever owns it — its Team, its AttackPower
     int Team => _owner != null ? _owner.Team : Teams.Universal;   // ownerless -> belongs to no side, so it hits everything
     readonly List<IDamageable> _hits = new List<IDamageable>();
@@ -53,9 +57,13 @@ public class ShapeAttack : MonoBehaviour
             Debug.LogError($"[{nameof(ShapeAttack)}] no {nameof(UnitAnimator)} found — the attack will never land. Assign it (it's on the art child).", this);
     }
 
-    // Fires when the animation reaches its hit frame (via UnitAnimator.Hit).
-    void OnHit()
+    // Fires when the animation reaches its hit frame (via UnitAnimator.Hit). Only this weapon's own clip: a
+    // unit that also throws something has a second clip with a hit frame in it, and the sword must not land on
+    // that one.
+    void OnHit(AnimAction action)
     {
+        if (action != anim) return;
+
         CombatWorld.Instance.Rebuild();
         if (shape == Shape.Circle)
             CombatWorld.Instance.Overlap(Centre, radius, Team, _hits);

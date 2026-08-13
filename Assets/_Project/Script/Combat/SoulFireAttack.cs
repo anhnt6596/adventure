@@ -8,8 +8,12 @@ using Lean.Pool;
 public class SoulFireAttack : MonoBehaviour
 {
     [SerializeField] float range = 6f;                  // how far the flame will hunt for a target
+    [SerializeField] float speed = 6f;                  // flight speed — the shot's, not the caster's
     [SerializeField] float knockback = 3f;              // shove on the target when the flame lands; 0 = none
     [SerializeField] UnitAnimator animatorSource;  // drag the one on the art child; fires Hit at the spit frame
+
+    [Tooltip("Which animation this spits on. Its hit frame is the moment the flame leaves the mouth.")]
+    [SerializeField] AnimAction anim = AnimAction.Attack;
     [SerializeField] Transform muzzle;                  // the mouth; empty = this object
     [SerializeField] SoulFire flamePrefab;              // the soul-fire visual + homing (assign the fx)
 
@@ -31,14 +35,15 @@ public class SoulFireAttack : MonoBehaviour
             Debug.LogError($"[{nameof(SoulFireAttack)}] no SoulFire prefab assigned — nothing to spit.", this);
     }
 
-    // Fires when the animation reaches its spit frame (via UnitAnimator.Hit).
-    void Spit()
+    // Fires when the animation reaches its spit frame (via UnitAnimator.Hit). This one's own clip only —
+    // anything else the unit can play that has a hit frame is not a spit.
+    void Spit(AnimAction action)
     {
-        if (flamePrefab == null) return;
+        if (action != anim || flamePrefab == null) return;
 
         float damage = _owner != null ? _owner.AttackPower : 0f;
         Vector3 dir = _owner != null ? _owner.FacingDir : transform.forward;   // the shot flies (and starts seeking) this way
         var flame = LeanPool.Spawn(flamePrefab, Muzzle, Quaternion.identity);
-        flame.Launch(range, Team, damage, knockback, dir, _owner);
+        flame.Launch(new Shot(dir, Team, damage, speed, range, knockback, _owner));
     }
 }

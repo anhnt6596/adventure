@@ -11,7 +11,7 @@ using UnityEngine;
 //
 // APPEND ONLY, WITH EXPLICIT NUMBERS. These are serialized inside every CharacterAnimSet asset, so inserting
 // a value in the middle silently slides every authored clip onto a different action.
-public enum AnimAction { Idle = 0, Move = 1, Attack = 2, Dash = 3 }
+public enum AnimAction { Idle = 0, Move = 1, Attack = 2, Dash = 3, Throw = 4 }
 
 // How many screen directions the art actually covers.
 public enum DirCount { Two = 2, Four = 4, Eight = 8 }
