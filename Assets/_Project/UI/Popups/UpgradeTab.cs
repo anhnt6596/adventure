@@ -45,6 +45,9 @@ public class UpgradeTab
     readonly VisualElement _body, _canvas, _edges, _tip;
     readonly Label _points, _tipText, _tipTotal, _empty;
     readonly Button _buyButton, _resetButton;
+#if UNITY_EDITOR
+    readonly Button _sellButton;
+#endif
     readonly ScrollView _scroll;
 
     readonly Dictionary<string, VisualElement> _nodeElements = new Dictionary<string, VisualElement>();
@@ -79,6 +82,35 @@ public class UpgradeTab
 
         _buyButton?.RegisterCallback<ClickEvent>(_ => Buy());
         _resetButton?.RegisterCallback<ClickEvent>(_ => ResetTree());
+
+#if UNITY_EDITOR
+        // BUILT HERE RATHER THAN AUTHORED IN THE UXML, which is the whole reason it can be trusted not to
+        // ship: markup cannot be compiled out, so a debug button living in the file would be one somebody has
+        // to remember to delete. Beside Reset, because the two are a pair — one fills the tree, one empties
+        // it — and wearing its classes, because a cheat that looks foreign is a cheat you misread as a bug.
+        var bar = root.Q<VisualElement>("upgrade-bar");
+        if (bar != null)
+        {
+            var maxAll = new Button { text = "Max all" };
+            maxAll.AddToClassList("btn");
+            maxAll.AddToClassList("btn--ghost");
+            maxAll.RegisterCallback<ClickEvent>(_ => MaxAll());
+            bar.Add(maxAll);
+        }
+
+        // The other direction of the buy button, under it, in the same tooltip. Built here for the same
+        // reason as the one above — and wearing tip-buy so it lines up with the button it undoes rather than
+        // arriving as a differently-shaped box in a box that is measured to the pixel.
+        if (_tip != null)
+        {
+            _sellButton = new Button { text = "− rank" };
+            _sellButton.AddToClassList("btn");
+            _sellButton.AddToClassList("btn--ghost");
+            _sellButton.AddToClassList("tip-buy");
+            _sellButton.RegisterCallback<ClickEvent>(_ => Sell());
+            _tip.Add(_sellButton);
+        }
+#endif
 
         // Pressing anywhere that is not the tooltip or a node puts the tooltip away. On the way DOWN the
         // tree, because a button swallows the press it handles and half of what a player can hit in here is
@@ -431,6 +463,12 @@ public class UpgradeTab
             // left". Without a class of its own a finished node looks exactly like one you cannot afford.
             _buyButton.EnableInClassList("tip-buy--max", maxed);
         }
+
+#if UNITY_EDITOR
+        // Dead at rank 0 rather than hidden, so the tooltip is the same height whatever node is open — a box
+        // that changes size as you click along a row is harder to read than one disabled button.
+        _sellButton?.SetEnabled(rank > 0);
+#endif
     }
 
     void Buy()
@@ -448,6 +486,20 @@ public class UpgradeTab
     {
         _upgrades?.Reset(_characterId);   // fires Changed -> Refresh
     }
+
+#if UNITY_EDITOR
+    void MaxAll()
+    {
+        _upgrades?.MaxAll(_characterId, _tree);   // fires Changed -> Refresh
+    }
+
+    // The tooltip stays open, the same as it does on a buy: this is for pushing a node up and down while
+    // watching what changes, and a box that shut on every press would make that impossible.
+    void Sell()
+    {
+        if (_selected != null) _upgrades?.Unbuy(_characterId, _selected);   // fires Changed -> Refresh
+    }
+#endif
 
     // Links are drawn from the node that leads IN to the node it opens, and coloured by whether that entry
     // has actually been taken — so a lit line means "this way is open", which is the only thing an edge in

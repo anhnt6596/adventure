@@ -112,6 +112,54 @@ public class UpgradeSystem : ISavable
         return true;
     }
 
+#if UNITY_EDITOR
+    // EDITOR ONLY. One rank back off a node, the other direction of Buy — for walking a node up and down
+    // while judging what a single rank is actually worth, which otherwise costs a Reset and a re-climb every
+    // time. Requirements are not re-checked on the way down: anything past this node keeps the ranks it has
+    // and simply reads as locked again, the same half-state MaxAll can leave behind.
+    public bool Unbuy(string characterId, UpgradeNode node)
+    {
+        if (node == null || string.IsNullOrEmpty(characterId)) return false;
+
+        int rank = RankOf(characterId, node);
+        if (rank <= 0 || !_ranks.TryGetValue(characterId, out var byNode)) return false;
+
+        byNode[node.id] = rank - 1;
+        _save.Save(SaveKey);
+        Changed?.Invoke();
+        return true;
+    }
+
+    // EDITOR ONLY, AND IT DOES NOT PAY. Every node straight to its ceiling, price and requirements both
+    // ignored — the point is to look at a finished tree without grinding the levels for it, and the nodes
+    // worth looking at are usually the ones behind a branch nobody has opened.
+    //
+    // Available() will read negative afterwards, and that is left showing on purpose: the cheat should be
+    // visible while it is on rather than hidden behind a number that has been quietly told to stop counting.
+    // Reset is the way back, the same one a player has.
+    public void MaxAll(string characterId, UpgradeTreeConfig tree)
+    {
+        if (string.IsNullOrEmpty(characterId) || tree == null) return;
+
+        if (!_ranks.TryGetValue(characterId, out var byNode))
+            _ranks[characterId] = byNode = new Dictionary<string, int>();
+
+        bool changed = false;
+        foreach (var node in tree.Nodes)   // hoisted by the caller's loop; Nodes flattens the inherited chain
+        {
+            if (node == null || string.IsNullOrEmpty(node.id)) continue;
+            if (RankOf(characterId, node) >= node.MaxRank) continue;
+
+            byNode[node.id] = node.MaxRank;
+            changed = true;
+        }
+
+        if (!changed) return;   // already full — no save, and nothing redraws for a no-op
+        _save.Save(SaveKey);
+        Changed?.Invoke();
+    }
+#endif
+
     // Full respec. Points are levels, so nothing has to be given back: dropping the counts is what makes them
     // spendable again. The character keeps its level, and therefore its total.
     public void Reset(string characterId)
