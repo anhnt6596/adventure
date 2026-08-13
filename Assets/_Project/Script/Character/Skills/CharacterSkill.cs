@@ -11,7 +11,9 @@ using UnityEngine;
 // prefab. As a stat it would also need one entry per slot per skill: a number every character's config has to
 // carry for a skill it may not even own, which is the same enumeration DESIGN.md rejects for gear rungs.
 //
-// WHAT IS A STAT IS THE HASTE — see StatId.Skill1Haste. Upgrades and gear move that; nothing moves the base.
+// BOTH LAYERS MOVE, AND THEY ARE DIFFERENT THINGS. The base is this skill's own tunable, so a node addressed
+// to this skill takes seconds off the number authored here; StatId.Skill1Haste is the character's, and scales
+// whatever that came to. Flat first, haste after — see Cooldown.
 //
 // NO DEPENDENCY INJECTION. The skill reads what it needs off its owner, the way ShapeAttack reads AttackPower,
 // so the same component works on a body that has ICharacterStats and on one that does not. An enemy given a
@@ -31,6 +33,10 @@ public abstract class CharacterSkill : MonoBehaviour
              "shortens it, nothing replaces it.")]
     [SerializeField, Min(0f)] float cooldown = 8f;
 
+    // Declared here rather than by each skill, because every skill has one: the name is the same on all of
+    // them, so a node reads "cooldown" whatever it is addressed to.
+    public const string CooldownTunable = "cooldown";
+
     [Tooltip("Starts shut, and stays shut until an upgrade node opens it (UnlockSkillEffect, by the Key " +
              "above). Off means the character has it from the first minute.")]
     [SerializeField] bool locked;
@@ -38,6 +44,7 @@ public abstract class CharacterSkill : MonoBehaviour
     protected DynamicUnit Owner { get; private set; }
 
     ICharacterStats _stats;   // null on anything that is not a main character — then haste is simply 0
+    Stat _cooldown;
     float _readyAt;
 
     public Slot Which => slot;
@@ -114,6 +121,10 @@ public abstract class CharacterSkill : MonoBehaviour
 
     protected virtual void Awake()
     {
+        // Before the guard below: a skill with nothing above it is broken, but a node still addresses this by
+        // name, and a tunable that exists on some bodies and not others is worse than one that simply reads 8.
+        _cooldown = Tunable(CooldownTunable, cooldown);
+
         Owner = GetComponentInParent<DynamicUnit>();
         if (Owner == null)
         {
@@ -142,12 +153,17 @@ public abstract class CharacterSkill : MonoBehaviour
     //
     // Negative haste is allowed and lengthens the wait, because a debuff that does that is a real thing to
     // want. The divisor is floored so that -100 or worse cannot divide by zero or run the cooldown backwards.
+    //
+    // The base is the tunable, so a flat "-1s" node is seconds off THIS number and haste then scales what is
+    // left — a second of a slow skill and a second of a fast one are not worth the same, which is the point.
+    // Floored at zero: the tunable can be driven negative, and a wait that runs backwards is not a shorter one.
     public float Cooldown
     {
         get
         {
             float scale = 1f + (Haste?.Value ?? 0f) * 0.01f;
-            return cooldown / Mathf.Max(0.05f, scale);
+            float @base = Mathf.Max(0f, _cooldown?.Value ?? cooldown);
+            return @base / Mathf.Max(0.05f, scale);
         }
     }
 
