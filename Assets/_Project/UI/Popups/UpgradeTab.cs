@@ -437,16 +437,11 @@ public class UpgradeTab
     {
         if (_selected == null) return;
 
-        // Only dismiss on a buy that actually happened: a refused one leaves the tooltip standing, because the
-        // reason it was refused is on the node the player is still looking at.
-        if (_upgrades?.Buy(_characterId, _tree, _selected) != true) return;   // fires Changed -> Refresh
-
-        // Closed only once there is nothing left to buy here. A node with ranks to spare still has an action
-        // in it, and shutting the box after each rank would make taking a node to five a matter of finding it
-        // again five times. Maxed, the button hides itself (see RefreshTip) and what is left is a box
-        // covering the very nodes it just opened.
-        if (_upgrades.IsMaxed(_characterId, _selected)) _selected = null;
-        Refresh();
+        // NOTHING CLOSES ON A BUY, the last rank included. The box is where the player is looking, and taking
+        // it away at the exact moment the node finished is the one press whose result they cannot read — the
+        // button says MAX and the total says what the node came to, and both arrive on a tooltip that is no
+        // longer there. It closes the way it always did: press the node again, or press away from it.
+        _upgrades?.Buy(_characterId, _tree, _selected);   // fires Changed -> Refresh
     }
 
     void ResetTree()
