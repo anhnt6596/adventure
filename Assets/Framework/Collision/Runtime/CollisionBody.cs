@@ -32,6 +32,11 @@ public class CollisionBody : MonoBehaviour, ICollisionBody
     // one of them undoing the other on the way out.
     public float Mass => mass;
 
+    // Readable so a caller can work out the impulse that produces a slide of a given LENGTH — the arithmetic
+    // needs the drag, and a second copy of this number kept somewhere else would be free to disagree with the
+    // one actually doing the slowing down.
+    public float KnockbackDrag => knockbackDrag;
+
     public float InvMass => mass > 0f ? 1f / mass : 0f;
     public int PassMask { get; private set; } = ~0;
 
@@ -42,10 +47,27 @@ public class CollisionBody : MonoBehaviour, ICollisionBody
 
     public bool IsKnocked => _knockVel.sqrMagnitude > 0.0001f;
 
+    // The furthest a body may ever slide from being hit, in world units — a ceiling on where it ENDS UP, not
+    // on any one blow. Three knives landing on the same frame are three impulses into one velocity, so a cap
+    // applied per hit is no cap at all; this is the only place that sees the total.
+    const float MaxKnockback = 2f;
+
     // An attack shoves the body along `impulse`; dividing by mass makes the same hit fling a light body far
     // and a heavy one little, and an immovable body (mass 0 → InvMass 0) not at all. The slide is corrected
     // against walls and other bodies by CollisionWorld.Step, like any other movement this frame.
-    public void AddImpulse(Vector3 impulse) => _knockVel += impulse * InvMass;
+    //
+    // CLAMPED AS A DISTANCE, THEN PUT BACK AS A SPEED. Drag is constant, so the ground left to cover at any
+    // moment is v²/(2·drag) — invert the ceiling through that and it becomes a speed limit, and the body
+    // simply cannot be travelling fast enough to overshoot. Doing it here rather than on the way in is what
+    // makes the limit true of the sum: whatever arrives, whenever, the total is measured against it.
+    public void AddImpulse(Vector3 impulse)
+    {
+        _knockVel += impulse * InvMass;
+
+        float maxSpeed = Mathf.Sqrt(2f * knockbackDrag * MaxKnockback);
+        if (_knockVel.sqrMagnitude > maxSpeed * maxSpeed)
+            _knockVel = _knockVel.normalized * maxSpeed;
+    }
 
     void Update()
     {

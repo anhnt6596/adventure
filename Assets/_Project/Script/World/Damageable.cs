@@ -46,10 +46,38 @@ public class Damageable : MonoBehaviour, IDamageable
         if (_body == null) _body = GetComponentInChildren<CollisionBody>(true);
     }
 
-    // Forward the attack's shove to the body; mass-scaling (and mass 0 = immovable) lives in AddImpulse.
-    public void ApplyKnockback(Vector3 impulse)
+    // WHAT AN ATTACK AUTHORS IS A DISTANCE, and this is where that becomes the impulse the body wants. The
+    // length of `shove` is how far a mass-1 body would be pushed, in world units.
+    //
+    // WHY THE CONVERSION HAS TO EXIST. A body slides until a constant drag eats its velocity, so the ground it
+    // covers goes as the SQUARE of the speed it left at — and the speed is the impulse over the mass. Handing
+    // an attack's number straight to AddImpulse therefore means
+    //
+    //     distance = knockback² / (2 · drag · mass²)
+    //
+    // and a designer typing "2" is choosing a number whose effect depends quadratically on itself and
+    // quadratically on a mass sitting on the victim's prefab. Nudging it from 2 to 3 does not move the target
+    // half again as far, it moves it 2.25 times as far — and the same 2 shifts a cat eight times further than
+    // a boar. That is not a number anyone can balance, which is the whole complaint this answers.
+    //
+    // Inverting it here leaves the physics exactly as it was and makes the authored number mean something:
+    // twice the value is twice the distance, and mass now resists in PROPORTION rather than by its square, so
+    // a body twice as heavy travels half as far instead of a quarter.
+    public void ApplyKnockback(Vector3 shove)
     {
-        if (_body != null) _body.AddImpulse(impulse);
+        if (_body == null) return;
+
+        float distance = shove.magnitude;
+        if (distance <= 0f) return;
+
+        // No ceiling here on purpose. How far a body may end up is a limit on the SUM of what is hitting it,
+        // which only the body can see — CollisionBody clamps it. Capping each blow on the way in would leave
+        // three simultaneous ones free to add up to three times the limit.
+        float travel = distance * _body.InvMass;
+
+        // Mass 0 is immovable and falls out on its own: InvMass is 0, so travel is 0 and so is the impulse.
+        float impulse = _body.Mass * Mathf.Sqrt(2f * _body.KnockbackDrag * travel);
+        _body.AddImpulse(shove / distance * impulse);
     }
 
     // HP is read in Start, not Awake: a unit resolves its config during injection (Construct runs after Awake),
