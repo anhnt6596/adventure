@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 8486517818659713739}
   - component: {fileID: 3085066272831242940}
   - component: {fileID: 1904772650338197411}
+  - component: {fileID: 5363670630624452513}
   m_Layer: 0
   m_Name: basic_tree
   m_TagString: Untagged
@@ -81,6 +82,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Damageable
+  lingerAfterDeath: 0.1
   hitRadius: 0.25
 --- !u!114 &2073095464694278207
 MonoBehaviour:
@@ -141,6 +143,22 @@ MonoBehaviour:
   reach: 0.1
   reachTop: -0.3
   stickyEdge: 0.06
+  renderers: []
+--- !u!114 &5363670630624452513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1470501848412717628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa860adc1dbe0d94eb18d7adc2ea1077, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitBend
+  lean: 0.05
+  duration: 0.5
+  wobbles: 1.5
   renderers: []
 --- !u!1 &6425603057950927440
 GameObject:

@@ -267,6 +267,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Damageable
+  lingerAfterDeath: 0
   hitRadius: 0.25
 --- !u!114 &7100000000000000001
 MonoBehaviour:
@@ -354,7 +355,6 @@ MonoBehaviour:
   - {fileID: 3375130734937823605}
   - {fileID: 3375130734937823605}
   - {fileID: 3375130734937823605}
-  - {fileID: 3375130734937823605}
   - {fileID: 7608053820603863719}
   finisherRecovery: 0.5
   resetAfter: 1
@@ -403,7 +403,7 @@ MonoBehaviour:
   speed: 5
   speedFromAttackRate: 0
   life: 0.75
-  power: 2
+  power: 1.5
   knockback: 0.68
   count: 1
   spread: 22.5
@@ -487,7 +487,7 @@ MonoBehaviour:
   projectile: {fileID: 3059785840995378781, guid: 31c383d68ad568042a7260c6ee7ce4e5, type: 3}
   speed: 3
   life: 1
-  power: 1.5
+  power: 2
   knockback: 0.5
   count: 3
   spread: 22.5

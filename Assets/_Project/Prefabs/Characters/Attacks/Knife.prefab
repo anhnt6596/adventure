@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7c6730755d6bdb41899b5000a3b2918, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Knife
+  canBeBlocked: 0
   radius: 0.3
   art: {fileID: 9160504989733773261}
   spin: 4320

@@ -796,6 +796,32 @@ vệt sáng lật đúng theo phía có lửa → là **directional per-pixel th
 
 ## ✨ Polish / feedback
 
+- [ ] **Một lô FX va chạm.** Danh sách đang nợ: **dao chạm địch**, **gió kiếm chạm địch**, **cây bị chém thì lá
+  bay**. Chưa làm cái nào; ghi lại đây kèm mấy chỗ móc sẵn để lúc bắt tay không phải đi tìm lại.
+
+  - **Khuôn mẫu đã có sẵn: `SoulFire`.** Nó giữ một `ParticleSystem` con (`burst`), **Play On Awake TẮT**, và
+    lúc nổ thì `burst.Clear(); burst.Play();`. Clear trước Play là bắt buộc vì object được pool — không clear
+    thì hạt của lần nổ trước còn sót lại. Mọi FX dưới đây copy đúng khuôn này.
+  - **Phải pool.** Rule của project (xem mục LeanPool ở Tech debt): thứ spawn/destroy liên tục thì
+    `LeanPool.Spawn/Despawn`, và **mọi field phải được set lại lúc spawn** vì object đã sống trước đó.
+  - **Chỗ móc, theo từng cái:**
+    - *Dao chạm địch* → `Knife.Bite()`, ngay trước `LeanPool.Despawn`. Vị trí là chỗ con dao đang đứng.
+    - *Gió kiếm chạm địch* → `SlashWave.Cut()`, trong vòng lặp, mỗi nạn nhân một lần. Lưu ý bản xuyên cắt
+      **nhiều** mục tiêu trong một chuyến bay nên FX sẽ nổ nhiều lần — đó là đúng, đừng gộp.
+    - *Đạn bị triệt tiêu* (mới có, chưa có FX) → `Projectile.Cancel()`. `SoulFire` đã override thành nổ sẵn;
+      `Knife` và `SlashWave` thì hiện **biến mất không kèn trống**, nhìn hụt.
+    - *Cây bị chém* → `Damageable.Damaged`, cùng cái event mà `HitFlash` và `HitBend` đang nghe. Gắn thêm một
+      component thứ ba là xong, không phải sửa gì.
+  - **⚠️ Không có ĐIỂM chạm.** Sát thương gây bằng overlap (`CombatWorld.Overlap/OverlapBox`), nên không đâu
+    biết "lưỡi dao cắm vào đúng chỗ nào" — chỉ có vị trí nạn nhân và vị trí kẻ đánh. FX phải chọn một trong hai
+    (hoặc điểm giữa) chứ đừng đi thêm một hệ raycast chỉ để lấy toạ độ.
+  - **Hướng thì lấy từ `source`.** `Damaged` mang theo `object source` — nó là `Component` của thứ gây đòn, nên
+    `source.transform.position` cho ra hướng đòn tới. `HitBend` và `ExpOnDeath` đều đang làm vậy; lá bay theo
+    hướng chém thì dùng đúng đường đó. **Cái `Damaged` KHÔNG mang là lượng damage** — muốn lá bay nhiều/ít theo
+    đòn nặng nhẹ thì phải sửa signature của event, và nó có nhiều người nghe.
+  - **Billboard.** Sprite FX phải quay mặt camera như mọi thứ khác, hoặc dùng ParticleSystem ở chế độ
+    billboard. Đừng để một quad phẳng nằm ngửa trên đất.
+
 - [ ] **Mũi tên hướng di chuyển.** Hiện mũi tên chỉ hướng MC đang hướng/di chuyển — dùng `DynamicUnit.FacingDir`
   (world XZ, đã có). Cũng là **chỉ báo hướng bắn SoulFire** (tia MC bay theo `FacingDir`). World-space dưới chân
   MC hoặc UI; cân nhắc snap 8 hướng cho khớp sprite.

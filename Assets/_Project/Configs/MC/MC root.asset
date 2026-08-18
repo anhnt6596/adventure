@@ -211,7 +211,7 @@ MonoBehaviour:
         buffs:
         - stat: Regen
           kind: 0
-          amount: 0.25
+          amount: 0.15
     - rid: 1851184252042870784
       type: {class: StatBuffEffect, ns: , asm: Assembly-CSharp}
       data:
@@ -253,4 +253,4 @@ MonoBehaviour:
         buffs:
         - stat: MaxHunger
           kind: 0
-          amount: 10
+          amount: 5

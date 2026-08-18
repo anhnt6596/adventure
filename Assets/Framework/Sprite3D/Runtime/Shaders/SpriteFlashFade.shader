@@ -14,8 +14,19 @@
 // side turns the authored percentages into them (FadeWhenBlocking.PushFadeRange). Billboarding rotates the
 // TRANSFORM, never the mesh, so this axis stays the sprite's own "up" whatever the camera is doing.
 //
-// _FadeAlpha/_FadeY0/_FadeY1 ride the same MaterialPropertyBlock as _FlashAmount — which is why HitFlash zeroes
-// its flash instead of dropping the block. Both effects apply at once; a tree can be mid-flash and mid-fade.
+// IT ALSO BENDS. _Bend leans the sprite sideways by an amount that grows with height, so the base stays planted
+// and the crown swings — a struck tree whips over and springs back rather than sliding off its own roots. A
+// SHEAR and not a rotation, because these sprites are pivoted at their middle: turning one about its own centre
+// would drag the trunk out of the ground it is standing in, and moving the pivot is not free either — the
+// ground shadow, the fade and the placement all measure from it.
+//
+// The lean is SQUARED up the sprite, so almost none of it lands on the trunk and almost all of it on the
+// canopy. A straight ramp leans the whole tree like a mast; the square is what makes it read as something
+// flexible being hit.
+//
+// _FadeAlpha/_FadeY0/_FadeY1/_Bend ride the same MaterialPropertyBlock as _FlashAmount — which is why HitFlash
+// zeroes its flash instead of dropping the block. Every effect applies at once; a tree can be mid-flash,
+// mid-fade and mid-bend.
 Shader "Sprite/Flash Fade"
 {
     Properties
@@ -27,6 +38,9 @@ Shader "Sprite/Flash Fade"
         [PerRendererData] _FadeAlpha ("Fade Alpha", Range(0,1)) = 1
         [PerRendererData] _FadeY0 ("Fade Start (object Y)", Float) = 0
         [PerRendererData] _FadeY1 ("Fade End (object Y)", Float) = 0
+        [PerRendererData] _Bend ("Lean at the top (object units)", Float) = 0
+        [PerRendererData] _BendBase ("Bend base (object Y)", Float) = 0
+        [PerRendererData] _BendSpan ("Bend span (object units)", Float) = 0
     }
 
     SubShader
@@ -74,11 +88,22 @@ Shader "Sprite/Flash Fade"
             float _FadeAlpha;
             float _FadeY0;
             float _FadeY1;
+            float _Bend;
+            float _BendBase;
+            float _BendSpan;
 
             v2f vert (appdata_t IN)
             {
                 v2f OUT;
-                OUT.vertex = UnityObjectToClipPos(IN.vertex);
+
+                // Height up the sprite, 0 at the foot and 1 at the top. A span of zero means nobody has pushed
+                // one, so the bend simply does not happen — a sprite on this shader that no bend ever touches
+                // must draw exactly as it did before.
+                float4 v = IN.vertex;
+                float h = _BendSpan > 1e-5 ? saturate((v.y - _BendBase) / _BendSpan) : 0.0;
+                v.x += _Bend * h * h;
+
+                OUT.vertex = UnityObjectToClipPos(v);
                 OUT.texcoord = IN.texcoord;
                 OUT.color = IN.color * _Color;   // SpriteRenderer.color rides the vertex colour
                 OUT.objY = IN.vertex.y;

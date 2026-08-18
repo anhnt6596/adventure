@@ -9,6 +9,11 @@ using UnityEngine;
 // listens. Lives in the combat world so attacks find it.
 public class Damageable : MonoBehaviour, IDamageable
 {
+    [Tooltip("Seconds the body stays visible after it is killed — room for it to topple, burst or shake apart " +
+             "before it goes. It is already dead from the first frame: out of the world, untargetable, drops " +
+             "already spilled. 0 = it vanishes on the blow that killed it.")]
+    [SerializeField, Min(0f)] float lingerAfterDeath;
+
     [SerializeField] float hitRadius = 0.5f;   // body size for being hit — the red gizmo circle. Attack REACH is a different thing; it lives on the attack component (ShapeAttack.radius).
 
     Unit _unit;                    // the unit this belongs to — supplies config + team
@@ -63,8 +68,15 @@ public class Damageable : MonoBehaviour, IDamageable
     // Inverting it here leaves the physics exactly as it was and makes the authored number mean something:
     // twice the value is twice the distance, and mass now resists in PROPORTION rather than by its square, so
     // a body twice as heavy travels half as far instead of a quarter.
+    // WHICH WAY THE BLOW PUSHED, raised whether or not there is a body to push. A tree has no CollisionBody and
+    // never moves an inch, but it was still shoved by something from somewhere — and that direction is the one
+    // thing about a blow that says where it came from, decided by the attack itself rather than guessed from
+    // where the attacker's feet happen to be. See HitBend.
+    public event System.Action<Vector3> Knocked;
+
     public void ApplyKnockback(Vector3 shove)
     {
+        Knocked?.Invoke(shove);
         if (_body == null) return;
 
         float distance = shove.magnitude;
@@ -119,7 +131,13 @@ public class Damageable : MonoBehaviour, IDamageable
 
     // In the combat world only while enabled: a disabled object can't be hit, a re-enabled one rejoins. The
     // world is a static (CombatWorld.Instance), ready before any OnEnable, so it self-registers — no wiring.
-    void OnEnable() => JoinWorld();
+    void OnEnable()
+    {
+        // A pooled body brought back out must not still owe last life's disappearance — the pending vanish
+        // would put the fresh one away seconds after it spawned.
+        CancelInvoke(nameof(Vanish));
+        JoinWorld();
+    }
     void OnDisable() => LeaveWorld();
 
     void OnDestroy()
@@ -137,6 +155,29 @@ public class Damageable : MonoBehaviour, IDamageable
     // thing that swung. A real concept rather than a cheat-only escape hatch: i-frames after a hit, and a
     // scripted invulnerable phase, both want exactly this.
     public bool Invulnerable { get; set; }
+
+    // How long the body stays on screen after it dies — the window a death throe has to play in. 0 = it is gone
+    // on the frame it is killed.
+    //
+    // It lives here rather than on whatever animates the death because THIS is what removes the body, and a
+    // second number somewhere else would be the same fact written twice: whoever plays the throe should ask how
+    // long it has, not agree with it by hand. See HitBend.
+    public float LingerAfterDeath => lingerAfterDeath;
+
+    // KEEP THE BODY A MOMENT LONGER, asked for by whatever is playing the death out. The one playing it is the
+    // only thing that knows how long it needs — a wobble's length falls out of its own shape — so it says so
+    // rather than a number here being kept level with it by hand. The longest ask wins, and the authored linger
+    // is simply the shortest ask there is.
+    //
+    // Only heard DURING Died: that is the one moment the body is dead and still deciding when to go. Anything
+    // asking earlier or later is asking about a body that is not leaving.
+    public void DelayVanish(float seconds)
+    {
+        if (_deciding && seconds > _linger) _linger = seconds;
+    }
+
+    bool _deciding;
+    float _linger;
 
     public void TakeDamage(float amount, object source)
     {
@@ -160,12 +201,28 @@ public class Damageable : MonoBehaviour, IDamageable
         HealthChanged?.Invoke();
     }
 
+    // DEAD IS DECIDED IMMEDIATELY; DISAPPEARING IS NOT. Everything that makes it dead happens on this frame —
+    // it leaves the world so nothing can target or hit it again, IsAlive is already false, and the drops go out
+    // — and only the body's removal from view is held back. So a tree that is still standing while it topples is
+    // scenery, not a thing you can chop twice.
     void Die(object source)
     {
         LeaveWorld();                  // out of the world before it can be re-targeted
-        Died?.Invoke(source);          // DropOnDeath (and anything else) reacts before we vanish
-        gameObject.SetActive(false);   // OnDisable's LeaveWorld is then a no-op
+
+        _linger = lingerAfterDeath;
+        _deciding = true;
+        Died?.Invoke(source);          // DropOnDeath (and anything else) reacts — and may ask for longer
+        _deciding = false;
+
+        if (_linger <= 0f) { Vanish(); return; }
+
+        // Invoke rather than a timer in Update: this is the only thing Damageable would ever need an Update
+        // for, and it would then run on every tree, rock and creature in the world to watch a clock that is
+        // almost never ticking. nameof so a rename cannot quietly leave it pointing at nothing.
+        Invoke(nameof(Vanish), _linger);
     }
+
+    void Vanish() => gameObject.SetActive(false);   // OnDisable's LeaveWorld is then a no-op
 
     // The hit circle sits at transform.position — this must line up with where the thing is drawn, or an attack
     // that visually connects will miss. Drawn on the ground plane (XZ), not as a sphere: the hit test is a
