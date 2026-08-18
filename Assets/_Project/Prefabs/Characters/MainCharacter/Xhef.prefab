@@ -308,6 +308,8 @@ GameObject:
   - component: {fileID: 6121150249688211610}
   - component: {fileID: 8513440581080589896}
   - component: {fileID: 8217432112079253852}
+  - component: {fileID: 7608053820603863719}
+  - component: {fileID: 3375130734937823605}
   - component: {fileID: 2777083503339222558}
   - component: {fileID: 6590687615965955985}
   m_Layer: 0
@@ -349,10 +351,11 @@ MonoBehaviour:
   cooldown: 8
   locked: 0
   steps:
-  - {fileID: 8217432112079253852}
-  - {fileID: 2777083503339222558}
-  - {fileID: 6590687615965955985}
-  resetAfter: 2
+  - {fileID: 3375130734937823605}
+  - {fileID: 3375130734937823605}
+  - {fileID: 7608053820603863719}
+  finisherRecovery: 0.5
+  resetAfter: 1
 --- !u!114 &8217432112079253852
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -375,6 +378,58 @@ MonoBehaviour:
   size: {x: 1.5, y: 3}
   forwardOffset: 0.2
   knockback: 0.2
+--- !u!114 &7608053820603863719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6455003387677767099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53d23237f2a977141b27b369f4319fba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectileSkill
+  slot: 0
+  key: 
+  cooldown: 8
+  locked: 0
+  anim: 4
+  muzzle: {fileID: 6121150249688211610}
+  projectile: {fileID: 4693166149446587541, guid: d2ec080899c90ea489a7d0da22b95fba, type: 3}
+  speed: 5
+  speedFromAttackRate: 0
+  life: 0.5
+  power: 2
+  knockback: 1
+  count: 1
+  spread: 22.5
+--- !u!114 &3375130734937823605
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6455003387677767099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53d23237f2a977141b27b369f4319fba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectileSkill
+  slot: 0
+  key: 
+  cooldown: 8
+  locked: 0
+  anim: 4
+  muzzle: {fileID: 6121150249688211610}
+  projectile: {fileID: 4693166149446587541, guid: 3672aed1c1a29b84892efb7bb00082ef, type: 3}
+  speed: 5
+  speedFromAttackRate: 0
+  life: 0.2
+  power: 1
+  knockback: 0.3
+  count: 1
+  spread: 22.5
 --- !u!114 &2777083503339222558
 MonoBehaviour:
   m_ObjectHideFlags: 0

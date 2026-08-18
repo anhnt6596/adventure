@@ -155,6 +155,23 @@ public abstract class DynamicUnit : Unit
         _cooldownTotal = _cooldownTimer;
     }
 
+    // LENGTHEN THE RECOVERY that is already running — for a blow that costs more than its own swing. Added
+    // rather than assigned, so it lands on top of whatever the action itself charged instead of replacing it.
+    //
+    // BASE SECONDS, divided by the rate here, the same way AttackCooldown is: everything about how fast a
+    // character attacks belongs to attack speed, and a number that ignored it would be a growing share of the
+    // recovery as the character got quicker — until it was the only thing left and the stat did nothing.
+    //
+    // The total moves with it so a dial drawn from the pair still reads full at the moment it is charged.
+    public void AddAttackRecovery(float baseSeconds)
+    {
+        if (baseSeconds <= 0f) return;
+
+        float extra = baseSeconds / AttackRate;
+        _cooldownTimer += extra;
+        _cooldownTotal += extra;
+    }
+
     // COMMIT the unit to an action of this kind for this long — the one door every ability goes through. It
     // refuses on the same terms the unit already states (CanAttack, CanUseSkill), so an ability never has to
     // repeat those rules and cannot disagree with them.
