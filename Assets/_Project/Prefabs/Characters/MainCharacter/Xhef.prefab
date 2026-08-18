@@ -353,6 +353,8 @@ MonoBehaviour:
   steps:
   - {fileID: 3375130734937823605}
   - {fileID: 3375130734937823605}
+  - {fileID: 3375130734937823605}
+  - {fileID: 3375130734937823605}
   - {fileID: 7608053820603863719}
   finisherRecovery: 0.5
   resetAfter: 1
@@ -378,6 +380,7 @@ MonoBehaviour:
   size: {x: 1.5, y: 3}
   forwardOffset: 0.2
   knockback: 0.2
+  blocksProjectiles: 0
 --- !u!114 &7608053820603863719
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -399,9 +402,9 @@ MonoBehaviour:
   projectile: {fileID: 4693166149446587541, guid: d2ec080899c90ea489a7d0da22b95fba, type: 3}
   speed: 5
   speedFromAttackRate: 0
-  life: 0.5
+  life: 0.75
   power: 2
-  knockback: 1
+  knockback: 0.68
   count: 1
   spread: 22.5
 --- !u!114 &3375130734937823605
@@ -425,7 +428,7 @@ MonoBehaviour:
   projectile: {fileID: 4693166149446587541, guid: 3672aed1c1a29b84892efb7bb00082ef, type: 3}
   speed: 5
   speedFromAttackRate: 0
-  life: 0.2
+  life: 0.3
   power: 1
   knockback: 0.3
   count: 1

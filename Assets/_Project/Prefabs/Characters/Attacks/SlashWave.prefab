@@ -45,10 +45,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6cb7a9233ae9a0488741871ddd07673, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlashWave
-  widthNear: 0.86
-  widthFar: 1.5
+  canBeBlocked: 0
+  startWidth: 0.86
+  widenPerUnit: 0.25
+  stopOnHit: 0
   thickness: 0.5
   art: {fileID: 9160504989733773261}
+  fadeIn: 0.12
+  fadeOut: 0.2
+  peakAlpha: 0.98039216
   previewRange: 1.5
 --- !u!1 &8727972409427485549
 GameObject:

@@ -78,8 +78,27 @@ public class SlashWave : Projectile
 
     Vector3 _dir;
     float _speed, _range, _damage, _knockback, _traveled;
-    int _team;
     Component _source;
+
+    // Across the flight, on the ground. Used by the cut, by the meeting test and by the gizmo alike, so none of
+    // them can be turned a different way from the others.
+    static Vector3 Perp(Vector3 forward)
+    {
+        forward.y = 0f;
+        forward = forward.sqrMagnitude > 1e-6f ? forward.normalized : Vector3.right;
+        return new Vector3(forward.z, 0f, -forward.x);
+    }
+
+    // Its own box, so a wave meets a shot across its WIDTH rather than within some circle that would have to be
+    // wide enough to be fair to it and would then catch things passing well clear.
+    protected override bool Reaches(Vector3 point)
+    {
+        Vector3 d = point - transform.position;
+        d.y = 0f;
+        Vector3 right = Perp(_dir);
+        return Mathf.Abs(Vector3.Dot(d, _dir)) <= thickness * 0.5f
+            && Mathf.Abs(Vector3.Dot(d, right)) <= HalfWidth;
+    }
 
     // How the prefab was BUILT: the tilt that lays the blade on the ground, and the size it was drawn at.
     // Cached before anything has flown, because from here on the live values are these times a heading and a
@@ -124,7 +143,7 @@ public class SlashWave : Projectile
         _range = shot.Range;
         _damage = shot.Damage;
         _knockback = shot.Knockback;
-        _team = shot.Team;
+        Team = shot.Team;
         _source = shot.Source;
         _traveled = 0f;
 
@@ -171,7 +190,7 @@ public class SlashWave : Projectile
     // if the wave spent itself doing it — in which case it is gone and the caller must not touch it again.
     bool Cut()
     {
-        CombatWorld.Instance.OverlapBox(transform.position, _dir, HalfWidth, thickness * 0.5f, _team, _found);
+        CombatWorld.Instance.OverlapBox(transform.position, _dir, HalfWidth, thickness * 0.5f, Team, _found);
 
         bool caught = false;
         for (int i = 0; i < _found.Count; i++)
@@ -290,13 +309,6 @@ public class SlashWave : Projectile
         Gizmos.color = new Color(0.6f, 0.9f, 1f, 0.45f);
         Gizmos.DrawLine(near + right * halfNear, far + right * halfFar);
         Gizmos.DrawLine(near - right * halfNear, far - right * halfFar);
-    }
-
-    static Vector3 Perp(Vector3 forward)
-    {
-        forward.y = 0f;
-        forward = forward.sqrMagnitude > 1e-6f ? forward.normalized : Vector3.right;
-        return new Vector3(forward.z, 0f, -forward.x);
     }
 
     static void DrawRect(Vector3 c, Vector3 forward, float halfWidth, float halfLength)

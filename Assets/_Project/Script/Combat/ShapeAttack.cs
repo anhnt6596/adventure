@@ -22,6 +22,13 @@ public class ShapeAttack : AttackAbility
     [SerializeField] float forwardOffset = 0f;                // slide the shape this far along the facing; 0 = centred on the owner
     [SerializeField] float knockback = 5f;                    // shove dealt outward from the owner; 0 = none
 
+    [Tooltip("Swat shots out of the air: anything hostile and blockable standing in the same shape is taken " +
+             "out along with whatever was hit. What counts as blockable is the shot's own business — one that " +
+             "spends itself on a body spends itself on a blade, one that carries through a rank carries " +
+             "through this. A tick because most blows are not a guard: a sword that erased every arrow it " +
+             "happened to swing past would make standing still the answer to being shot at.")]
+    [SerializeField] bool blocksProjectiles;
+
     int Team => Owner != null ? Owner.Team : Teams.Universal;   // ownerless -> belongs to no side, so it hits everything
     readonly List<IDamageable> _hits = new List<IDamageable>();
 
@@ -37,6 +44,14 @@ public class ShapeAttack : AttackAbility
 
     protected override void Land()
     {
+        // ON THE HIT FRAME, with the bodies, and out of the same shape. A guard that ran on its own timing
+        // would be a second window the player has to learn, when what they are reading is one swing.
+        if (blocksProjectiles)
+        {
+            if (shape == Shape.Circle) Projectile.CancelIn(Centre, radius, Team);
+            else Projectile.CancelIn(Centre, Facing, size.x * 0.5f, size.y * 0.5f, Team);
+        }
+
         CombatWorld.Instance.Rebuild();
         if (shape == Shape.Circle)
             CombatWorld.Instance.Overlap(Centre, radius, Team, _hits);

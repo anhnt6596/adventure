@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Lean.Pool;
 
@@ -47,9 +48,121 @@ public readonly struct Shot
 // never needs to know which projectile it is holding. That is what makes ProjectileSkill work for all of them.
 //
 // POOLED, ALWAYS: Launch must (re)set every field it reads, because this object has flown before.
+//
+// THE ONE THING EVERY PROJECTILE SHARES BESIDES THAT is meeting another one. Two shots crossing in the air is
+// not a property of knives or of waves, it is a property of shots — so the rule lives here, once, rather than
+// in each flight rewritten slightly differently.
 public abstract class Projectile : MonoBehaviour
 {
     public abstract void Launch(in Shot shot);
+
+    // Whose it is. On the base because the clash below needs it and every Shot carries one — three private
+    // copies of the same field was three chances for one of them to be read after it went stale.
+    public int Team { get; protected set; }
+
+    // ---- meeting another shot ------------------------------------------------------------------------
+    //
+    // BEING STOPPED BY A BODY AND BEING STOPPED BY A SHOT ARE TWO DIFFERENT QUESTIONS, so this is its own tick
+    // rather than something read off the flight. A blade of pressure that bursts on the first man it reaches can
+    // still be the kind of thing no arrow turns aside, and that combination is a real weapon — one you answer by
+    // moving rather than by shooting back.
+    //
+    // WHAT IT DOES NOT DECIDE is whether this shot cancels OTHERS: erasing what it meets costs it nothing, and
+    // an unblockable shot ploughing through a volley is the whole point of being unblockable. So an untickeded
+    // one still clears the air ahead of it — it simply cannot be cleared.
+    [Tooltip("Can be taken out of the air — by an opposing shot, or by a blade swung through it. Untick for " +
+             "something that answers to bodies alone: it still erases what it meets, it just cannot be erased.")]
+    [SerializeField] bool canBeBlocked = true;
+
+    // Asked of the shot, not of the prefab: a flame already bursting has nothing left to cancel, and cancelling
+    // it twice would restart the explosion. Subclasses with a moment like that say so here.
+    protected virtual bool InFlight => true;
+
+    bool Blockable => canBeBlocked && InFlight;
+
+    // Does this shot's shape cover that point? Asked of each side in turn rather than summing two radii,
+    // because these are not all circles — a wave is a long thin box, and a radius wide enough to be fair to its
+    // width would catch shots passing well clear of it.
+    protected abstract bool Reaches(Vector3 point);
+
+    // Taken out of the air. Virtual so a shot with something to play on the way out can say so.
+    protected virtual void Cancel() => LeanPool.Despawn(gameObject);
+
+    // Everything in the air right now. A plain list, walked in full: shots number in the handful even in a
+    // fight, and a spatial index for a handful costs more to keep than it saves. CombatWorld is a hash because
+    // it holds every body in the world; this does not.
+    static readonly List<Projectile> Live = new List<Projectile>();
+
+    protected virtual void OnEnable() => Live.Add(this);
+    protected virtual void OnDisable() => Live.Remove(this);
+
+    // AFTER EVERYTHING HAS MOVED. Flights run in Update, so testing there would judge some pairs on this
+    // frame's positions and some on last frame's, and which is which would depend on script order.
+    void LateUpdate()
+    {
+        // Downwards, because cancelling removes from the list: everything below the cursor keeps its index.
+        for (int i = Live.Count - 1; i >= 0 && i < Live.Count; i--)
+        {
+            var other = Live[i];
+            if (other == null || other == this || other.Team == Team) continue;
+
+            bool mine = Blockable, theirs = other.Blockable;
+            if (!mine && !theirs) continue;   // two that carry have nothing to settle
+
+            // EITHER SIDE REACHING IS A MEETING. Two shots of very different size — a knife and a wave — would
+            // otherwise pass or clash depending on which of them was asked, and that is not a thing the player
+            // could ever predict.
+            Vector3 here = transform.position, there = other.transform.position;
+            if (!Reaches(there) && !other.Reaches(here)) continue;
+
+            if (theirs) other.Cancel();
+            if (mine) { Cancel(); return; }   // gone; there is nothing left to meet
+        }
+    }
+
+    // ---- swatting shots out of the air ---------------------------------------------------------------
+    //
+    // A BLADE IS AN OBSTACLE TOO. What cancels a shot is being met by something solid enough to spend it, and a
+    // swing is exactly that — so a sword can bat a fireball down, and it is the same rule as two shots meeting,
+    // asked of a shape that belongs to a body instead of to another shot. Which is why this lives here beside
+    // that rule rather than growing a second, subtly different one inside the attack.
+    //
+    // The same "either side reaching" test: a shot standing inside the swing is caught, and so is a wave whose
+    // own shape lies across the swing even though its centre is somewhere else.
+    public static void CancelIn(Vector3 centre, float radius, int team)
+    {
+        for (int i = Live.Count - 1; i >= 0 && i < Live.Count; i--)
+        {
+            var shot = Live[i];
+            if (!Catchable(shot, team)) continue;
+
+            Vector3 d = shot.transform.position - centre;
+            d.y = 0f;
+            if (d.sqrMagnitude <= radius * radius || shot.Reaches(centre)) shot.Cancel();
+        }
+    }
+
+    public static void CancelIn(Vector3 centre, Vector3 forward, float halfWidth, float halfLength, int team)
+    {
+        forward.y = 0f;
+        Vector3 fwd = forward.sqrMagnitude > 1e-6f ? forward.normalized : Vector3.right;
+        Vector3 right = new Vector3(fwd.z, 0f, -fwd.x);
+
+        for (int i = Live.Count - 1; i >= 0 && i < Live.Count; i--)
+        {
+            var shot = Live[i];
+            if (!Catchable(shot, team)) continue;
+
+            Vector3 d = shot.transform.position - centre;
+            d.y = 0f;
+            bool inside = Mathf.Abs(Vector3.Dot(d, fwd)) <= halfLength
+                       && Mathf.Abs(Vector3.Dot(d, right)) <= halfWidth;
+
+            if (inside || shot.Reaches(centre)) shot.Cancel();
+        }
+    }
+
+    static bool Catchable(Projectile shot, int team) => shot != null && shot.Blockable && shot.Team != team;
 
     // One press, one or several shots, spaced about the direction the centre one is aimed at. Static and here
     // rather than on whatever spawns it, because more than one thing does: a skill fires a fan on the frame

@@ -36,11 +36,22 @@ public class SoulFire : Projectile
     Color _glowColor;
 
     float _range, _speed, _damage, _knockback;
-    int _team;             // caster's team — Overlap spares it (no friendly fire / no self-seek)
     Vector3 _dir;          // travel direction
     float _traveled;       // distance covered so far
     Component _source;     // the caster — passed as the damage source so a victim can hit back at the shooter
     readonly List<IDamageable> _found = new List<IDamageable>();
+
+    // Already bursting, it is spent: there is nothing left to take out of the air, and cancelling it again
+    // would restart the explosion under itself.
+    protected override bool InFlight => _phase != Phase.Bursting;
+
+    // The same reach it makes contact with, so what swats it out of the air is what it would have burnt.
+    protected override bool Reaches(Vector3 point)
+    {
+        Vector3 d = point - transform.position;
+        d.y = 0f;
+        return d.sqrMagnitude <= hitPadding * hitPadding;
+    }
 
     // Cache the authored glow look once, before any shot mutates it - otherwise a pooled flame would
     // re-cache the alpha 0 it faded to last burst and stay invisible forever.
@@ -58,7 +69,7 @@ public class SoulFire : Projectile
         _range = shot.Range;
         _speed = shot.Speed;
         _source = shot.Source;
-        _team = shot.Team;
+        Team = shot.Team;
         _damage = shot.Damage;
         _knockback = shot.Knockback;
         _dir = shot.Direction;
@@ -123,6 +134,15 @@ public class SoulFire : Projectile
         if (_traveled >= _range) StartBurst(burstScale * 2f);   // ran the full range, hit nothing — wide burst
     }
 
+    // Swatted out of the air. It BURSTS rather than blinking off, because that is what this flame does when it
+    // stops — being met by a blade is a way of stopping, not a way of never having been there. Despawning would
+    // also cut the flame particles mid-emit and leave a hole where the player was watching.
+    //
+    // The narrow burst, the one it makes on a body: it was stopped by something, not spent on empty ground.
+    // NO DAMAGE with it — cancelling is what the blade earned, and a flame that still burnt whatever knocked it
+    // down would make blocking a worse answer than dodging.
+    protected override void Cancel() => StartBurst(burstScale);
+
     void StartBurst(float glowScale)
     {
         _phase = Phase.Bursting;
@@ -154,7 +174,7 @@ public class SoulFire : Projectile
 
         Vector3 from = transform.position;
         CombatWorld.Instance.Rebuild();
-        CombatWorld.Instance.Overlap(from, Mathf.Max(hitPadding, seekRange), _team, _found);
+        CombatWorld.Instance.Overlap(from, Mathf.Max(hitPadding, seekRange), Team, _found);
 
         float minDot = Mathf.Cos(seekAngle * 0.5f * Mathf.Deg2Rad);
         float contactSq = float.MaxValue, targetSq = float.MaxValue;

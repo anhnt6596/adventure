@@ -30,8 +30,15 @@ public class Knife : Projectile
 
     Vector3 _dir;
     float _speed, _range, _damage, _knockback, _traveled;
-    int _team;
     Component _source;
+
+    // What the blade catches on, for anything asking whether it has been met — see Projectile.
+    protected override bool Reaches(Vector3 point)
+    {
+        Vector3 d = point - transform.position;
+        d.y = 0f;
+        return d.sqrMagnitude <= radius * radius;
+    }
 
     // The tilt the blade was AUTHORED with — how it lies on the ground, decided once in the prefab and never
     // a runtime concern. Cached before anything has flown, because from then on the live value is this plus a
@@ -55,7 +62,7 @@ public class Knife : Projectile
         _range = shot.Range;
         _damage = shot.Damage;
         _knockback = shot.Knockback;
-        _team = shot.Team;
+        Team = shot.Team;
         _source = shot.Source;
         _traveled = 0f;
 
@@ -117,7 +124,7 @@ public class Knife : Projectile
     // Everything the blade is touching where it now stands. Returns true if the knife is spent.
     bool Bite()
     {
-        CombatWorld.Instance.Overlap(transform.position, radius, _team, _found);
+        CombatWorld.Instance.Overlap(transform.position, radius, Team, _found);
         if (_found.Count == 0) return false;
 
         // EVERYTHING IN THE CIRCLE, then gone. It stops on contact whatever the blow did, but it stops at the
