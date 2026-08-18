@@ -205,13 +205,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 908c11e1ac13d9a4fa0e712a9d2fbda2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShapeAttack
+  slot: 1
+  key: 
+  cooldown: 8
+  locked: 0
+  anim: 2
   shape: 1
   radius: 1
   size: {x: 0.5, y: 0.7}
   forwardOffset: 0.35
   knockback: 1
-  animatorSource: {fileID: 639855831500468208}
-  anim: 2
 --- !u!114 &837169390879070922
 MonoBehaviour:
   m_ObjectHideFlags: 0

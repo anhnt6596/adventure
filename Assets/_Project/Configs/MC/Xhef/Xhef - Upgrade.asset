@@ -15,24 +15,15 @@ MonoBehaviour:
   id: xhef
   inherits: {fileID: 11400000, guid: 726357f6690e32c4d92d43ed10b43937, type: 2}
   nodes:
-  - id: unlock-dash
-    key: dash
-    requires:
-    - speed-2
-    effect:
-      rid: 1851184096931217482
-    cost: 1
-    maxRank: 1
-    position: {x: -0.75, y: 1.5}
   - id: dash-cooldown
     key: dash
     requires:
-    - unlock-dash
+    - speed-3
     effect:
       rid: 1851184252042870859
     cost: 1
     maxRank: 3
-    position: {x: -1.5, y: 1.5}
+    position: {x: -0.75, y: 2.25}
   - id: throw-knives
     key: throw-knives
     requires:
@@ -72,20 +63,15 @@ MonoBehaviour:
   - id: dash-distance
     key: dash-distance
     requires:
-    - unlock-dash
+    - speed-2
     effect:
       rid: 1851184256934215750
     cost: 1
     maxRank: 3
-    position: {x: -0.75, y: 2.25}
+    position: {x: -0.75, y: 1.5}
   references:
     version: 2
     RefIds:
-    - rid: 1851184096931217482
-      type: {class: UnlockSkillEffect, ns: , asm: Assembly-CSharp}
-      data:
-        skill: dash
-        description: unlock-dash
     - rid: 1851184252042870859
       type: {class: SkillBuffEffect, ns: , asm: Assembly-CSharp}
       data:
@@ -93,7 +79,7 @@ MonoBehaviour:
         buffs:
         - stat: cooldown
           kind: 0
-          amount: -1
+          amount: -0.5
     - rid: 1851184252042870862
       type: {class: UnlockSkillEffect, ns: , asm: Assembly-CSharp}
       data:

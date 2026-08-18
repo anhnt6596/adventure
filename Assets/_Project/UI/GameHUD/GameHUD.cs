@@ -137,28 +137,45 @@ public class GameHUD : UIView
             return;
         }
 
-        // Attack first, and the bar runs left to right, so it sits leftmost — under J, with the skills after
-        // it under K and L. It has no component of its own; the unit IS the ability, and "attack" is the key
-        // its picture hangs on.
-        AddAbility(mc.Id, "attack", () => mc.AttackCooldownFraction);
-
         var skills = mc.GetComponentsInChildren<CharacterSkill>(true);
-        foreach (var slot in new[] { CharacterSkill.Slot.One, CharacterSkill.Slot.Two })
-            foreach (var skill in skills)
-                if (skill.Which == slot)
-                {
-                    // A skill the character has not been given yet has no button at all, rather than a greyed
-                    // one: a dimmed button is a promise, and the tree is where promises are made. The node in
-                    // the tree is what says the skill exists.
-                    if (skill.Unlocked) AddAbility(mc.Id, skill.Key, () => skill.CooldownFraction);
-                    break;   // a second skill claiming the same slot has no button, and MCInput has said so
-                }
+
+        // The bar runs left to right in the order the keys sit under the hand: attack (J/Space), dash (K), then
+        // the two skills (L and ;).
+        //
+        // THE ATTACK BUTTON DRAWS THE UNIT'S RECOVERY, not the ability's own cooldown, whether or not something
+        // is bound to it. An attack is paced by the swing and AttackCooldown — a combo has no cooldown of its
+        // own at all — so a sweep taken from CharacterSkill.CooldownFraction would be a dial that never moves.
+        // "attack" is the key the picture hangs on when the component has nothing better to say — a character
+        // with no attack component at all (the unit IS the ability there), and equally one whose swing never
+        // needed a key of its own. A named one wins, so a combo can hang its own icon there.
+        var attack = FirstInSlot(skills, AbilitySlot.Attack);
+        string attackKey = attack != null && !string.IsNullOrEmpty(attack.Key) ? attack.Key : "attack";
+        AddAbility(mc.Id, attackKey, () => mc.AttackCooldownFraction);
+
+        foreach (var slot in new[] { AbilitySlot.Dash, AbilitySlot.Skill1, AbilitySlot.Skill2 })
+        {
+            var skill = FirstInSlot(skills, slot);
+
+            // A skill the character has not been given yet has no button at all, rather than a greyed one: a
+            // dimmed button is a promise, and the tree is where promises are made. The node in the tree is what
+            // says the skill exists.
+            if (skill != null && skill.Unlocked) AddAbility(mc.Id, skill.Key, () => skill.CooldownFraction);
+        }
 
         // 30 a second, not every frame: a wedge is a shape the eye reads as continuous long before it is, and
         // this repaints a mesh each time it moves.
         _abilityTicker ??= Root.schedule.Execute(StepAbilities).Every(33);
         _abilityTicker.Resume();
         StepAbilities();
+    }
+
+    // The first ability answering to a button; a second one claiming it has no button, and MCInput has already
+    // said so out loud.
+    static CharacterSkill FirstInSlot(CharacterSkill[] skills, AbilitySlot slot)
+    {
+        foreach (var skill in skills)
+            if (skill.Which == slot) return skill;
+        return null;
     }
 
     void AddAbility(string characterId, string key, System.Func<float> cooling)

@@ -1,10 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// One of a character's two skills, living on that character's own prefab — the same shape ShapeAttack has, and
-// for the same reason. Docs/DESIGN.md says a character IS stats + attack + skill, and only the last two are
-// behaviour rather than numbers; which skill a character carries is therefore part of the body, not a field
-// somebody sets on a config.
+// One of the things a character can DO, living on that character's own prefab. Docs/DESIGN.md says a character
+// IS stats + attack + skill, and only the last two are behaviour rather than numbers; which of them a character
+// carries is therefore part of the body, not a field somebody sets on a config.
+//
+// The attack is one of these too, and so is the dash. What separates them is the slot they answer to — see
+// AbilitySlot — not a different base class: a swing and a lunge both play a clip, both hold the unit, both take
+// upgrades on their own tunables, and a combo has to be able to drive either as one of its steps.
 //
 // THE BASE COOLDOWN IS AUTHORED HERE, NOT AS A CHARACTER STAT. A dash balanced at eight seconds is eight
 // seconds whoever casts it — what differs between two characters is which skill they have, and that is this
@@ -20,17 +23,17 @@ using UnityEngine;
 // dash simply has no haste and uses the authored cooldown.
 public abstract class CharacterSkill : MonoBehaviour
 {
-    public enum Slot { One = 1, Two = 2 }
-
-    [Tooltip("Which of the character's two skill buttons this one answers to.")]
-    [SerializeField] Slot slot = Slot.One;
+    [Tooltip("Which button runs this. None = no button does — it is a piece of something else, like one step " +
+             "of a combo, and only the ability driving it can fire it.")]
+    [SerializeField] AbilitySlot slot = AbilitySlot.None;
 
     [Tooltip("WHAT this skill is, for display — the icon is looked up by (character id, this key), the same " +
              "way an upgrade node's is. Nothing readable is stored on the skill itself.")]
     [SerializeField] string key = "";
 
     [Tooltip("Seconds before it can be used again, BEFORE haste. The skill's own number — a character's haste " +
-             "shortens it, nothing replaces it.")]
+             "shortens it, nothing replaces it. Ignored while this commits as an ATTACK: an attack is paced by " +
+             "the unit's own recovery, and a second wait here could only disagree with it.")]
     [SerializeField, Min(0f)] float cooldown = 8f;
 
     // Declared here rather than by each skill, because every skill has one: the name is the same on all of
@@ -47,8 +50,20 @@ public abstract class CharacterSkill : MonoBehaviour
     Stat _cooldown;
     float _readyAt;
 
-    public Slot Which => slot;
+    public AbilitySlot Which => slot;
     public string Key => key;
+
+    // HOW THIS COMMITS THE UNIT while it plays, and it is deliberately NOT something each skill decides for
+    // itself. It falls out of which button runs it: the attack button commits as an ATTACK, which a skill may
+    // cut short; every other button commits as a SKILL, which nothing cuts. See ActionKind.
+    //
+    // A piece with no button — a step of a combo — INHERITS it from whatever threw it. That is the whole point:
+    // a combo sits in the Attack slot, so a dash used as one of its steps is part of the attack while it is in
+    // there, and is paced like one. The same dash on its own button is a skill again. Nothing about the dash
+    // changed; what changed is who asked for it.
+    public ActionKind Kind { get; private set; } = ActionKind.Skill;
+
+    ActionKind KindOfSlot => slot == AbilitySlot.Attack ? ActionKind.Attack : ActionKind.Skill;
 
     // Whether the character actually has this yet. A skill that was never locked is simply always open; one
     // that was waits to be told, and is told again from scratch on every re-apply of the tree — so a respec
@@ -141,7 +156,20 @@ public abstract class CharacterSkill : MonoBehaviour
         Animator = Owner.GetComponentInChildren<UnitAnimator>();
     }
 
-    IStat Haste => _stats?.Get(slot == Slot.One ? StatId.Skill1Haste : StatId.Skill2Haste);
+    // ONLY THE TWO SKILL SLOTS HAVE ONE. There is no attack haste because the attack already has a stat that
+    // does that job — AttackSpeed scales the swing and the recovery together — and no dash haste because
+    // nothing has asked for one; a tree that wants a quicker dash moves the dash's own `cooldown` tunable,
+    // which is the per-skill route that already exists. A combo step (None) never waits on a cooldown at all.
+    IStat Haste
+    {
+        get
+        {
+            if (_stats == null) return null;
+            if (slot == AbilitySlot.Skill1) return _stats.Get(StatId.Skill1Haste);
+            if (slot == AbilitySlot.Skill2) return _stats.Get(StatId.Skill2Haste);
+            return null;
+        }
+    }
 
     // Ability haste rather than a percentage off:
     //
@@ -184,7 +212,14 @@ public abstract class CharacterSkill : MonoBehaviour
 
     public bool TryUse()
     {
-        if (!Unlocked || !Ready || Owner == null) return false;
+        if (!Unlocked || Owner == null) return false;
+
+        Kind = KindOfSlot;
+
+        // A SKILL WAITS ON ITS COOLDOWN; AN ATTACK WAITS ON THE UNIT. Which one this is has already been decided
+        // by the slot, so the wait follows from it instead of from a number somebody has to remember to zero.
+        // The attack's own gate is inside DynamicUnit.Commit, and it is the same gate every attack passes.
+        if (Kind == ActionKind.Skill && !Ready) return false;
 
         // Not while another skill is playing out. A swing, by contrast, is no obstacle — pressing this
         // cancels it, which is the one asymmetry in the rules. See ActionKind.
@@ -193,9 +228,32 @@ public abstract class CharacterSkill : MonoBehaviour
         if (!Run()) return false;
 
         // Charged only once the skill agreed to happen. A press that could do nothing must not eat the
-        // cooldown — the player reads that as the game having swallowed the button.
-        _readyAt = Time.time + Cooldown;
+        // cooldown — the player reads that as the game having swallowed the button. Nothing to charge for an
+        // attack: the recovery it started IS its wait.
+        if (Kind == ActionKind.Skill) _readyAt = Time.time + Cooldown;
         return true;
+    }
+
+    // RUN IT NOW, with somebody else owning the pacing. Same thing TryUse does, minus the cooldown: no wait is
+    // checked and none is charged, because the caller is what decides when this happens — a combo running its
+    // next step, and whatever else ever drives one skill from another.
+    //
+    // It is what makes any skill usable as a piece of something bigger. A string of blows, a string that ends in
+    // a dash, a skill that fires another skill: none of those need a second kind of component, because the
+    // difference between "a button runs it" and "something else runs it" is which of these two methods was
+    // called — and, on the data side, whether it claimed a slot at all.
+    //
+    // Still refuses on its own terms: Run returns false when the thing simply cannot happen (mid-recovery, no
+    // body to move), and that answer is passed straight back so the caller can decide what to do about it.
+    public bool Trigger() => Trigger(KindOfSlot);
+
+    // Run it as part of something bigger, committing the unit the way THAT thing commits it.
+    public bool Trigger(ActionKind kind)
+    {
+        if (!Unlocked || Owner == null) return false;
+
+        Kind = kind;
+        return Run();
     }
 
     // Do the thing. Return false if it could not start at all, and it stays off cooldown.

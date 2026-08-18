@@ -122,7 +122,9 @@ public class DashSkill : CharacterSkill
         _left = _runDuration;
         _nextGhost = 0f;
 
-        Owner.Hold(_runDuration, ActionKind.Skill);
+        // Kind, not a hardcoded Skill: pressed on its own key this is a skill nothing may cut, and thrown as
+        // a step of a combo it is part of the attack — the difference is who asked, not what a dash is.
+        Owner.Hold(_runDuration, Kind);
 
         // One call is enough: the view stops touching the animator while a skill holds, and Play leaves a
         // looping action that is already running alone. 1x on purpose — the legs move at the speed the art

@@ -29,6 +29,10 @@ public class EnemyAI : MonoBehaviour
     {
         _ctx = new AIContext { controller = GetComponent<EnemyController>() };
         _self = GetComponentInChildren<Damageable>(true);
+
+        // Everything this creature can do, found rather than dragged in: a serialized list would be one more
+        // thing to forget on every prefab. The FSM picks from it by SLOT, exactly as a player's keys do.
+        _ctx.abilities = GetComponentsInChildren<CharacterSkill>(true);
     }
 
     void Start()
@@ -42,6 +46,10 @@ public class EnemyAI : MonoBehaviour
         // A creature authored to sleep will instead be awake around the clock if nothing injected the time —
         // wrong in a way that looks like a tuning problem, so say it out loud. Monsters on the default 0..24
         // window don't care and stay quiet.
+        if (_ctx.Ability(AbilitySlot.Attack) == null)
+            Debug.LogError($"[{nameof(EnemyAI)}] nothing in the Attack slot on this body — it will chase and " +
+                           "never land a hit.", this);
+
         if (_s != null && _s.HasBodyClock && _clock == null)
             Debug.LogWarning($"[{nameof(EnemyAI)}] brain '{_s.name}' wakes only {_s.activeFrom}h–{_s.activeTo}h but no {nameof(DayNightClock)} was injected — it will behave as awake all day.", this);
     }
@@ -159,16 +167,16 @@ public class EnemyAI : MonoBehaviour
         //
         // A reflex does not stand here waiting for its jaws to reload either — it lets go and re-notices later,
         // so it is never holding a target it isn't actively biting. The swing already underway is unaffected:
-        // ShapeAttack fires off the animation's hit frame and hits by overlap, not off the brain's target.
+        // a blow fires off the animation's hit frame and hits by overlap, not off the brain's target.
         if (!_ctx.controller.CanAttack) { if (Reflex) Release(); return; }
 
         if (d <= _ctx.AttackRange)
         {
             // A reflex aims on exactly one frame: this one. It must, or the bite leaves along whatever heading
-            // the creature happened to be left facing — and ShapeAttack's box is thrown FORWARD (forwardOffset),
-            // so prey at its flank would be missed by a mouth that is right on top of it. Turning here and not
+            // the creature happened to be left facing — and the hit box is thrown FORWARD (forwardOffset), so
+            // prey at its flank would be missed by a mouth that is right on top of it. Turning here and not
             // before is the whole difference between aiming and tracking. Order matters: Face writes FacingDir,
-            // then Attack fires and UnitView pushes that heading into the animation in the same frame.
+            // then the blow swings along it in the same frame.
             if (Reflex) FaceTarget();
             _s.attack.Tick(_ctx);              // loaded and in reach — swing
             if (Reflex) Release();             // one snap, and it is done: no follow-up, no watching them leave

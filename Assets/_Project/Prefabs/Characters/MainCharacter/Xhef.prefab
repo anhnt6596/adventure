@@ -144,12 +144,9 @@ GameObject:
   - component: {fileID: 5403837979165827894}
   - component: {fileID: 6555081437869580352}
   - component: {fileID: 6480636053901883455}
-  - component: {fileID: 7100000000000000001}
-  - component: {fileID: 3429398652169516405}
   - component: {fileID: 349107934453197144}
+  - component: {fileID: 7100000000000000001}
   - component: {fileID: 5942486055440083867}
-  - component: {fileID: 7265794382236970313}
-  - component: {fileID: 6752807109447648016}
   m_Layer: 0
   m_Name: Xhef
   m_TagString: Untagged
@@ -170,6 +167,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 6121150249688211610}
   - {fileID: 5349522427429684554}
   - {fileID: 2353679818562381336}
   m_Father: {fileID: 0}
@@ -257,37 +255,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Picker
   pickHeight: 0.4
   inventoryId: main_char
---- !u!114 &7100000000000000001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5431757174141155505}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7f3c2e91b8d4046a9c5e0f13d726b84, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &3429398652169516405
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5431757174141155505}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 908c11e1ac13d9a4fa0e712a9d2fbda2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ShapeAttack
-  shape: 0
-  radius: 0.5
-  size: {x: 1.5, y: 3}
-  forwardOffset: 0.2
-  knockback: 0.5
-  animatorSource: {fileID: 1003609662157716418}
-  anim: 2
 --- !u!114 &349107934453197144
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -301,6 +268,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Damageable
   hitRadius: 0.25
+--- !u!114 &7100000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5431757174141155505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7f3c2e91b8d4046a9c5e0f13d726b84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &5942486055440083867
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -318,19 +297,122 @@ MonoBehaviour:
   duration: 0.15
   renderers:
   - {fileID: 8142573892274122599}
---- !u!114 &7265794382236970313
+--- !u!1 &6455003387677767099
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6121150249688211610}
+  - component: {fileID: 8513440581080589896}
+  - component: {fileID: 8217432112079253852}
+  - component: {fileID: 2777083503339222558}
+  - component: {fileID: 6590687615965955985}
+  m_Layer: 0
+  m_Name: skill
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6121150249688211610
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6455003387677767099}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1067017619327003808}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8513440581080589896
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5431757174141155505}
+  m_GameObject: {fileID: 6455003387677767099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d9e1afa520eaff4189a23fc82aafa67, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ComboAttack
+  slot: 1
+  key: 
+  cooldown: 8
+  locked: 0
+  steps:
+  - {fileID: 8217432112079253852}
+  - {fileID: 2777083503339222558}
+  - {fileID: 6590687615965955985}
+  resetAfter: 2
+--- !u!114 &8217432112079253852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6455003387677767099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 908c11e1ac13d9a4fa0e712a9d2fbda2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShapeAttack
+  slot: 0
+  key: 
+  cooldown: 8
+  locked: 0
+  anim: 2
+  shape: 0
+  radius: 0.5
+  size: {x: 1.5, y: 3}
+  forwardOffset: 0.2
+  knockback: 0.2
+--- !u!114 &2777083503339222558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6455003387677767099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc5419b8916bc2246b5caf81399f9898, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DashSkill
+  slot: 2
+  key: dash
+  cooldown: 4
+  locked: 0
+  anim: 3
+  distance: 1
+  duration: 0.2
+  massMultiplier: 1
+  invulnerable: 1
+  source: {fileID: 8142573892274122599}
+  ghosts: 6
+  ghostTint: {r: 0.65, g: 0.85, b: 1, a: 0.55}
+  ghostFade: 0.25
+--- !u!114 &6590687615965955985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6455003387677767099}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea8dbf8997f38ed45beeb754a0b1e196, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackstepSkill
-  slot: 2
+  slot: 3
   key: throw-knives
   cooldown: 20
   locked: 1
@@ -351,31 +433,6 @@ MonoBehaviour:
   knockback: 0.5
   count: 3
   spread: 22.5
---- !u!114 &6752807109447648016
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5431757174141155505}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc5419b8916bc2246b5caf81399f9898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DashSkill
-  slot: 1
-  key: dash
-  cooldown: 6
-  locked: 1
-  anim: 3
-  distance: 1
-  duration: 0.2
-  massMultiplier: 1
-  invulnerable: 1
-  source: {fileID: 8142573892274122599}
-  ghosts: 6
-  ghostTint: {r: 0.65, g: 0.85, b: 1, a: 0.55}
-  ghostFade: 0.25
 --- !u!1 &8299895054748087226
 GameObject:
   m_ObjectHideFlags: 0

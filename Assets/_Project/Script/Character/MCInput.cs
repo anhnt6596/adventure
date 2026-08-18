@@ -61,34 +61,68 @@ public class MCInput : MonoBehaviour
         _held[Key.LeftArrow] = left;
         _held[Key.RightArrow] = right;
 
-        // J as well as Space, and J is the one that matters: it puts attack beside K and L so the three
-        // abilities sit under three fingers in the order the HUD draws them. Space stays because it is what
-        // hands already reach for, and one command object answers both — the same press either way.
-        var attack = new AttackCommand(character);
-        _pressed[Key.Space] = attack;
-        _pressed[Key.J] = attack;
-
-        BindSkills();
+        BindAbilities();
     }
 
-    // Bound by SLOT, not by which component happens to be there: every character carries its own skills, so
-    // the key has to mean "your first skill" rather than "the dash". Found on the body rather than dragged in,
+    // Bound by SLOT, not by which component happens to be there: every character carries its own abilities, so
+    // a key has to mean "your dash" rather than "the DashSkill". Found on the body rather than dragged in,
     // because a character with no second skill yet must simply have nothing on that key — a serialized slot
     // would be an empty reference to explain instead.
-    void BindSkills()
+    //
+    // J and Space are both the attack, and J is the one that matters: it puts attack beside K, L and ; so the
+    // four abilities sit under four fingers in the order the HUD draws them. Space stays because it is what
+    // hands already reach for, and one command object answers both — the same press either way.
+    void BindAbilities()
     {
-        foreach (var skill in character.GetComponentsInChildren<CharacterSkill>(true))
+        CharacterSkill attack = null;
+
+        foreach (var ability in character.GetComponentsInChildren<CharacterSkill>(true))
         {
-            var key = skill.Which == CharacterSkill.Slot.One ? Key.K : Key.L;
-            if (_skills.ContainsKey(key))
+            // A piece of something bigger — a combo step — reached only by the ability that drives it. Not an
+            // error and not a warning: this is what most attack components on a body are.
+            if (ability.Which == AbilitySlot.None) continue;
+
+            if (ability.Which == AbilitySlot.Attack)
             {
-                Debug.LogError($"[{nameof(MCInput)}] two skills claim slot {skill.Which} on '{character.name}' — " +
-                               "the second one can never be pressed.", skill);
+                if (attack != null)
+                {
+                    Debug.LogError($"[{nameof(MCInput)}] two abilities claim the attack button on " +
+                                   $"'{character.name}' — the second one can never be pressed.", ability);
+                    continue;
+                }
+                attack = ability;
                 continue;
             }
-            _skills[key] = new SkillCommand(skill);
+
+            var key = KeyOf(ability.Which);
+            if (_skills.ContainsKey(key))
+            {
+                Debug.LogError($"[{nameof(MCInput)}] two abilities claim slot {ability.Which} on " +
+                               $"'{character.name}' — the second one can never be pressed.", ability);
+                continue;
+            }
+            _skills[key] = new SkillCommand(ability);
         }
+
+        // A character with nothing in the Attack slot cannot attack at all, which is a wiring mistake and not a
+        // design: every body needs either a blow in that slot or a combo in front of one.
+        if (attack == null)
+            Debug.LogError($"[{nameof(MCInput)}] nothing in the Attack slot on '{character.name}' — the attack " +
+                           "button does nothing. Put an AttackAbility or a ComboAttack there.", character);
+
+        var command = new AttackCommand(attack);
+        _pressed[Key.Space] = command;
+        _pressed[Key.J] = command;
     }
+
+    // Semicolon for the second skill because hardly any character has one: the three abilities every character
+    // does have keep the three keys the hand is already resting on, and the rare fourth is the reach.
+    static Key KeyOf(AbilitySlot slot) => slot switch
+    {
+        AbilitySlot.Dash => Key.K,
+        AbilitySlot.Skill1 => Key.L,
+        _ => Key.Semicolon,
+    };
 
     public void AccumulateMove(Vector2 direction) => _localMove += direction;
 

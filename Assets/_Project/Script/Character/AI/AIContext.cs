@@ -19,6 +19,20 @@ public class AIContext
     // and an actual hunt.
     public bool committed;
 
+    // WHAT THIS CREATURE CAN DO, by the same slots a player's buttons use. A monster has no buttons, so the FSM
+    // is what presses them — but it presses the same things, in the same way: an attack plan asks for the Attack
+    // slot, and a plan that casts will ask for Skill1. Reading the slot rather than "the first attack component
+    // on the body" is what makes that possible, and it is why a creature with two abilities can tell them apart.
+    public CharacterSkill[] abilities;
+
+    public CharacterSkill Ability(AbilitySlot slot)
+    {
+        if (abilities == null) return null;
+        for (int i = 0; i < abilities.Length; i++)
+            if (abilities[i] != null && abilities[i].Which == slot) return abilities[i];
+        return null;
+    }
+
     public Transform Tr => controller.transform;
     public bool HasLiveTarget => target != null && target.IsAlive;
 

@@ -130,7 +130,7 @@ public class ProjectileSkill : CharacterSkill
         // clip that is missing measures zero and holds nothing, which is the right failure: the skill still
         // fires, it just does not freeze a character in front of an animation that is not there.
         float length = Animator != null ? Animator.LengthOf(anim) : 0f;
-        if (length > 0f) Owner.Hold(length, ActionKind.Skill);
+        if (length > 0f) Owner.Hold(length, Kind);
 
         return true;
     }

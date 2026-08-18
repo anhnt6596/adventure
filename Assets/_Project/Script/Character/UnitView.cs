@@ -1,8 +1,12 @@
 using UnityEngine;
 
-// Drives a unit's sprite/animator off its control state (Velocity, IsBusy, Attacked). Typed to DynamicUnit,
-// so the same view logic serves the player and any enemy — each unit kind gets a thin subclass (MCView,
-// EnemyView) for its own view extras, while this holds the shared movement/attack animation.
+// Drives a unit's sprite/animator off its control state (Velocity, IsBusy). Typed to DynamicUnit, so the same
+// view logic serves the player and any enemy — each unit kind gets a thin subclass (MCView, EnemyView) for its
+// own view extras, while this holds the shared movement animation.
+//
+// IT DOES NOT PLAY ATTACKS. A blow owns its own clip (AttackAbility), because which clip an attack plays is a
+// property of that attack — a five-hit string has five — and a view that picked one could only ever be right
+// for a character with exactly one. All this does is stay out of the way while the unit is committed.
 public class UnitView : MonoBehaviour
 {
     [SerializeField] protected DynamicUnit character;
@@ -12,28 +16,6 @@ public class UnitView : MonoBehaviour
     {
         if (character == null) character = GetComponent<DynamicUnit>();
         if (characterAnimator == null) characterAnimator = GetComponentInChildren<UnitAnimator>();
-
-        // The view owns the animation, so it is the only thing that can measure the swing. Pushed once —
-        // the set does not change at runtime — so the combat lock never has to restate the clip's length.
-        if (character != null && characterAnimator != null)
-            character.SetSwingClipLength(characterAnimator.LengthOf(AnimAction.Attack));
-    }
-
-    protected virtual void OnEnable() => character.Attacked += PlayAttack;
-    protected virtual void OnDisable() => character.Attacked -= PlayAttack;
-
-    // Aim first, then start the swing, so the very first frame drawn is already the right side of the unit —
-    // an AI that turns to its target and attacks in the same Update (EnemyAI.TickAttack does exactly that)
-    // would otherwise show one frame of the old facing.
-    //
-    // The swing plays as fast as the unit swings, so the clip stretches with the busy window instead of being
-    // cut off or leaving a dead tail — and the hit frame inside it lands at the same fraction of the swing at
-    // every attack speed, no separate timing to keep in sync.
-    void PlayAttack()
-    {
-        PushDir();
-        characterAnimator.PlaybackSpeed = character.AttackRate;
-        characterAnimator.Play(AnimAction.Attack);
     }
 
     protected virtual void LateUpdate()
@@ -43,22 +25,16 @@ public class UnitView : MonoBehaviour
         // this only ever changes which side of the swing is drawn, never how far along it is.
         PushDir();
 
-        // A skill cut the swing short, so the clip has to go with it — and that is not cosmetic. ShapeAttack
-        // lands its damage on the animator's Hit frame, so a swing replaced before it reaches that frame never
-        // connects. Leaving the old clip playing would let a cancelled attack still hit, from inside a dash.
-        //
-        // HANDS OFF WHILE A SKILL HOLDS THE UNIT. The skill owns the animation for that window and drives the
-        // animator itself — see CharacterSkill — because skills do not share one shape: some play nothing,
-        // some run several clips in order, some pick by what is going on. Anything this method played would
-        // be fighting whichever of those the skill is doing.
+        // HANDS OFF WHILE THE UNIT IS COMMITTED. Whatever is running — a blow, a dash — owns the animator for
+        // that window and drives it itself, because those do not share one shape: some play nothing, some run
+        // several clips in order, some pick by what is going on. Anything this method played would be fighting
+        // whichever of those is happening.
         //
         // Aim above still goes out, so the sprite keeps turning; only the ACTION is left alone.
         //
-        // This is also what makes cancelling a swing real rather than cosmetic: ShapeAttack lands its damage
-        // on the animator's Hit frame, so when the skill replaces the clip the hit never arrives.
-        if (character.Busy == ActionKind.Skill) return;
-
-        if (character.IsBusy) return;   // mid-swing: leave the action alone, don't let idle/move claim it back
+        // It is also what makes cancelling a swing real rather than cosmetic: a blow lands its damage on the
+        // animator's Hit frame, so when a dash replaces the clip mid-swing the hit never arrives.
+        if (character.IsBusy) return;
         characterAnimator.PlaybackSpeed = 1f;   // swing over — idle/move play at their authored rate
 
         bool moving = character.Velocity.sqrMagnitude > 0.0001f;

@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 // What a unit is in the middle of. The DURATION of an action, not its cooldown — a cooldown gates the one
@@ -11,7 +10,7 @@ using UnityEngine;
 public enum ActionKind { None, Attack, Skill }
 
 // Base for a DYNAMIC unit — one that moves and attacks. The control surface a view/animator reads (Velocity,
-// IsBusy, Attacked, Facing) lives here, so ONE view drives the player and an enemy alike. Whatever FEEDS Move
+// IsBusy, Facing) lives here, so ONE view drives the player and an enemy alike. Whatever FEEDS Move
 // stays external (player input, enemy AI). Subclasses supply the stat numbers by overriding the accessors. A
 // static thing (Prop) is a plain Unit — it never runs this loop.
 public abstract class DynamicUnit : Unit
@@ -46,7 +45,6 @@ public abstract class DynamicUnit : Unit
     public float AttackCooldownFraction
         => _cooldownTotal > 0f ? Mathf.Clamp01(_cooldownTimer / _cooldownTotal) : 0f;
     public Vector3 Velocity { get; private set; }
-    public event Action Attacked;
 
     // Which way the unit is turned in the WORLD, as an 8-sector index (ViewAngleUtil, clockwise from +Z):
     // its last move direction, held while idle. A view turns this into a screen-relative direction against
@@ -65,27 +63,19 @@ public abstract class DynamicUnit : Unit
     // should face, and only the unsnapped direction still knows.
     public Vector3 AimRaw { get; private set; } = SectorDir(EastSector);
 
-    // The numbers the control loop needs; each unit kind sources them differently. Both attack numbers are
-    // BASE seconds, authored at 1x attack speed — Attack() divides them by the rate.
+    // The numbers the control loop needs; each unit kind sources them differently. AttackCooldown is BASE
+    // seconds, authored at 1x attack speed — Hold divides it by the rate when it charges the recovery.
     protected abstract float MoveSpeed { get; }
     protected abstract float AttackSpeed { get; }
     protected abstract float AttackCooldown { get; }   // seconds between attack STARTS
     protected abstract float Mass { get; }
 
     // Public and sanitised. A 0 or negative stat would divide the timers to infinity and freeze the swing
-    // animation outright, so it reads as 1x. The view scales the attack clip by this, which is what keeps the
-    // sprite in step with the timers below — including the hit frame that lands the damage.
+    // animation outright, so it reads as 1x. A blow scales its clip by this, which is what keeps the sprite in
+    // step with the timers below — including the hit frame that lands the damage.
     public float AttackRate => AttackSpeed > 0f ? AttackSpeed : 1f;
 
-    // How long the swing locks the unit, measured from the attack ANIMATION and pushed in by the view. There
-    // is deliberately no config number for it: the lock and the swing are one thing seen twice, so a second
-    // hand-typed value could only ever agree or be a bug. Wanting a longer gap between attacks is
-    // AttackCooldown's job — and that one leaves the unit free to move, which a longer lock would not.
-    float _swingDuration;
-
-    public void SetSwingClipLength(float seconds) => _swingDuration = Mathf.Max(0f, seconds);
-
-    // Public because attack skills read it off their owner (a ShapeAttack on an enemy deals the enemy's damage,
+    // Public because a blow reads it off its owner (a ShapeAttack on an enemy deals the enemy's damage,
     // the same one on the MC deals the MC's) — the number's source differs per kind, the skill doesn't care.
     public abstract float AttackPower { get; }
 
@@ -103,11 +93,11 @@ public abstract class DynamicUnit : Unit
         body.SetMass(Mass);
     }
 
-    public void Move(Vector2 worldDir)
-    {
-        if (IsBusy) return;
-        _input += worldDir;
-    }
+    // TAKEN EVEN WHILE COMMITTED, and Update is what decides what to do with it: a unit in the middle of a swing
+    // or a lunge turns to face where it is being steered, but does not travel. Refusing the input here instead
+    // would throw away the aim with the movement, and they are not the same thing — the swing is what pins the
+    // feet, not the eyes.
+    public void Move(Vector2 worldDir) => _input += worldDir;
 
     // Aim the facing at a world direction WITHOUT moving — for a standing attack that must face its target
     // first (its skill fires along FacingDir). No-op on a zero direction so it holds the last aim.
@@ -149,35 +139,36 @@ public abstract class DynamicUnit : Unit
     {
         _busyTimer = kind == ActionKind.Skill ? seconds : Mathf.Max(_busyTimer, seconds);
         _busyKind = kind;
+
+        // COMMITTING AS AN ATTACK COSTS THE ATTACK RECOVERY, whatever the action actually was. This is the one
+        // place that decides it, so a swing, a combo step and a lunge used as a combo step all pay the same
+        // price for the same claim — none of them has to remember to charge it, and none of them can forget.
+        if (kind != ActionKind.Attack) return;
+
+        // The recovery begins where the COMMITMENT ENDS, so the timer spans both: one attack costs its own
+        // window plus the gap. Carrying the window inside it is what lets a single countdown express that, and
+        // it is why the recovery can never expire mid-swing with no clamp needed to promise it.
+        //
+        // Cancelling into a skill does NOT refund it: the attack was spent the moment it was thrown, and what a
+        // cancel buys is the time back, not the attack back.
+        _cooldownTimer = seconds + AttackCooldown / AttackRate;
+        _cooldownTotal = _cooldownTimer;
     }
 
-    // Returns whether the swing actually started, the same promise CharacterSkill.TryUse makes. A refused
-    // press is not a silent nothing to whoever asked: it is what the input layer holds on to and offers again
-    // when the recovery ends.
-    public bool Attack()
+    // COMMIT the unit to an action of this kind for this long — the one door every ability goes through. It
+    // refuses on the same terms the unit already states (CanAttack, CanUseSkill), so an ability never has to
+    // repeat those rules and cannot disagree with them.
+    public bool Commit(float seconds, ActionKind kind)
     {
-        if (!CanAttack) return false;
+        if (kind == ActionKind.Attack ? !CanAttack : !CanUseSkill) return false;
 
-        // Attack speed scales the swing AND the recovery by the same factor, the way action games have always
-        // done it: the ratio between them holds at every rate, so a fast attacker feels like the same attack
-        // sped up rather than a different one, and the stat can never go dead.
-        float rate = AttackRate;
-        float duration = _swingDuration / rate;
-
-        _busyTimer = duration;
-        _busyKind = ActionKind.Attack;
-
-        // The cooldown is the recovery that begins where the SWING ENDS, so the timer spans both: one attack
-        // costs duration + cooldown. Carrying the swing inside it is what lets a single countdown express that
-        // — and it is why the cooldown can never expire mid-swing, with no clamp needed to promise it.
-        //
-        // Cancelling the swing into a skill does NOT refund it. The attack was spent the moment it was thrown;
-        // what a cancel buys is the time back, not the attack back.
-        _cooldownTimer = duration + AttackCooldown / rate;
-        _cooldownTotal = _cooldownTimer;
-        Attacked?.Invoke();
+        Hold(Mathf.Max(0f, seconds), kind);
         return true;
     }
+
+    // How long until the next attack may start. What a combo counts its idle time from — "stopped attacking"
+    // has to mean stopped once you were ABLE to, or a slow swing would time itself out mid-string.
+    public float AttackReadyIn => Mathf.Max(0f, _cooldownTimer);
 
     protected virtual void Update()
     {
@@ -190,7 +181,13 @@ public abstract class DynamicUnit : Unit
         // While a knockback shove is carrying the body, it drives movement — don't fight it with input.
         if (body != null && body.IsKnocked) { Velocity = Vector3.zero; return; }
 
+        // AIM FIRST, AND ALWAYS. It costs nothing while standing still and it is what lets a player turn into
+        // the next blow of a combo instead of being locked facing the last one. Whether the body then MOVES is
+        // a separate question, answered immediately below.
         if (move.sqrMagnitude > 0.0001f) Aim(move.x, move.y);
+
+        // Committed: turn on the spot. The feet are the thing the action owns.
+        if (IsBusy) { Velocity = Vector3.zero; return; }
 
         Velocity = new Vector3(move.x, 0f, move.y) * MoveSpeed;
         transform.position += Velocity * Time.deltaTime;

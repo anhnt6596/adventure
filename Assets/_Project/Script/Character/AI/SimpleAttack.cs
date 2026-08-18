@@ -1,13 +1,18 @@
 using System;
 
-// The plain attack timing: fire the moment the unit is allowed to. The FSM only runs this while it's already
-// facing the target and inside AttackRange, so this just triggers and lets the cooldown gate the rest. Facing/
-// aim is the FSM's job (it faces before firing); range and the actual hit live on the skill.
+// The plain attack timing: throw whatever sits in this creature's Attack slot, the moment it is allowed to. The
+// FSM only runs this while it is already facing the target and inside AttackRange, so this just pulls the
+// trigger and lets the attack's own recovery gate the rest. Facing/aim is the FSM's job; range and the actual
+// hit live on the ability.
+//
+// BY SLOT, not by component type, and that is the point: a monster presses the same buttons a player does, so
+// the day a creature swings a combo or casts a skill, this line does not change.
 [Serializable]
 public class SimpleAttack : IAttackPlan
 {
     public void Tick(AIContext ctx)
     {
-        if (ctx.controller.CanAttack) ctx.controller.Attack();
+        var attack = ctx.Ability(AbilitySlot.Attack);
+        if (attack != null) attack.TryUse();
     }
 }
