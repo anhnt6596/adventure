@@ -68,7 +68,7 @@ public abstract class AttackAbility : CharacterSkill
         // one. Nothing commits the unit, the whole recovery collapses to the bare AttackCooldown, and no hit
         // frame ever arrives, so the blow costs nothing and lands nothing. Refuse it and name the clip: that is
         // an authoring hole, and it should read as one instead of as a combo that hits like a machine gun.
-        float length = Animator.LengthOf(anim);
+        float length = ClipTime(anim);
         if (length <= 0f)
         {
             if (!_warned)
@@ -83,9 +83,9 @@ public abstract class AttackAbility : CharacterSkill
         // Committed the way whoever asked commits things — Kind, not a decision made here. Pressed on the
         // attack button it is an attack and pays the attack recovery; thrown as a step of a combo it is still
         // the attack, because the combo is; sat on a skill button it commits as a skill and is paced by that
-        // skill's own cooldown. The clip is scaled by attack speed either way, so the drawing and the lock
-        // always agree.
-        if (!Owner.Commit(length / Owner.AttackRate, Kind)) return false;
+        // skill's own cooldown. The length already carries attack speed (ClipTime), so the drawing and the
+        // lock always agree.
+        if (!Owner.Commit(length, Kind)) return false;
 
         _armed = true;
         PlayAnim(anim, Owner.AttackRate);

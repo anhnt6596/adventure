@@ -232,7 +232,7 @@ public class SlashWave : Projectile
 
         // RELATIVE TO EAST, not to north. Atan2(x, z) is the compass heading, clockwise from +Z — but the rest
         // pose is drawn facing EAST, which is the convention every piece of 2D art in the project follows (see
-        // DynamicUnit's starting sector, and every attack gizmo that draws to the right). Turning it by the
+        // DynamicUnit's starting facing, and every attack gizmo that draws to the right). Turning it by the
         // absolute heading would rotate it a further ninety degrees off the pose it was already drawn in, and a
         // wave thrown east would fly sideways to its own picture.
         float yaw = Mathf.Atan2(_dir.x, _dir.z) * Mathf.Rad2Deg - 90f;

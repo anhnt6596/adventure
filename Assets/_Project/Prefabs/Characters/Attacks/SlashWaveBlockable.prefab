@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6cb7a9233ae9a0488741871ddd07673, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlashWave
-  canBeBlocked: 1
+  canBeBlocked: 0
   startWidth: 0.68
   widenPerUnit: 0.25
   stopOnHit: 1

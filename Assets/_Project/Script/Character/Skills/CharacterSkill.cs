@@ -134,6 +134,17 @@ public abstract class CharacterSkill : MonoBehaviour
         Animator.Play(action);
     }
 
+    // HOW LONG A CLIP TAKES ON THIS BODY: its authored length, shortened by how fast the character swings.
+    //
+    // The one place that says attack speed shortens an animation, so everything timed off its own clip — a
+    // swing, a throw, whatever comes next — agrees about it without each of them remembering to divide. It is
+    // also what keeps the DRAWING and the LOCK in step: play the clip at AttackRate and hold the unit for this,
+    // and the character is free on the frame the picture ends, at any attack speed.
+    //
+    // Zero for a clip the anim set does not have — the caller decides whether that is a hole worth naming.
+    protected float ClipTime(AnimAction action)
+        => Animator != null && Owner != null ? Animator.LengthOf(action) / Owner.AttackRate : 0f;
+
     protected virtual void Awake()
     {
         // Before the guard below: a skill with nothing above it is broken, but a node still addresses this by

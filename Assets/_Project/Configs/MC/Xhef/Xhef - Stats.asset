@@ -16,7 +16,7 @@ MonoBehaviour:
   moveSpeed: 2
   attackSpeed: 0.8
   attackPower: 4
-  attackCooldown: 0.1
+  attackCooldown: 0.01
   mass: 1
   pickupRadius: 0.3
   maxHp: 80

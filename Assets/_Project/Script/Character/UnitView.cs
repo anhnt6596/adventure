@@ -41,7 +41,7 @@ public class UnitView : MonoBehaviour
         characterAnimator.Play(moving ? AnimAction.Move : AnimAction.Idle);
     }
 
-    // Which way the unit reads on screen, as an angle. The UNSNAPPED aim brought into the camera's own frame
+    // Which way the unit reads on screen, as an angle. The unit's aim brought into the camera's own frame
     // — where +x is screen-right and +z is screen-up — which is exactly how MCInput turns key presses into
     // world movement, run backwards. Handing over the raw angle rather than a sector lets each anim set
     // quantise it however its own pose count needs. Recomputed every frame, not just while moving, so
@@ -49,7 +49,7 @@ public class UnitView : MonoBehaviour
     void PushDir()
     {
         float camYaw = CameraViewDir.Transform != null ? CameraViewDir.Transform.eulerAngles.y : 0f;
-        Vector3 screen = Quaternion.Euler(0f, -camYaw, 0f) * character.AimRaw;
+        Vector3 screen = Quaternion.Euler(0f, -camYaw, 0f) * character.FacingDir;
         characterAnimator.SetDir(Mathf.Atan2(screen.x, screen.z) * Mathf.Rad2Deg);
     }
 }

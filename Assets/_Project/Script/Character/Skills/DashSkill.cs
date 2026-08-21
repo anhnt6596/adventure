@@ -3,9 +3,9 @@ using UnityEngine;
 // A lunge along the way the character is already facing, heavy while it lasts, with a trail of itself left
 // behind.
 //
-// IT GOES WHERE YOU POINT, NOT WHERE YOU HOLD. FacingDir is the snapped 8-sector aim the sprite is actually
-// drawn in (see DynamicUnit.Aim), so the dash lands where the character visibly points rather than up to 22°
-// off it — the same reason an attack lane uses it.
+// IT GOES WHERE YOU POINT, NOT WHERE YOU HOLD. FacingDir is the unit's aim (see DynamicUnit.Aim), which the
+// sprite's eight poses only approximate — so the lunge lands exactly where the player aimed rather than on
+// the nearest pose, the same reason an attack lane uses it.
 //
 // THE UNIT IS HELD FOR THE DURATION. It stops steering (Move early-outs while busy) which is what leaves this
 // component free to own the position for a moment without the two fighting over the same transform, and it

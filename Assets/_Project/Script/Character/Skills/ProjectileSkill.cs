@@ -124,12 +124,17 @@ public class ProjectileSkill : CharacterSkill
         if (projectile == null || Owner == null) return false;
 
         _armed = true;
-        PlayAnim(anim);
+
+        // AT THE CHARACTER'S OWN ATTACK SPEED, exactly as a swing is (AttackAbility.Swing). A throw is a blow:
+        // it is thrown by the same arms, it is a step of the same combos, and a character whose attacks got
+        // quicker while its throws did not would be one whose attack speed stopped working the moment its
+        // string was built out of these — which is what Xhef's is.
+        PlayAnim(anim, Owner.AttackRate);
 
         // The clip's own length, so the character is locked for the throw and free the instant it finishes. A
         // clip that is missing measures zero and holds nothing, which is the right failure: the skill still
         // fires, it just does not freeze a character in front of an animation that is not there.
-        float length = Animator != null ? Animator.LengthOf(anim) : 0f;
+        float length = ClipTime(anim);
         if (length > 0f) Owner.Hold(length, Kind);
 
         return true;

@@ -447,7 +447,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DashSkill
   slot: 2
   key: dash
-  cooldown: 4
+  cooldown: 1.5
   locked: 0
   anim: 3
   distance: 1

@@ -139,8 +139,8 @@ public class GameHUD : UIView
 
         var skills = mc.GetComponentsInChildren<CharacterSkill>(true);
 
-        // The bar runs left to right in the order the keys sit under the hand: attack (J/Space), dash (K), then
-        // the two skills (L and ;).
+        // The bar runs left to right in the order the keys sit under the hand: attack (Z / Space / J), dash
+        // (X / K), then the two skills (C / L and V / ;).
         //
         // THE ATTACK BUTTON DRAWS THE UNIT'S RECOVERY, not the ability's own cooldown, whether or not something
         // is bound to it. An attack is paced by the swing and AttackCooldown — a combo has no cooldown of its

@@ -11,6 +11,12 @@ public class CameraRig : MonoBehaviour
     [SerializeField] float distance = 12f;
     [SerializeField] Vector3 pivotOffset;
 
+    [Tooltip("How near and how far the wheel may pull the camera. The bounds live here rather than with the " +
+             "input because they are a property of the shot — how much of the world stays readable — and not " +
+             "of the device that happens to ask.")]
+    [SerializeField, Min(0.1f)] float minDistance = 3f;
+    [SerializeField, Min(0.1f)] float maxDistance = 10f;
+
     [Header("Follow")]
     [SerializeField, Range(0.001f, 1f)] float smooth = 0.05f;
 
@@ -24,7 +30,9 @@ public class CameraRig : MonoBehaviour
     public Transform Target { get => target; set => target = value; }
     public float Pitch { get => pitch; set => pitch = value; }
     public float Yaw { get => yaw; set => yaw = value; }
-    public float Distance { get => distance; set => distance = value; }
+    // CLAMPED ON THE WAY IN, so there is no way to end up inside the ground or looking at the world from orbit
+    // — whoever sets it, and whatever they were reading when they worked the number out.
+    public float Distance { get => distance; set => distance = Mathf.Clamp(value, minDistance, maxDistance); }
     public Vector3 PivotOffset { get => pivotOffset; set => pivotOffset = value; }
     public float Smooth => smooth;
 
@@ -85,4 +93,8 @@ public class CameraRig : MonoBehaviour
     public void RemoveModifier(ICameraModifier modifier) => _modifiers.Remove(modifier);
 
     public void RotateYaw(float step) => _targetYaw = Mathf.Repeat(_targetYaw + step, 360f);
+
+    // Further out on a positive amount, nearer on a negative one. Immediate rather than eased, unlike the Q/E
+    // turn: a wheel is already a stream of small steps, so the smoothing is in the hand.
+    public void Zoom(float amount) => Distance = distance + amount;
 }

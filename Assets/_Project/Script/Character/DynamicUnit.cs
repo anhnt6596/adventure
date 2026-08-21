@@ -18,6 +18,7 @@ public abstract class DynamicUnit : Unit
     protected CollisionBody body;   // the unit's body, auto-found under it — not wired by hand
 
     Vector2 _input;
+    bool _aimed;            // something aimed this unit by hand this frame — see Face
     float _busyTimer;       // the swing itself — locks the unit out of moving and attacking
     float _cooldownTimer;   // gates the NEXT attack only; the unit is free to move while it runs
 
@@ -46,22 +47,23 @@ public abstract class DynamicUnit : Unit
         => _cooldownTotal > 0f ? Mathf.Clamp01(_cooldownTimer / _cooldownTotal) : 0f;
     public Vector3 Velocity { get; private set; }
 
-    // Which way the unit is turned in the WORLD, as an 8-sector index (ViewAngleUtil, clockwise from +Z):
-    // its last move direction, held while idle. A view turns this into a screen-relative direction against
-    // the camera, so the sprite re-aims when the camera orbits even while the unit stands still.
-    // A unit that has not moved or aimed yet starts facing EAST, not north — the 2D art is authored facing
-    // right, so this is the pose it was actually painted in, and it is the same direction ShapeAttack's gizmo
-    // draws toward in the editor. All three of these must agree from the very first frame, not just after the
-    // first Aim(): Facing is the sector, FacingDir is that sector as a vector, AimRaw is the unsnapped aim.
-    const int EastSector = 2;   // sectors run clockwise from +Z, so 2 * 45° = +X
+    // Is a knockback shove carrying the body? While one is, Update throws steering away — so anything driving
+    // this unit from outside can tell that its input went nowhere for a reason other than being stuck.
+    public bool IsKnocked => body != null && body.IsKnocked;
 
-    public int Facing { get; private set; } = EastSector;
-    public Vector3 FacingDir { get; private set; } = SectorDir(EastSector);   // last move direction (world XZ) — where the unit is aimed
-
-    // The same aim BEFORE it was snapped to a sector. Kept because two-direction art has no up or down pose:
-    // sectors 0 and 4 straddle the vertical, so the sector index alone cannot say which way such a sprite
-    // should face, and only the unsnapped direction still knows.
-    public Vector3 AimRaw { get; private set; } = SectorDir(EastSector);
+    // Which way the unit is turned in the WORLD (unit vector on XZ): its last move or aim direction, held
+    // while idle. A view turns this into a screen-relative direction against the camera, so the sprite
+    // re-aims when the camera orbits even while the unit stands still.
+    //
+    // CONTINUOUS, NOT ONE OF EIGHT. The sprite has eight poses, the aim does not: a click-to-move order
+    // points anywhere at all, and quantising it would send the walk one way and the dash, the shot and the
+    // attack lane up to 22.5° another. The eight poses are an approximation of this direction — chosen by
+    // whichever anim set is drawing it (CharacterAnimSet.Resolve) — and not the direction itself.
+    //
+    // A unit that has not moved or aimed yet faces EAST, not north — the 2D art is authored facing right, so
+    // this is the pose it was actually painted in, and it is the direction ShapeAttack's gizmo draws toward
+    // in the editor.
+    public Vector3 FacingDir { get; private set; } = Vector3.right;
 
     // The numbers the control loop needs; each unit kind sources them differently. AttackCooldown is BASE
     // seconds, authored at 1x attack speed — Hold divides it by the rate when it charges the recovery.
@@ -69,6 +71,11 @@ public abstract class DynamicUnit : Unit
     protected abstract float AttackSpeed { get; }
     protected abstract float AttackCooldown { get; }   // seconds between attack STARTS
     protected abstract float Mass { get; }
+
+    // The unit's top speed, readable from outside. What something STEERING the unit needs in order to size a
+    // step to the ground left in front of it — walking to a point means the last step is a short one, and only
+    // the speed says how short (see MoveOrder.Step). The stat itself stays protected; this is the number.
+    public float Speed => MoveSpeed;
 
     // Public and sanitised. A 0 or negative stat would divide the timers to infinity and freeze the swing
     // animation outright, so it reads as 1x. A blow scales its clip by this, which is what keeps the sprite in
@@ -93,38 +100,30 @@ public abstract class DynamicUnit : Unit
         body.SetMass(Mass);
     }
 
-    // TAKEN EVEN WHILE COMMITTED, and Update is what decides what to do with it: a unit in the middle of a swing
-    // or a lunge turns to face where it is being steered, but does not travel. Refusing the input here instead
-    // would throw away the aim with the movement, and they are not the same thing — the swing is what pins the
-    // feet, not the eyes.
+    // TAKEN EVEN WHILE COMMITTED, and Update is what decides what to do with it. A unit in the middle of a swing
+    // or a lunge keeps being handed input — it simply neither travels nor turns on it (see Update).
     public void Move(Vector2 worldDir) => _input += worldDir;
 
-    // Aim the facing at a world direction WITHOUT moving — for a standing attack that must face its target
-    // first (its skill fires along FacingDir). No-op on a zero direction so it holds the last aim.
+    // Aim the facing at a world direction WITHOUT moving — for a blow that must face its target first (it
+    // fires along FacingDir). No-op on a zero direction so it holds the last aim.
+    //
+    // AN AIM SAID OUT LOUD BEATS THE ONE MOVEMENT WOULD IMPLY, and the flag is what makes that true for the
+    // REST OF THIS FRAME as well as for the instant: MCInput turns the character at the cursor immediately
+    // before the press, and Update runs afterwards — without this the movement input from the same frame
+    // would quietly aim it back down the way the player was walking, and the blow would leave along that.
     public void Face(Vector3 worldDir)
     {
         worldDir.y = 0f;
         if (worldDir.sqrMagnitude < 1e-6f) return;
         Aim(worldDir.x, worldDir.z);
+        _aimed = true;
     }
 
-    // The one place the aim is set, so Facing and FacingDir can never drift apart. It SNAPS: FacingDir is
-    // derived from the 8-sector the sprite is drawn in, not from the raw direction. A continuous aim under an
-    // 8-frame sprite would send the attack shape and the shot up to 22.5° off from where the unit visibly
-    // points — invisible on a circle centred on the unit, but plain to see once the hitbox is a lane.
-    // MOVEMENT is not snapped: Velocity still follows the raw input, only the aim quantises.
+    // The one place the aim is set. Normalised, so everything downstream — an attack lane, a lunge, a shot —
+    // can take it as a direction and never has to check.
     void Aim(float x, float z)
     {
-        AimRaw = new Vector3(x, 0f, z).normalized;
-        Facing = ViewAngleUtil.GetViewType8(Mathf.Atan2(x, z) * Mathf.Rad2Deg);
-        FacingDir = SectorDir(Facing);
-    }
-
-    // Sector n is centred on n * 45°, measured the way GetViewType8 reads it: clockwise from +Z.
-    static Vector3 SectorDir(int sector)
-    {
-        float rad = sector * 45f * Mathf.Deg2Rad;
-        return new Vector3(Mathf.Sin(rad), 0f, Mathf.Cos(rad));
+        FacingDir = new Vector3(x, 0f, z).normalized;
     }
 
     // Take the unit over for a moment. A skill that moves the body itself needs the unit to stop steering
@@ -195,15 +194,26 @@ public abstract class DynamicUnit : Unit
         var move = Vector2.ClampMagnitude(_input, 1f);
         _input = Vector2.zero;
 
+        bool aimed = _aimed;   // cleared here and not below, so an early return cannot carry it into next frame
+        _aimed = false;
+
         // While a knockback shove is carrying the body, it drives movement — don't fight it with input.
         if (body != null && body.IsKnocked) { Velocity = Vector3.zero; return; }
 
-        // AIM FIRST, AND ALWAYS. It costs nothing while standing still and it is what lets a player turn into
-        // the next blow of a combo instead of being locked facing the last one. Whether the body then MOVES is
-        // a separate question, answered immediately below.
-        if (move.sqrMagnitude > 0.0001f) Aim(move.x, move.y);
+        // WALKING AIMS THE UNIT, but it is the weakest claim on the facing there is, and it yields twice:
+        //
+        //   to an explicit Face() this frame — the cursor said where, and being steered is not an argument
+        //     against it;
+        //   and to being COMMITTED — an action owns the direction it was thrown in for as long as it lasts.
+        //     A blow lands its damage frames later, off the facing as it stands THEN, so a unit that kept
+        //     turning on the keys would let a swing be steered after it was thrown, away from what it was
+        //     aimed at. Face() still turns it: an enemy tracks its target through its own swing.
+        //
+        // Between the blows of a combo the unit is free again (the string's gap is recovery, not commitment),
+        // so turning into the next one costs nothing and needs no exception here.
+        if (!aimed && !IsBusy && move.sqrMagnitude > 0.0001f) Aim(move.x, move.y);
 
-        // Committed: turn on the spot. The feet are the thing the action owns.
+        // Committed: stand still. The feet are the thing the action owns.
         if (IsBusy) { Velocity = Vector3.zero; return; }
 
         Velocity = new Vector3(move.x, 0f, move.y) * MoveSpeed;
