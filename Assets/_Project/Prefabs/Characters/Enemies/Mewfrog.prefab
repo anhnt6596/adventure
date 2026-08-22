@@ -228,6 +228,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c69335fec0c30144bbcdc650d64363ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Damageable
+  lingerAfterDeath: 0
   hitRadius: 0.3
 --- !u!114 &6143232455295501188
 MonoBehaviour:
@@ -266,19 +267,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 5431757174141155505}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 950196cda30f97c47b4098541c4e8753, type: 3}
+  m_Script: {fileID: 11500000, guid: 53d23237f2a977141b27b369f4319fba, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SoulFireAttack
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectileSkill
   slot: 1
   key: 
   cooldown: 8
   locked: 0
   anim: 2
-  range: 5
-  speed: 6
-  knockback: 0.3
   muzzle: {fileID: 194829221086538142}
-  flamePrefab: {fileID: 2475285664741214988, guid: d229363f7430b724b820ffda4755e083, type: 3}
+  projectile: {fileID: 2475285664741214988, guid: d229363f7430b724b820ffda4755e083, type: 3}
+  speed: 4
+  speedFromAttackRate: 0
+  life: 3
+  power: 1
+  knockback: 0.3
+  count: 1
+  spread: 22.5
+  volleys:
+  - 0
 --- !u!114 &905355796874017787
 MonoBehaviour:
   m_ObjectHideFlags: 0

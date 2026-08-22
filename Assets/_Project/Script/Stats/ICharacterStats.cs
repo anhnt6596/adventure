@@ -15,7 +15,7 @@ public interface ICharacterStats
     IStat MoveSpeed { get; }
     IStat AttackSpeed { get; }
     IStat AttackPower { get; }
-    IStat AttackCooldown { get; }
+    IStat Recovery { get; }
     IStat MaxHp { get; }
     IStat MaxHunger { get; }
     IStat HungerDrain { get; }

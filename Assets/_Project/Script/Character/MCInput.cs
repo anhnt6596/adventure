@@ -19,14 +19,8 @@ public class MCInput : MonoBehaviour
     const float BufferWindow = 0.2f;
 
     IInputGate _gate;
-    IUISystem _ui;   // so a right-click that lands on a button is the button's, not the ground's
+    IUISystem _ui;   // so a click that lands on a button is the button's, not a swing at the shopkeeper
 
-    // Where the player last right-clicked, if it is still standing. Owned HERE and not by the unit: it is
-    // something the player asked for, the same kind of thing as a key being held, and the unit has no more
-    // business remembering it than it has remembering which key is down. It also means a body that dies
-    // takes its orders with it.
-    readonly MoveOrder _order = new MoveOrder();
-    bool _dragging;   // the right button went down on the world and has not come up — see TakeClick
     Camera _cam;
 
     // ONE SLOT, NOT A QUEUE, and it holds the LATEST refused press. A queue would replay a flurry of mashing
@@ -57,6 +51,13 @@ public class MCInput : MonoBehaviour
     // permissions — a scripted moment may well want you able to swing where you stand but not to dash out of
     // it — and one dictionary could only ever be allowed or refused as a whole.
     readonly Dictionary<Key, ICharacterCommand> _skills = new Dictionary<Key, ICharacterCommand>();
+
+    // THE TWO MOUSE BUTTONS. Kept apart from the dictionaries because a mouse button is not a Key and they
+    // cannot hold it — but each is the SAME command object its keys carry, so one press is one action however
+    // it was made: one cooldown, one buffered press, one place in a combo string.
+    ICharacterCommand _attack;   // left
+    ICharacterCommand _skill1;   // right
+
     Vector2 _localMove;
 
     void Awake()
@@ -85,16 +86,23 @@ public class MCInput : MonoBehaviour
     // because a character with no second skill yet must simply have nothing on that key — a serialized slot
     // would be an empty reference to explain instead.
     //
-    // TWO HANDS, TWO SETS, both running attack, dash, skill 1, skill 2 in the order the HUD draws them. The
-    // left hand plays with the right one on the mouse: Z-X-C-V under the fingers already resting there from
-    // WASD, with Space as a second attack under the thumb. J-K-L-; is the keyboard-only set, for playing with
-    // no hand on the mouse at all. Every alternative for one action is the SAME command object: one cooldown,
-    // one buffered press, however it was asked for.
+    // THE MOUSE FIGHTS AND THE THUMB DASHES. Left button attacks where the cursor is pointing, right button
+    // casts skill 1, Space lunges: the hand that aims is the hand that acts, and the one thing the other hand
+    // needs under it is the way out. That is the control scheme; everything below is an alternative to it.
     //
-    // The two sets are not identical in one respect: the left hand's keys AIM — see AimedKeys.
+    // SKILL 1 AND NOT SKILL 2 on the right button, because there are two buttons and four things, so one of
+    // them has to be the one that gets the hand. Skill 1 is the one every character has and the one pressed
+    // most often — skill 2 is the late unlock, and reaching for a key is the right price for it.
     //
-    // THE MOUSE THROWS NOTHING. Its right button walks the character and that is all it does: an attack on the
-    // left button would be a second thing to do with the hand that is already aiming.
+    // TWO KEYBOARD SETS behind that, both running attack, dash, skill 1, skill 2 in the order the HUD draws
+    // them: Z-X-C-V under the fingers WASD leaves them next to, and J-K-L-; for a hand nowhere near those.
+    // Every alternative for one action is the SAME command object: one cooldown, one buffered press, however
+    // it was asked for.
+    //
+    // NO KEY AIMS. The cursor turns the character on a mouse CLICK and nowhere else — see AimAtCursor — so the
+    // same skill leaves along the pointer off the right button and along the current facing off its key. A key
+    // that re-aimed would mean the pointer, left wherever it happens to be, quietly overriding the direction
+    // the player is walking.
     void BindAbilities()
     {
         CharacterSkill attack = null;
@@ -117,8 +125,8 @@ public class MCInput : MonoBehaviour
                 continue;
             }
 
-            var key = KeyOf(ability.Which);
-            if (_skills.ContainsKey(key))
+            var keys = KeysOf(ability.Which);
+            if (keys.Length > 0 && _skills.ContainsKey(keys[0]))
             {
                 Debug.LogError($"[{nameof(MCInput)}] two abilities claim slot {ability.Which} on " +
                                $"'{character.name}' — the second one can never be pressed.", ability);
@@ -126,10 +134,8 @@ public class MCInput : MonoBehaviour
             }
 
             var command = new SkillCommand(ability);
-            _skills[key] = command;
-
-            var alt = AltKeyOf(ability.Which);
-            if (alt != Key.None) _skills[alt] = command;   // the SAME command, so one skill either way
+            foreach (var key in keys) _skills[key] = command;   // the SAME command, so one skill either way
+            if (ability.Which == AbilitySlot.Skill1) _skill1 = command;
         }
 
         // A character with nothing in the Attack slot cannot attack at all, which is a wiring mistake and not a
@@ -138,40 +144,29 @@ public class MCInput : MonoBehaviour
             Debug.LogError($"[{nameof(MCInput)}] nothing in the Attack slot on '{character.name}' — the attack " +
                            "button does nothing. Put an AttackAbility or a ComboAttack there.", character);
 
-        // One command object behind all three keys, so an attack is one attack however it was asked for — one
-        // cooldown, one buffered press, one place in a combo string.
+        // One command object behind the button and both keys, so an attack is one attack however it was asked
+        // for — one cooldown, one buffered press, one place in a combo string.
         var swing = new AttackCommand(attack);
+        _attack = swing;
         _pressed[Key.J] = swing;
-        _pressed[Key.Space] = swing;
         _pressed[Key.Z] = swing;
     }
 
-    // The keyboard-only set, running rightwards from the attack key on J: dash, then the two skills. Semicolon
-    // for the last of them because it is the one a character is least likely to have — the reach is spent on
-    // the rarest thing rather than on the dash every character carries.
-    static Key KeyOf(AbilitySlot slot) => slot switch
+    // EVERY KEY A SLOT ANSWERS TO, in one list rather than one function per set: which keys reach a slot is a
+    // single fact, and two lists to keep level is how a key ends up meaning two things.
+    //
+    // SPACE IS THE DASH, on its own, under the thumb of the hand that is not on the mouse. It is the one thing
+    // that has to be reachable without looking, so it gets the biggest key on the board rather than a place in
+    // a row. The rest are the two rows: X-C-V beside the fingers WASD already holds, and K-L-; for a hand
+    // nowhere near them — semicolon last because slot 2 is the one a character is least likely to have, so the
+    // reach is spent on the rarest thing rather than on the dash everybody carries.
+    static Key[] KeysOf(AbilitySlot slot) => slot switch
     {
-        AbilitySlot.Dash => Key.K,
-        AbilitySlot.Skill1 => Key.L,
-        _ => Key.Semicolon,
+        AbilitySlot.Dash => new[] { Key.Space, Key.X, Key.K },
+        AbilitySlot.Skill1 => new[] { Key.C, Key.L },
+        AbilitySlot.Skill2 => new[] { Key.V, Key.Semicolon },
+        _ => System.Array.Empty<Key>(),
     };
-
-    // The left hand's copy of the same three, under the fingers WASD leaves them next to — the set that
-    // matters while the other hand is on the mouse, and the set that AIMS (see AimedKeys).
-    static Key AltKeyOf(AbilitySlot slot) => slot switch
-    {
-        AbilitySlot.Dash => Key.X,
-        AbilitySlot.Skill1 => Key.C,
-        AbilitySlot.Skill2 => Key.V,
-        _ => Key.None,
-    };
-
-    // THE KEYS PRESSED WITH A HAND ON THE MOUSE. Space and Z-X-C-V sit under the left hand while the right one
-    // holds the cursor, so a press there is made while already pointing at something: it turns the character at
-    // the cursor first and throws from there. J-K-L is the keyboard-only set and stays that way — nobody
-    // pressing L is looking at where the pointer happens to have been left, and swinging at it would be the
-    // game acting on something the player never said.
-    static readonly HashSet<Key> AimedKeys = new HashSet<Key> { Key.Space, Key.Z, Key.X, Key.C, Key.V };
 
     public void AccumulateMove(Vector2 direction) => _localMove += direction;
 
@@ -188,95 +183,53 @@ public class MCInput : MonoBehaviour
 
         if (_gate == null || _gate.Allows(InputKind.Attack))
         {
+            // THE LEFT BUTTON SWINGS WHERE IT POINTS. Always aimed, like every click — see AimAtCursor.
+            if (_attack != null && Clicked(Mouse.current?.leftButton))
+                Press(_attack, InputKind.Attack, atCursor: true);
+
             foreach (var b in _pressed)
-                if (kb[b.Key].wasPressedThisFrame) PressKey(b.Key, b.Value, InputKind.Attack);
+                if (kb[b.Key].wasPressedThisFrame) Press(b.Value, InputKind.Attack);
         }
 
         if (_gate == null || _gate.Allows(InputKind.Skill))
         {
+            // AIMED, the same as the left button: a CLICK is an aim, whichever button it was made with. See
+            // AimAtCursor — what does not aim is a KEY.
+            if (_skill1 != null && Clicked(Mouse.current?.rightButton))
+                Press(_skill1, InputKind.Skill, atCursor: true);
+
             foreach (var b in _skills)
-                if (kb[b.Key].wasPressedThisFrame) PressKey(b.Key, b.Value, InputKind.Skill);
+                if (kb[b.Key].wasPressedThisFrame) Press(b.Value, InputKind.Skill);
         }
     }
 
-    // The two ways the player asks the character to move, and which of them wins. A HAND ON THE KEYS BEATS A
-    // CLICK, always: steering now is a plainer statement of intent than a destination chosen a moment ago, and
-    // a player who grabs the keys to dodge something must not be dragged back on course when they let go.
+    // THE KEYS ARE THE ONLY THING THAT WALKS THE CHARACTER. The mouse points and hits; it does not drive.
+    // One hand steers and the other aims, and the two are never saying the same thing — which is what lets a
+    // blow be thrown one way while the feet carry the body another.
     void Steer(Keyboard kb)
     {
-        if (_gate != null && !_gate.Allows(InputKind.Move))
-        {
-            // Dropped, not held: the controls come back at the end of a cutscene or a shop, and a character
-            // that then strolls off toward somewhere asked for minutes ago is acting on an intention that has
-            // passed — the same reason a buffered press expires.
-            _order.Clear();
-            return;
-        }
-
-        TakeClick();
+        if (_gate != null && !_gate.Allows(InputKind.Move)) return;
 
         _localMove = Vector2.zero;
         foreach (var b in _held)
             if (kb[b.Key].isPressed) b.Value.Execute();
 
-        if (_localMove != Vector2.zero)
-        {
-            // The keys end the DRAG as well as the destination. Without that, a held button would re-issue the
-            // point every frame the player was steering past it, and let go of the keys to find the character
-            // strolling back to wherever the cursor had drifted.
-            _order.Clear();
-            _dragging = false;
+        if (_localMove == Vector2.zero) return;
 
-            var cam = CameraViewDir.Transform;
-            if (cam == null) return;
+        var cam = CameraViewDir.Transform;
+        if (cam == null) return;
 
-            float camYaw = cam.eulerAngles.y;
-            var world = Quaternion.Euler(0f, camYaw, 0f) * new Vector3(_localMove.x, 0f, _localMove.y);
-            character.Move(new Vector2(world.x, world.z));
-            return;
-        }
-
-        if (!_order.Active) return;
-
-        // THE ORDER WAITS OUT ANYTHING THAT HAS THE BODY. Mid-swing the feet are pinned already (DynamicUnit
-        // zeroes velocity while busy), so steering could only turn the character — off whatever it is hitting
-        // and back toward the destination, mid-blow; and a knockback throws input away outright. Held rather
-        // than dropped, so the walk picks up afterwards, and held rather than stepped, so neither one counts
-        // against the stall that ends an order going nowhere.
-        if (character.IsBusy || character.IsKnocked) { _order.Hold(character.transform.position); return; }
-
-        var step = _order.Step(character.transform.position, character.Speed, Time.deltaTime);
-        if (step != Vector2.zero) character.Move(step);
+        // Turned against the camera, so W is up the SCREEN however the camera has been orbited.
+        float camYaw = cam.eulerAngles.y;
+        var world = Quaternion.Euler(0f, camYaw, 0f) * new Vector3(_localMove.x, 0f, _localMove.y);
+        character.Move(new Vector2(world.x, world.z));
     }
 
-    // Right-click: walk to that spot.
-    //
-    // The click is not checked against the map. Somewhere unwalkable is a fine thing to ask for — the walk
-    // toward it stops at the bank, and MoveOrder gives up once it stops getting anywhere.
-    void TakeClick()
-    {
-        var mouse = Mouse.current;
-        if (mouse == null) return;
-
-        // HELD, NOT MERELY PRESSED. A button held down is a live instruction, the same as a key held: the
-        // destination follows the cursor for as long as it is down, so leading the character around is one
-        // drag rather than a rattle of clicks. Release leaves the last point standing and the walk finishes it.
-        //
-        // The DRAG is what is tracked, not the button: a press that was refused (it landed on the HUD) must not
-        // become a walk the moment the cursor slides off the button, so nothing happens until the next press
-        // that was actually meant for the world.
-        if (Clicked(mouse.rightButton)) _dragging = true;
-        else if (!mouse.rightButton.isPressed) { _dragging = false; return; }
-        else if (!_dragging) return;
-
-        if (!GroundUnderCursor(out Vector3 point)) return;
-
-        _order.Set(point);
-    }
-
-    // WHAT THE CURSOR IS FOR. A blow thrown blind leaves along whatever way the character already happened to
-    // point; aimed, it leaves where the player is looking. Every press made with a hand on the mouse goes
-    // through here — see AimedKeys.
+    // WHAT THE CURSOR IS FOR. A CLICK AIMS, A KEY DOES NOT, and that is the whole rule: clicking is the player
+    // stating a direction at the moment they ask for the action — the cursor is what they were pointing at and
+    // the only thing they were saying. A key is not; the pointer may have been sitting untouched for a minute,
+    // and turning the character onto it would be the game acting on something nobody said. So a press made
+    // with a key leaves along the facing as it stands, which is the one the player has been steering.
     //
     // TURNED IN THE SAME FRAME IT FIRES, immediately before the press: Face writes FacingDir and the ability
     // reads it — the same order an ambush predator's bite depends on (EnemyAI.TickAttack).
@@ -328,7 +281,7 @@ public class MCInput : MonoBehaviour
     // a long cooldown would fire the moment it ended, however long ago the player asked.
     void Press(ICharacterCommand command, InputKind kind, bool atCursor = false)
     {
-        if (Throw(command, atCursor)) { Fired(); return; }
+        if (Throw(command, atCursor)) { _buffered = null; return; }   // it went; anything older is stale
 
         _buffered = command;
         _bufferedKind = kind;
@@ -336,13 +289,9 @@ public class MCInput : MonoBehaviour
         _bufferedAt = Time.time;
     }
 
-    // A key press, aimed at the cursor if it is one of the aiming row.
-    void PressKey(Key key, ICharacterCommand command, InputKind kind)
-        => Press(command, kind, AimedKeys.Contains(key));
-
-    // Throw it — aimed, if it was asked for with a hand on the mouse — and TAKE THE TURN BACK if it would not
-    // go. The aim has to be set before Execute, because the ability leaves along FacingDir in the same frame,
-    // so putting the facing back afterwards is the only way a refused press can leave nothing behind.
+    // Throw it — aimed, if it was asked for with the cursor — and TAKE THE TURN BACK if it would not go. The
+    // aim has to be set before Execute, because the ability leaves along FacingDir in the same frame, so
+    // putting the facing back afterwards is the only way a refused press can leave nothing behind.
     //
     // IT HAS TO LEAVE NOTHING BEHIND, because a button that is not ready yet is a button that gets pressed a
     // lot. Without this, mashing a cooling skill would spin the character to face the cursor over and over
@@ -378,17 +327,6 @@ public class MCInput : MonoBehaviour
         // pointing at" — a swing that came out aimed at the spot the cursor has since left would be the
         // player's own early press working against them. A retry that is refused again turns nothing, the
         // same as the press that made it.
-        if (Throw(_buffered, _bufferedAtCursor)) Fired();
-    }
-
-    // One place, so a press that went straight out and one that waited in the buffer settle the same way.
-    void Fired()
-    {
-        _buffered = null;   // it went; anything older is stale by definition
-
-        // ACTING ENDS THE WALK. Throwing a blow is the player taking hold of the character — and where they
-        // are standing when it lands is most of what they were deciding. Walking on afterwards would carry
-        // them out of the fight they just chose to be in, toward a spot picked before it started.
-        _order.Clear();
+        if (Throw(_buffered, _bufferedAtCursor)) _buffered = null;
     }
 }

@@ -21,7 +21,7 @@ public class EnemyController : DynamicUnit
     // Null-safe so a missing config leaves the enemy inert (Start logs it) instead of crashing the base loop.
     protected override float MoveSpeed => config != null ? config.moveSpeed : 0f;
     protected override float AttackSpeed => config != null ? config.attackSpeed : 1f;
-    protected override float AttackCooldown => config != null ? config.attackCooldown : 0f;
+    public override float Recovery => config != null ? config.recovery : 0f;
     protected override float Mass => config != null ? config.mass : 1f;
     public override float AttackPower => config != null ? config.attackDamage : 0f;
 

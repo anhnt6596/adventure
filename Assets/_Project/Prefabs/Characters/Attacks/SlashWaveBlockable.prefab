@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6cb7a9233ae9a0488741871ddd07673, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlashWave
-  canBeBlocked: 0
+  canBeBlocked: 1
   startWidth: 0.68
   widenPerUnit: 0.25
   stopOnHit: 1
@@ -81,7 +81,7 @@ Transform:
   m_GameObject: {fileID: 8727972409427485549}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: -0.7071068, w: 0}
-  m_LocalPosition: {x: 0, y: 0.4, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.075, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []

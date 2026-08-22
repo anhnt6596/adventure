@@ -3,13 +3,22 @@ using UnityEngine;
 // A lunge along the way the character is already facing, heavy while it lasts, with a trail of itself left
 // behind.
 //
-// IT GOES WHERE YOU POINT, NOT WHERE YOU HOLD. FacingDir is the unit's aim (see DynamicUnit.Aim), which the
-// sprite's eight poses only approximate — so the lunge lands exactly where the player aimed rather than on
-// the nearest pose, the same reason an attack lane uses it.
+// IT CAN BE SWUNG OUT OF. An attack pressed mid-lunge cuts it there and then — see StepDash — which is the
+// other half of the cancel that has always let a swing be dashed out of. What the cut does NOT do is refund
+// the dash: the wait was charged the moment it went, and cutting it short buys the time, not the dash.
 //
-// THE UNIT IS HELD FOR THE DURATION. It stops steering (Move early-outs while busy) which is what leaves this
-// component free to own the position for a moment without the two fighting over the same transform, and it
-// stops the view claiming the idle animation back mid-lunge.
+// IT GOES WHERE YOU HOLD, AND ONLY WHERE YOU POINT IF YOU ARE HOLDING NOTHING — DynamicUnit.TravelDir. A
+// dash is travel, and the keys are what the player is using to say where the body goes; the cursor says where
+// the blows land. Swing at something, hold away from it, dash: the lunge leaves along the keys, because that
+// is the half of the sentence that was about going somewhere.
+//
+// CONTINUOUS EITHER WAY. Both directions are true angles rather than one of the sprite's eight poses, so the
+// lunge lands exactly where it was asked for rather than on the nearest pose — the same reason an attack lane
+// uses one.
+//
+// THE UNIT IS HELD FOR THE DURATION, and the unit is what CARRIES it: this asks for a glide and the body does
+// the travelling (DynamicUnit.Glide), so there is only ever one thing writing the position. The hold is what
+// stops the legs steering against it, and what stops the view claiming the idle animation back mid-lunge.
 //
 // MASS GOES UP, and that is the whole feel of it: mass is what decides how far a shove moves you and how hard
 // you are to push aside, so a heavy dash ploughs through a crowd instead of bouncing off it. It is multiplied
@@ -32,6 +41,11 @@ public class DashSkill : CharacterSkill
 
     [Tooltip("How long that takes. Shorter is snappier and more likely to clip a corner — see the step clamp.")]
     [SerializeField, Min(0.01f)] float duration = 0.18f;
+
+    [Tooltip("The breath AFTER the lunge, before it can be thrown again — the dash's whole wait is this plus " +
+             "the duration above. Its own number and not the character's attack recovery: how quickly you " +
+             "swing has nothing to say about how soon you may lunge again.")]
+    [SerializeField, Min(0f)] float rest = 0.2f;
 
     [Tooltip("Mass while dashing, as a multiple of what the body normally carries.")]
     [SerializeField, Min(0f)] float massMultiplier = 5f;
@@ -57,8 +71,9 @@ public class DashSkill : CharacterSkill
     // character will be carrying which skill, so no dropdown can offer them.
     public const string Distance = "distance";
     public const string Duration = "duration";
+    public const string Rest = "rest";
 
-    Stat _distance, _duration;
+    Stat _distance, _duration, _rest;
 
     CollisionBody _body;
     Damageable _damageable;
@@ -68,6 +83,7 @@ public class DashSkill : CharacterSkill
     float _nextGhost;
     Vector3 _direction;
     float _runDistance, _runDuration;   // this dash's numbers, fixed when it started
+    int _commitment;        // the unit's commitment this lunge was granted — see StepDash
 
     // Both put back as they were FOUND rather than reset to a config value, so whatever else may be holding
     // them — a cheat toggle, another effect — is not undone by this one finishing.
@@ -86,6 +102,7 @@ public class DashSkill : CharacterSkill
         // The serialized fields are the bases; from here on the dash reads the stats, so a node can move them.
         _distance = Tunable(Distance, distance);
         _duration = Tunable(Duration, duration);
+        _rest = Tunable(Rest, rest);
 
         if (Owner != null)
         {
@@ -98,10 +115,35 @@ public class DashSkill : CharacterSkill
                              "nothing behind. Drag the character's SpriteRenderer in.", this);
     }
 
-    // WHICH WAY THE LUNGE GOES, and the only thing about it a variant has ever needed to change. Off the
-    // FACING and not the velocity: where a dash takes you is something the player aims, not something the legs
-    // decide from wherever they last carried the body.
-    protected virtual Vector3 LungeDir => Owner.FacingDir;
+    // THE WAIT IS THE LUNGE ITSELF PLUS A BREATH, which is why the inherited Cooldown field means nothing
+    // here — a dash is not a spell on a timer. What a player reads as "how often can I dash" is how soon the
+    // next one can start once this one has LANDED, so the duration has to be in the number; an authored total
+    // would have to be kept in step with it by hand, and would be wrong the first time somebody lengthened the
+    // lunge or a node did it for them.
+    //
+    // The breath is `rest`, this skill's own, and NOT the character's attack recovery: the two are different
+    // things that only looked alike while both were small, and one number for both would mean a character who
+    // swings faster also dashes more often, which nobody asked for.
+    //
+    // It is the BASE, so haste still divides it the way it divides any other skill's — a dash slot has no
+    // haste stat today, and if one is ever added it shortens this without this line hearing about it.
+    protected override float BaseCooldown => Mathf.Max(0.01f, _duration?.Value ?? duration)
+                                           + Mathf.Max(0f, _rest?.Value ?? rest);
+
+    // WHICH WAY THE LUNGE GOES. Off TravelDir and not the velocity: the unit is standing still every time this
+    // is read — a dash thrown out of a swing has had its feet pinned for the whole swing — so the velocity is
+    // zero and says nothing. What the player is HOLDING is a live answer whether or not the body is free to
+    // act on it.
+    protected virtual Vector3 LungeDir => Owner.TravelDir;
+
+    // WHICH WAY IT LOOKS while it goes, which for anything travelling forwards is the same direction. It has
+    // to be said out loud because the sprite is redrawn off the facing every frame, committed or not
+    // (UnitView.PushDir): a lunge that left the facing where the last swing put it would be drawn walking
+    // backwards for as long as it lasted.
+    //
+    // A SEPARATE SEAM FROM LungeDir for one reason, and it is the backstep — where the body going one way
+    // while the eyes stay on the other IS the move. Two directions, because a lunge really does have two.
+    protected virtual Vector3 LungeFacing => _direction;
 
     protected override bool Run()
     {
@@ -111,6 +153,11 @@ public class DashSkill : CharacterSkill
         _direction.y = 0f;
         if (_direction.sqrMagnitude < 1e-6f) return false;
         _direction.Normalize();
+
+        // TURNED BEFORE ANYTHING ELSE READS IT. Face writes FacingDir, and what a subclass throws as it leaves
+        // (BackstepSkill) is aimed off that — so the turn has to be settled before the lunge is under way, not
+        // after. It is also what the after-images are copied from.
+        Owner.Face(LungeFacing);
 
         // READ ONCE, AT THE START. A dash is a committed action, so a buff landing mid-flight must not bend
         // the arc it is already halfway through — and the hold below is one number that has to agree with the
@@ -122,9 +169,16 @@ public class DashSkill : CharacterSkill
         _left = _runDuration;
         _nextGhost = 0f;
 
-        // Kind, not a hardcoded Skill: pressed on its own key this is a skill nothing may cut, and thrown as
-        // a step of a combo it is part of the attack — the difference is who asked, not what a dash is.
+        // Kind, not a hardcoded one: pressed on its own key this is a DASH, which only an attack may cut, and
+        // thrown as a step of a combo it is part of the attack — the difference is who asked, not what a dash is.
         Owner.Hold(_runDuration, Kind);
+        _commitment = Owner.Commitment;   // whatever takes this off us cuts the lunge short — see StepDash
+
+        // THE UNIT CARRIES ITSELF. This used to walk the transform frame by frame from out here, wall clamp and
+        // all — which is the same thing a stepping blow needs, so it belongs to the body rather than to one of
+        // the abilities that asks for it. What is left here is what is actually a dash: the mass, the window,
+        // the trail.
+        Owner.Glide(_direction, _runDistance, _runDuration);
 
         // One call is enough: the view stops touching the animator while a skill holds, and Play leaves a
         // looping action that is already running alone. 1x on purpose — the legs move at the speed the art
@@ -154,19 +208,17 @@ public class DashSkill : CharacterSkill
 
     void StepDash(float dt)
     {
+        // CUT SHORT BY WHOEVER TOOK THE BODY. An attack may be thrown out of a lunge, and the swing that
+        // answers it owns the unit from that moment. The MOVEMENT already stops on its own — the glide watches
+        // this same number — so what this is for is everything the dash raised and nothing else knows to put
+        // back: the mass, the invulnerability, the trail that should stop being fed.
+        //
+        // The commitment number, not the kind: a dash thrown as a step of a combo is committed as an attack,
+        // and so is the swing that would cut it.
+        if (Owner.Commitment != _commitment) { EndDash(); return; }
+
         dt = Mathf.Min(dt, _left);
         _left -= dt;
-
-        Vector3 step = _direction * (_runDistance / _runDuration * dt);
-
-        // The same clamp CollisionBody puts on a knockback slide, for the same reason: the world only pushes a
-        // body back out of a wall while its centre is within its own radius of one, so a step longer than that
-        // jumps clean through and lands inside. A dash is the fastest a character ever moves, which makes it
-        // the most likely thing in the game to tunnel.
-        float max = _body.Radius * 0.9f;
-        if (step.sqrMagnitude > max * max) step = step.normalized * max;
-
-        Owner.transform.position += step;
 
         _nextGhost -= dt;
         if (_nextGhost <= 0f)

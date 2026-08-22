@@ -143,7 +143,7 @@ public class GameHUD : UIView
         // (X / K), then the two skills (C / L and V / ;).
         //
         // THE ATTACK BUTTON DRAWS THE UNIT'S RECOVERY, not the ability's own cooldown, whether or not something
-        // is bound to it. An attack is paced by the swing and AttackCooldown — a combo has no cooldown of its
+        // is bound to it. An attack is paced by the swing and the unit's Recovery — a combo has no cooldown of its
         // own at all — so a sweep taken from CharacterSkill.CooldownFraction would be a dial that never moves.
         // "attack" is the key the picture hangs on when the component has nothing better to say — a character
         // with no attack component at all (the unit IS the ability there), and equally one whose swing never

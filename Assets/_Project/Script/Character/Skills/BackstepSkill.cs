@@ -56,8 +56,18 @@ public class BackstepSkill : DashSkill
 
     Vector3 Muzzle => muzzle != null ? muzzle.position : transform.position;
 
-    // The one thing the movement needed to say differently.
+    // The two things the movement says differently, and they are the same sentence twice: it goes backwards
+    // and it does not turn round.
+    //
+    // AWAY FROM THE FACING, not away from the steering. This retreats from what the character is LOOKING at —
+    // which is what is about to hit it — and the facing is the only thing that says what that is. A backstep
+    // off TravelDir would spring away from the keys, which is just a dash with a knife.
     protected override Vector3 LungeDir => -Owner.FacingDir;
+
+    // Unchanged: it keeps looking where it looked, so the knife below stays aimed at what is being backed away
+    // from. Face is still called with it — a no-op that costs nothing and says this was decided rather than
+    // forgotten.
+    protected override Vector3 LungeFacing => Owner.FacingDir;
 
     protected override void Awake()
     {

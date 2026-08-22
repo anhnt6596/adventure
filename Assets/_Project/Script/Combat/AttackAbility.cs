@@ -13,9 +13,9 @@ using UnityEngine;
 // longer drawing, not a number somebody has to keep in step with one.
 //
 // NO COOLDOWN OF ITS OWN while it is an attack: it waits on the unit's attack recovery — the clip's length plus
-// AttackCooldown, scaled by attack speed, exactly as every attack in the game always has. A wait declared here
-// as well would be a second opinion about the same gap, and the slower would win in silence. On a skill button
-// it is that skill's cooldown that paces it instead, and this stays zero.
+// the unit's Recovery, scaled by attack speed, exactly as every attack in the game always has. A wait declared
+// here as well would be a second opinion about the same gap, and the slower would win in silence. On a skill
+// button it is that skill's cooldown that paces it instead, and this stays zero.
 //
 // THE ARMING is what lets five blows share one animation without all five landing on it. A blow only answers a
 // hit frame it was armed for, and it is armed by the same call that started it.
@@ -24,6 +24,17 @@ public abstract class AttackAbility : CharacterSkill
     [Tooltip("Which animation this blow swings. Its length is how long the character is committed, and its " +
              "hit frame is the moment the blow lands.")]
     [SerializeField] AnimAction anim = AnimAction.Attack;
+
+    [Header("Step-in")]
+    [Tooltip("How far the blow carries the character forward, in world units, along the way it is aimed. " +
+             "0 = it swings where it stands. A step into a wall covers less, the same as a dash does.")]
+    [SerializeField, Min(0f)] float lunge;
+
+    [Tooltip("How much OF THE SWING the step takes, as a share of the clip rather than a number of seconds. " +
+             "The clip already says how long the blow lasts, so this keeps its place in the drawing at any " +
+             "attack speed and on any weapon — 0.35 is 'over the first third of it', whatever that is worth " +
+             "in seconds today. Nothing to do while the distance is 0.")]
+    [SerializeField, Range(0.05f, 1f)] float lungeShare = 0.35f;
 
     // Armed by whoever threw it, spent by the hit frame. Without it a blow would land on ANY play of its clip —
     // including one some other system started — and a clip cut short before its hit frame would leave the blow
@@ -65,9 +76,9 @@ public abstract class AttackAbility : CharacterSkill
         if (Owner == null || Animator == null) return false;
 
         // A CLIP THAT IS NOT AUTHORED MEASURES ZERO, and a zero-length swing is not a fast attack — it is a free
-        // one. Nothing commits the unit, the whole recovery collapses to the bare AttackCooldown, and no hit
-        // frame ever arrives, so the blow costs nothing and lands nothing. Refuse it and name the clip: that is
-        // an authoring hole, and it should read as one instead of as a combo that hits like a machine gun.
+        // one. Nothing commits the unit, the whole recovery collapses to the bare Recovery, and no hit frame
+        // ever arrives, so the blow costs nothing and lands nothing. Refuse it and name the clip: that is an
+        // authoring hole, and it should read as one instead of as a combo that hits like a machine gun.
         float length = ClipTime(anim);
         if (length <= 0f)
         {
@@ -86,6 +97,14 @@ public abstract class AttackAbility : CharacterSkill
         // skill's own cooldown. The length already carries attack speed (ClipTime), so the drawing and the
         // lock always agree.
         if (!Owner.Commit(length, Kind)) return false;
+
+        // AFTER THE COMMIT, NEVER BEFORE IT: a blow that was refused must leave the character exactly where it
+        // found them, and a step already taken is not something a refusal can give back.
+        //
+        // ALONG THE AIM, not along where the feet are being steered: this is the blow moving, and the blow goes
+        // where it was pointed. The share is of `length`, which already carries attack speed — so a quicker
+        // swing covers the same ground in less time rather than covering less of it.
+        if (lunge > 0f) Owner.Glide(Owner.FacingDir, lunge, length * lungeShare);
 
         _armed = true;
         PlayAnim(anim, Owner.AttackRate);

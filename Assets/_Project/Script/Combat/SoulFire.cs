@@ -2,13 +2,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using Lean.Pool;
 
-// A soul-fire projectile — same for player and enemy. It flies straight in the caster's facing direction up to
-// Range, hitting the first hostile it touches (damage + burst) or bursting wide at the end if it hits nothing.
-// As it travels it SEEKS: each frame it scans a cone ahead of its travel direction and bends toward the best
-// target in there — so it never turns back on something it already flew past, and it prefers the OPPOSING combat
-// team (a player shot, team 1, chases team 2; an enemy shot, team 2, chases team 1). A hit, unlike the seek, is
-// direction-blind: anything touching the flame stops it. ONE prefab / particle for everyone. Pooled: every field
-// is (re)set in Launch.
+// A soul-fire projectile — same for player and enemy. It flies STRAIGHT along the direction it was launched in,
+// up to Range, hitting the first hostile it touches (damage + burst) or bursting wide at the end if it hit
+// nothing. The hit is direction-blind: anything touching the flame stops it, from any side. ONE prefab /
+// particle for everyone. Pooled: every field is (re)set in Launch.
+//
+// IT DOES NOT SEEK. It used to bend toward whatever stood in a cone ahead of it, and that made the shot the
+// thing doing the aiming — a flame you could not dodge by moving, only by breaking line of sight it never had.
+// Where it goes is now settled entirely at the moment it is let go, which is what makes stepping out of the way
+// an answer. Nothing was left behind to turn it back on: a shot that chases is a different weapon, not a
+// setting on this one.
 [DisallowMultipleComponent]
 public class SoulFire : Projectile
 {
@@ -22,11 +25,6 @@ public class SoulFire : Projectile
     [SerializeField] float burstTime = 0.35f;  // glow bloom + fade, ~ the explosion length
     [SerializeField] float burstScale = 1.6f;  // glow scale multiplier at the burst peak
     [SerializeField] float hitPadding = 0.15f; // contact reach past the target's hit circle
-
-    [Header("Seek")]
-    [SerializeField] float seekRange = 3f;     // how far ahead the cone reaches (≤ CombatWorld cell 8)
-    [SerializeField, Range(0f, 180f)] float seekAngle = 60f;  // full cone opening around the travel direction
-    [SerializeField] float steerRate = 180f;   // max turn deg/sec toward the scanned target — small = a gentle nudge, not homing
 
     enum Phase { Spawning, Flying, Bursting }
     Phase _phase;
@@ -111,8 +109,7 @@ public class SoulFire : Projectile
 
     void Flying(float dt)
     {
-        Scan(out var contact, out var target);
-
+        var contact = Contact();
         if (contact != null)   // touching — deal the hit (always, from the muzzle on, from any direction)
         {
             Vector3 to = contact.Position - transform.position; to.y = 0f;
@@ -121,11 +118,6 @@ public class SoulFire : Projectile
             if (_knockback > 0f && dist > 1e-4f) contact.ApplyKnockback((to / dist) * _knockback);
             StartBurst(burstScale);
             return;
-        }
-        if (target != null)   // something ahead in the cone — bend toward it
-        {
-            Vector3 to = target.Position - transform.position; to.y = 0f;
-            _dir = Vector3.RotateTowards(_dir, to.normalized, steerRate * Mathf.Deg2Rad * dt, 0f);
         }
 
         float step = _speed * dt;
@@ -164,54 +156,41 @@ public class SoulFire : Projectile
         if (k >= 1f) LeanPool.Despawn(gameObject);
     }
 
-    // One sweep of the hostiles around the flame (Overlap filters own team + alive), split into the two things
-    // the shot cares about: `contact` is anything already touching it, whatever the direction — a hit can't be
-    // dodged by standing off to the side; `target` is the best hostile inside the cone ahead, the one to steer at.
-    void Scan(out IDamageable contact, out IDamageable target)
+    // What the flame is TOUCHING right now, or null. Direction-blind on purpose: a flame is not a blade, and
+    // standing off to one side of the thing you are standing on is not a way of not being burnt by it.
+    //
+    // Overlap already IS the contact test — it measures each body's own hit circle against the radius it is
+    // handed — so the padding goes in and the answer comes back, with nothing left here to re-measure.
+    IDamageable Contact()
     {
-        contact = null;
-        target = null;
-
         Vector3 from = transform.position;
         CombatWorld.Instance.Rebuild();
-        CombatWorld.Instance.Overlap(from, Mathf.Max(hitPadding, seekRange), Team, _found);
+        CombatWorld.Instance.Overlap(from, hitPadding, Team, _found);
 
-        float minDot = Mathf.Cos(seekAngle * 0.5f * Mathf.Deg2Rad);
-        float contactSq = float.MaxValue, targetSq = float.MaxValue;
-        bool contactPriority = false, targetPriority = false;
+        IDamageable best = null;
+        bool bestPriority = false;
+        float bestSq = float.MaxValue;
 
         for (int i = 0; i < _found.Count; i++)
         {
             var c = _found[i];
-            // Creatures first, scenery second — a shot will still burn a tree, but never in preference to the
-            // thing fighting you. This used to name the one opposing team outright (1 chases 2, 2 chases 1);
-            // with a team per monster kind there is no single opponent left to name.
+            // Creatures first, scenery second — the flame will still burn a tree, but never in preference to
+            // the thing fighting you. Two bodies shoulder to shoulder is one contact, and which of them the
+            // query happened to return first is not something the player could see or aim at.
             bool priority = Teams.IsPrey(c.Team);
             Vector3 d = c.Position - from; d.y = 0f;
             float sq = d.x * d.x + d.z * d.z;
 
-            float touch = c.HitRadius + hitPadding;
-            if (sq <= touch * touch && Better(priority, sq, contact, contactPriority, contactSq))
-            {
-                contact = c;
-                contactPriority = priority;
-                contactSq = sq;
-            }
-            // The cone test needs a direction, so it skips anything sitting on the flame — that one is a
-            // contact anyway, and the hit above already claimed it.
-            if (sq > 1e-8f && sq <= seekRange * seekRange
-                && Vector3.Dot(_dir, d / Mathf.Sqrt(sq)) >= minDot
-                && Better(priority, sq, target, targetPriority, targetSq))
-            {
-                target = c;
-                targetPriority = priority;
-                targetSq = sq;
-            }
+            if (!Better(priority, sq, best, bestPriority, bestSq)) continue;
+            best = c;
+            bestPriority = priority;
+            bestSq = sq;
         }
+        return best;
     }
 
-    // A priority-team target beats any non-priority one; within the same class, the nearer wins — so the shot
-    // chases an enemy over a bystander, and the closest of those.
+    // A priority-team body beats any non-priority one; within the same class, the nearer wins — so the flame
+    // spends itself on a creature over a bystander, and on the closest of those.
     static bool Better(bool priority, float sq, IDamageable best, bool bestPriority, float bestSq)
         => best == null || (priority && !bestPriority) || (priority == bestPriority && sq < bestSq);
 

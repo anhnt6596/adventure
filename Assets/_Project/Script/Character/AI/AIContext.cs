@@ -40,8 +40,10 @@ public class AIContext
     // no body clock is simply always awake, and every default window (0..24) says the same.
     public bool IsActiveHours => brain == null || clock == null || brain.IsActiveAt(clock.Hour);
 
-    // Brain-owned: how close the unit gets before it stops and attacks. The projectile has no range of its own
-    // — once fired it homes the target wherever it goes, so this is purely the "where do I plant my feet" call.
+    // Brain-owned: how close the unit gets before it stops and attacks. It is only about where the unit plants
+    // its feet — what a blow can actually reach from there is the ability's own business, and a shot that flies
+    // straight will miss from here if the target moves. Two numbers to keep level by eye, on purpose: a creature
+    // that closed to exactly its weapon's reach would never miss, and never missing is not a monster.
     public float AttackRange => brain != null ? brain.attackRange : 0f;
 
     public float DistanceToTarget()

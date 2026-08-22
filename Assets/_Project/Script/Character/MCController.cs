@@ -29,7 +29,7 @@ public class MCController : DynamicUnit
 
     protected override float MoveSpeed => _stats.MoveSpeed.Value;
     protected override float AttackSpeed => _stats.AttackSpeed.Value;
-    protected override float AttackCooldown => _stats.AttackCooldown.Value;
+    public override float Recovery => _stats.Recovery.Value;
     protected override float Mass => _stats.Mass.Value;
     public override float AttackPower => _stats.AttackPower.Value;
 }

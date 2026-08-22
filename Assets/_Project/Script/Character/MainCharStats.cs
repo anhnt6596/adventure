@@ -18,7 +18,7 @@ public class MainCharStats : ICharacterStats
     public IStat MoveSpeed => _byId[StatId.MoveSpeed];
     public IStat AttackSpeed => _byId[StatId.AttackSpeed];
     public IStat AttackPower => _byId[StatId.AttackPower];
-    public IStat AttackCooldown => _byId[StatId.AttackCooldown];
+    public IStat Recovery => _byId[StatId.Recovery];
     public IStat MaxHp => _byId[StatId.MaxHp];
     public IStat MaxHunger => _byId[StatId.MaxHunger];
     public IStat HungerDrain => _byId[StatId.HungerDrain];
@@ -34,7 +34,7 @@ public class MainCharStats : ICharacterStats
         _byId[StatId.MoveSpeed] = new Stat(config.moveSpeed);
         _byId[StatId.AttackSpeed] = new Stat(config.attackSpeed);
         _byId[StatId.AttackPower] = new Stat(config.attackPower);
-        _byId[StatId.AttackCooldown] = new Stat(config.attackCooldown);
+        _byId[StatId.Recovery] = new Stat(config.recovery);
         _byId[StatId.MaxHp] = new Stat(config.maxHp);
         _byId[StatId.MaxHunger] = new Stat(config.maxHunger);
         _byId[StatId.HungerDrain] = new Stat(config.hungerDrain);

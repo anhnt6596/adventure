@@ -33,7 +33,8 @@ public abstract class CharacterSkill : MonoBehaviour
 
     [Tooltip("Seconds before it can be used again, BEFORE haste. The skill's own number — a character's haste " +
              "shortens it, nothing replaces it. Ignored while this commits as an ATTACK: an attack is paced by " +
-             "the unit's own recovery, and a second wait here could only disagree with it.")]
+             "the unit's own recovery, and a second wait here could only disagree with it. A DASH ignores it " +
+             "too, and works its wait out of its own duration instead — see DashSkill.")]
     [SerializeField, Min(0f)] float cooldown = 8f;
 
     // Declared here rather than by each skill, because every skill has one: the name is the same on all of
@@ -55,7 +56,8 @@ public abstract class CharacterSkill : MonoBehaviour
 
     // HOW THIS COMMITS THE UNIT while it plays, and it is deliberately NOT something each skill decides for
     // itself. It falls out of which button runs it: the attack button commits as an ATTACK, which a skill may
-    // cut short; every other button commits as a SKILL, which nothing cuts. See ActionKind.
+    // cut short; the dash button as a DASH, which an attack may cut short; every other button as a SKILL,
+    // which nothing cuts. See ActionKind.
     //
     // A piece with no button — a step of a combo — INHERITS it from whatever threw it. That is the whole point:
     // a combo sits in the Attack slot, so a dash used as one of its steps is part of the attack while it is in
@@ -63,7 +65,12 @@ public abstract class CharacterSkill : MonoBehaviour
     // changed; what changed is who asked for it.
     public ActionKind Kind { get; private set; } = ActionKind.Skill;
 
-    ActionKind KindOfSlot => slot == AbilitySlot.Attack ? ActionKind.Attack : ActionKind.Skill;
+    ActionKind KindOfSlot => slot switch
+    {
+        AbilitySlot.Attack => ActionKind.Attack,
+        AbilitySlot.Dash => ActionKind.Dash,
+        _ => ActionKind.Skill,
+    };
 
     // Whether the character actually has this yet. A skill that was never locked is simply always open; one
     // that was waits to be told, and is told again from scratch on every re-apply of the tree — so a respec
@@ -201,10 +208,14 @@ public abstract class CharacterSkill : MonoBehaviour
         get
         {
             float scale = 1f + (Haste?.Value ?? 0f) * 0.01f;
-            float @base = Mathf.Max(0f, _cooldown?.Value ?? cooldown);
-            return @base / Mathf.Max(0.05f, scale);
+            return Mathf.Max(0f, BaseCooldown) / Mathf.Max(0.05f, scale);
         }
     }
+
+    // The flat half of the wait, before haste. VIRTUAL for the one shape of skill whose wait is not a number
+    // somebody authored but one that falls out of what the skill already is — see DashSkill. Haste is applied
+    // to whatever comes back, so a skill that works its own out is still hasted like any other.
+    protected virtual float BaseCooldown => _cooldown?.Value ?? cooldown;
 
     // Off Time.time rather than counted down in an Update: a skill that is doing nothing should cost nothing,
     // and this is scaled time, so a paused game pauses the wait with it.
@@ -227,21 +238,23 @@ public abstract class CharacterSkill : MonoBehaviour
 
         Kind = KindOfSlot;
 
-        // A SKILL WAITS ON ITS COOLDOWN; AN ATTACK WAITS ON THE UNIT. Which one this is has already been decided
-        // by the slot, so the wait follows from it instead of from a number somebody has to remember to zero.
-        // The attack's own gate is inside DynamicUnit.Commit, and it is the same gate every attack passes.
-        if (Kind == ActionKind.Skill && !Ready) return false;
+        // EVERYTHING BUT AN ATTACK WAITS ON ITS OWN COOLDOWN; AN ATTACK WAITS ON THE UNIT. Which one this is
+        // has already been decided by the slot, so the wait follows from it instead of from a number somebody
+        // has to remember to zero. The attack's own gate is inside DynamicUnit.Commit, and it is the same gate
+        // every attack passes.
+        if (Kind != ActionKind.Attack && !Ready) return false;
 
-        // Not while another skill is playing out. A swing, by contrast, is no obstacle — pressing this
-        // cancels it, which is the one asymmetry in the rules. See ActionKind.
-        if (!Owner.CanUseSkill) return false;
+        // ...and whether the unit is free for this KIND of thing, which is where the cancels live: a swing may
+        // be cut into by anything, a lunge by an attack, a skill by nothing. Asked of the unit rather than
+        // restated here — see DynamicUnit.CanDo.
+        if (!Owner.CanDo(Kind)) return false;
 
         if (!Run()) return false;
 
         // Charged only once the skill agreed to happen. A press that could do nothing must not eat the
         // cooldown — the player reads that as the game having swallowed the button. Nothing to charge for an
         // attack: the recovery it started IS its wait.
-        if (Kind == ActionKind.Skill) _readyAt = Time.time + Cooldown;
+        if (Kind != ActionKind.Attack) _readyAt = Time.time + Cooldown;
         return true;
     }
 

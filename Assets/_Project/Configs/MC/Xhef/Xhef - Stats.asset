@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Xhef - Stats
   m_EditorClassIdentifier: Assembly-CSharp::MainCharStatsConfig
   id: xhef
-  moveSpeed: 2
+  moveSpeed: 2.5
   attackSpeed: 0.8
   attackPower: 4
-  attackCooldown: 0.01
+  recovery: 0
   mass: 1
   pickupRadius: 0.3
   maxHp: 80

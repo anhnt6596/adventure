@@ -15,7 +15,10 @@ public class EnemyConfig : Config, IDamageableConfig, IDeathDropableConfig, IDea
     public float moveSpeed = 2f;
     public float attackDamage = 1f;
     public float attackSpeed = 1f;
-    public float attackCooldown = 0f;   // recovery AFTER the swing ends, at 1x attackSpeed; one attack costs swing + this (0 = swing back-to-back)
+    // THE REST AFTER A BLOW, on top of the swing itself, at 1x attack speed — one attack costs its own
+    // animation plus this. Attacks only: a skill's wait is the skill's own number, on the prefab that carries
+    // it.
+    public float recovery = 0.01f;
 
     // How heavy it is, and it means two things at once because CollisionBody uses it for both: knockback scales
     // by 1/mass (1 = full, 2 = half, 0.5 = double, 0 = rooted to the spot), and so does being shoved aside when

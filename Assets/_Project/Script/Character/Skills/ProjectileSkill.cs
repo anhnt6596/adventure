@@ -9,6 +9,12 @@ using Lean.Pool;
 // none of them knows it has company, and the one that flies straight is the same object as the two that do
 // not. Put the spread in the projectile and every projectile would have to carry a count it usually ignores.
 //
+// SO DOES THE BURST, and it is a DIFFERENT axis from the fan: the fan is how many go out at once, the burst is
+// how many times that happens. Three volleys of two is six knives in three beats, and the two numbers are what
+// the player actually reads — a spray and a rhythm. One list rather than a count plus a gap, because the gaps
+// are usually not equal: the pair that comes fast and the third that lands late is the whole shape of a burst,
+// and a single "interval" can only ever describe a metronome.
+//
 // NOT ABSTRACT, AND THERE IS NO KnifeSkill. A subclass per projectile would be a class whose only content is
 // which prefab to spawn — the field below already says that, and says it where the art is, on the prefab. What
 // varies between two of these is a Projectile, not a skill.
@@ -66,6 +72,14 @@ public class ProjectileSkill : CharacterSkill
              "the spray instead of squeezing it. Nothing to do at count 1.")]
     [SerializeField, Min(0f)] float spread = 22.5f;
 
+    [Header("The burst")]
+    [Tooltip("ONE ENTRY PER RELEASE, and the number in it is the wait SINCE THE ONE BEFORE — the first is " +
+             "measured from the hit frame, so a 0 there means 'on the frame the clip connects'. The list " +
+             "length is how many times this fires; a single entry of 0 is one throw, which is what most of " +
+             "these are. The fan above goes out at every one of them: three entries at a count of two is six " +
+             "knives, two at a time.")]
+    [SerializeField] float[] volleys = { 0f };
+
     // The names a node addresses these by, the same way DashSkill names its own. Every one of the four is a
     // number a tree ought to be able to move: further, faster, harder, and the shove.
     public const string Speed = "speed";
@@ -81,6 +95,17 @@ public class ProjectileSkill : CharacterSkill
     // including one some other system started — and a clip interrupted before its hit frame would leave the
     // throw owed, to be paid by whatever plays it next.
     bool _armed;
+
+    // The burst that is running, if one is. The Shot is fixed at the hit frame and every volley of the burst
+    // leaves with it — one press is one action, and an action owns the direction it was thrown in for as long
+    // as it lasts. A burst that re-aimed itself between volleys would let the player steer shots they had
+    // already paid for, which is the same thing a swing is not allowed to do.
+    Shot _shot;
+    float _wait;      // seconds until the next one
+
+    // Which entry goes out next, and it starts SPENT: nothing is owed until a hit frame says so, and a 0 here
+    // would have the first volley fall out of the burst tick on the object's very first frame alive.
+    int _volley = int.MaxValue;
 
     Vector3 Muzzle => muzzle != null ? muzzle.position : transform.position;
 
@@ -106,10 +131,13 @@ public class ProjectileSkill : CharacterSkill
     }
 
     // Disarmed as well as unsubscribed: a body put away mid-throw and pooled back out must not still owe one.
+    // The burst is dropped with it — a corpse does not finish its volley, and a body pooled back out must not
+    // spit the rest of the last one's on its first frame alive.
     void OnDisable()
     {
         if (Animator != null) Animator.Hit -= OnHitFrame;
         _armed = false;
+        _volley = int.MaxValue;
     }
 
     void Start()
@@ -117,6 +145,12 @@ public class ProjectileSkill : CharacterSkill
         if (projectile == null)
             Debug.LogError($"[{nameof(ProjectileSkill)}] no {nameof(Projectile)} assigned — the animation " +
                            "plays and nothing comes out.", this);
+
+        // An empty list is not "throw once", it is "throw never", and a skill that silently does nothing is
+        // worse than one that says so. One entry of 0 is the single throw somebody clearing this list meant.
+        if (volleys == null || volleys.Length == 0)
+            Debug.LogError($"[{nameof(ProjectileSkill)}] no volleys — the animation plays and nothing comes " +
+                           "out. One entry of 0 is a single throw on the hit frame.", this);
     }
 
     protected override bool Run()
@@ -161,7 +195,40 @@ public class ProjectileSkill : CharacterSkill
         // stutter or slow frame can lengthen — while the caster still authors the flight as the duration it
         // actually reads as. Every buff to the speed lands in the reach for free.
         float shotRange = _life.Value * shotSpeed;
-        var centre = new Shot(Owner.FacingDir, Owner.Team, damage, shotSpeed, shotRange, shove, Owner);
-        Projectile.Fan(projectile, Muzzle, centre, Mathf.RoundToInt(_count.Value), _spread.Value);
+        _shot = new Shot(Owner.FacingDir, Owner.Team, damage, shotSpeed, shotRange, shove, Owner);
+
+        // A FRESH HIT FRAME OWNS THE BURST. Whatever was left of the last one is dropped rather than queued:
+        // the volleys of one press are that press's, and a second press is a second action — pouring the
+        // remains of the first one into it would hand the player shots they can no longer account for. It only
+        // comes up at all when a burst is authored longer than the clip that starts it, since nothing can be
+        // pressed again before the unit is free.
+        _volley = 0;
+        _wait = Delay(0);
+        Release(0f);   // a first entry of 0 goes out on the hit frame ITSELF, not a frame after it
     }
+
+    void Update() => Release(Time.deltaTime);
+
+    // Let go of every volley whose wait has run out. The wait is SUBTRACTED from rather than reset, so a slow
+    // frame does not stretch the burst and two volleys closer together than one frame still both go out — a
+    // burst timed in hundredths must not quietly become a burst timed in frames on a weak machine.
+    //
+    // FROM THE MUZZLE AS IT IS NOW, not where it was when the clip connected. The unit is usually held still
+    // for the throw, but it is not always — and a shot leaving a point the hand has since walked away from is
+    // the one thing the player would actually see.
+    void Release(float dt)
+    {
+        if (volleys == null || _volley >= volleys.Length) return;
+
+        _wait -= dt;
+        while (_wait <= 0f)
+        {
+            Projectile.Fan(projectile, Muzzle, _shot, Mathf.RoundToInt(_count.Value), _spread.Value);
+            if (++_volley >= volleys.Length) return;
+            _wait += Delay(_volley);
+        }
+    }
+
+    // Floored, so a negative entry is a volley on the same beat rather than one that runs the burst backwards.
+    float Delay(int i) => volleys != null && i < volleys.Length ? Mathf.Max(0f, volleys[i]) : 0f;
 }

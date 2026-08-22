@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8670942038637264622}
   m_Layer: 6
-  m_Name: GameObject
+  m_Name: attacknode
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -309,7 +309,6 @@ GameObject:
   - component: {fileID: 6121150249688211610}
   - component: {fileID: 8513440581080589896}
   - component: {fileID: 8217432112079253852}
-  - component: {fileID: 7608053820603863719}
   - component: {fileID: 3375130734937823605}
   - component: {fileID: 2777083503339222558}
   - component: {fileID: 6590687615965955985}
@@ -347,15 +346,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d9e1afa520eaff4189a23fc82aafa67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ComboAttack
-  slot: 1
+  slot: 0
   key: 
   cooldown: 8
   locked: 0
   steps:
-  - {fileID: 3375130734937823605}
-  - {fileID: 3375130734937823605}
-  - {fileID: 3375130734937823605}
-  - {fileID: 7608053820603863719}
+  - {fileID: 8217432112079253852}
+  - {fileID: 8217432112079253852}
+  - {fileID: 8217432112079253852}
   finisherRecovery: 0.5
   resetAfter: 1
 --- !u!114 &8217432112079253852
@@ -370,43 +368,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 908c11e1ac13d9a4fa0e712a9d2fbda2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShapeAttack
-  slot: 0
+  slot: 1
   key: 
   cooldown: 8
   locked: 0
   anim: 2
+  lunge: 0.5
+  lungeShare: 0.25
   shape: 0
   radius: 0.5
   size: {x: 1.5, y: 3}
   forwardOffset: 0.2
   knockback: 0.2
-  blocksProjectiles: 0
---- !u!114 &7608053820603863719
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6455003387677767099}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 53d23237f2a977141b27b369f4319fba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectileSkill
-  slot: 0
-  key: 
-  cooldown: 8
-  locked: 0
-  anim: 4
-  muzzle: {fileID: 6121150249688211610}
-  projectile: {fileID: 4693166149446587541, guid: d2ec080899c90ea489a7d0da22b95fba, type: 3}
-  speed: 5
-  speedFromAttackRate: 0
-  life: 0.75
-  power: 1.5
-  knockback: 0.68
-  count: 1
-  spread: 22.5
+  blocksProjectiles: 1
 --- !u!114 &3375130734937823605
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -419,20 +393,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53d23237f2a977141b27b369f4319fba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectileSkill
-  slot: 0
+  slot: 3
   key: 
   cooldown: 8
   locked: 0
   anim: 4
-  muzzle: {fileID: 6121150249688211610}
+  muzzle: {fileID: 8670942038637264622}
   projectile: {fileID: 4693166149446587541, guid: 3672aed1c1a29b84892efb7bb00082ef, type: 3}
   speed: 5
   speedFromAttackRate: 0
-  life: 0.3
+  life: 1
   power: 1
   knockback: 0.3
   count: 1
   spread: 22.5
+  volleys:
+  - 0
+  - 0.2
+  - 0.2
 --- !u!114 &2777083503339222558
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -450,8 +428,9 @@ MonoBehaviour:
   cooldown: 1.5
   locked: 0
   anim: 3
-  distance: 1
-  duration: 0.2
+  distance: 1.25
+  duration: 0.3
+  rest: 0.2
   massMultiplier: 1
   invulnerable: 1
   source: {fileID: 8142573892274122599}
@@ -477,6 +456,7 @@ MonoBehaviour:
   anim: 3
   distance: 1.2
   duration: 0.3
+  rest: 0.2
   massMultiplier: 1
   invulnerable: 0
   source: {fileID: 0}

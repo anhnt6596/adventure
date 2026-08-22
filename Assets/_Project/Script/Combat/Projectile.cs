@@ -41,8 +41,8 @@ public readonly struct Shot
 }
 
 // Anything a skill or an attack can spawn and let go of. The base carries no flight and no hit: a soul-fire
-// seeks and bursts, a knife runs straight and is stopped by whatever survives it, and a shared Update that
-// tried to serve both would be a switch over which projectile this is.
+// bursts on what it touches, a knife is spent on it, a wave widens as it goes and cuts everything in the lane —
+// and a shared Update that tried to serve all three would be a switch over which projectile this is.
 //
 // What it does own is the ONE contract — hand it a Shot and it is on its way — so the thing that spawns it
 // never needs to know which projectile it is holding. That is what makes ProjectileSkill work for all of them.
@@ -175,12 +175,16 @@ public abstract class Projectile : MonoBehaviour
     {
         if (prefab == null) return;
 
-        // ON THE GROUND, whatever height it was thrown from. A projectile's transform is its place on the
-        // BOARD — the whole game is played on the XZ plane, every hit test flattens Y before it measures, and
-        // a shot spawned at hand height would be a body floating a foot above the floor it is fighting on.
-        // How high the thing LOOKS is the art child's business and no part of where it is.
-        from.y = 0f;
-
+        // AT THE HEIGHT IT LEFT FROM, and the height is the ONLY part of this that is a look rather than a
+        // rule: the game is played on the XZ plane and every hit test flattens Y before it measures — the
+        // hash, both overlaps, the reach of one shot against another, a blade swung through one — so nothing
+        // downstream can read this number even by accident.
+        //
+        // It used to be flattened to the floor, which made the muzzle a point whose height meant nothing: a
+        // flame came out of a frog's feet, and lifting it back to the mouth meant offsetting the art inside
+        // the projectile prefab — one number, shared by every caster that ever throws it, and therefore wrong
+        // for all but one of them. A mouth is not the same height as a hand. The muzzle transform already
+        // says where this leaves from; this simply believes it.
         int shots = Mathf.Max(1, count);
         float offset = -spread * (shots - 1) * 0.5f;
 

@@ -13,7 +13,10 @@ public static class StatId
     public const string MoveSpeed = "MoveSpeed";
     public const string AttackSpeed = "AttackSpeed";
     public const string AttackPower = "AttackPower";
-    public const string AttackCooldown = "AttackCooldown";
+    // The rest after a blow, on top of the swing itself — see DynamicUnit.Recovery. Named for what it IS
+    // rather than for a cooldown, because it is not one: nothing is gated by it but the next attack, and the
+    // swing it follows is already inside the wait.
+    public const string Recovery = "Recovery";
     public const string MaxHp = "MaxHp";
     public const string MaxHunger = "MaxHunger";
     public const string HungerDrain = "HungerDrain";
@@ -56,7 +59,7 @@ public static class StatId
 
     public static readonly string[] All =
     {
-        MoveSpeed, AttackSpeed, AttackPower, AttackCooldown,
+        MoveSpeed, AttackSpeed, AttackPower, Recovery,
         MaxHp, MaxHunger, HungerDrain, Regen, Mass, PickupRadius, Vision,
         Skill1Haste, Skill2Haste,
     };
@@ -71,7 +74,7 @@ public static class StatId
         MoveSpeed => "move speed",
         AttackSpeed => "attack speed",
         AttackPower => "attack",
-        AttackCooldown => "attack cooldown",
+        Recovery => "recovery",
         MaxHp => "HP",
         MaxHunger => "max fullness",
         HungerDrain => "hunger drain",

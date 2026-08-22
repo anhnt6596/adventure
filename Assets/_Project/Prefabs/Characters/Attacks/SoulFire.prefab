@@ -5045,17 +5045,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87f8934a86970a44889025928169e43d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoulFire
+  canBeBlocked: 1
   glow: {fileID: 4429551336127051099}
   flame: {fileID: 2668228725341082327}
   burst: {fileID: 2404101980525971392}
   spawnTime: 0.1
-  speed: 6
   burstTime: 0.35
   burstScale: 1.6
   hitPadding: 0.05
-  seekRange: 3
-  seekAngle: 60
-  steerRate: 120
 --- !u!1001 &4235611895995287631
 PrefabInstance:
   m_ObjectHideFlags: 0

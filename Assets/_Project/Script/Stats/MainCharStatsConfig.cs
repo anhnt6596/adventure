@@ -6,7 +6,10 @@ public class MainCharStatsConfig : Config, IHungerConfig, IDamageableConfig
     public float moveSpeed = 6f;
     public float attackSpeed = 1f;
     public float attackPower = 5f;
-    public float attackCooldown = 0f;     // recovery AFTER the swing ends, at 1x attack speed; one attack costs swing + this (0 = swing back-to-back)
+    // THE REST AFTER A BLOW, on top of the swing itself, at 1x attack speed — one attack costs its own
+    // animation plus this. Attacks only: a skill's wait is the skill's own number, on the prefab that carries
+    // it.
+    public float recovery = 0.01f;
     public float mass = 1f;             // how hard to shove aside in collisions (not physics)
     public float pickupRadius = 1.5f;   // how close a pickable must be for the character to grab it
     // Vision has no field here on purpose — see MainCharStats. Its baseline is the spotlight drawn on the
