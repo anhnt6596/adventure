@@ -2,17 +2,17 @@ using UnityEngine;
 using VContainer;
 
 // Drives every GroundShadow material from one place: turns the time of day into a sun direction and
-// pushes it as global shader properties. Model (DayNightClock) ⊥ view (the shadow shader): this only
+// pushes it as global shader properties. Model (ITimeOfDay) ⊥ view (the shadow shader): this only
 // reads the clock. Shadows swing from one side at dawn, shrink to a stub at noon, stretch the other
 // way at dusk, and fade out at night.
 //
-// Wiring: drop on a scene object and add it to GameScope's Auto Inject list (needs DayNightClock).
+// Wiring: it lives on the MAP prefab, so MapService injects it with the rest of the map.
 // Not injected? It still runs off `fixedHour` so you can test the shader before wiring DI.
 [DefaultExecutionOrder(-50)]   // push the sun globals before SpriteShadow reads them (frame-1 correctness)
 [DisallowMultipleComponent]
 public class ShadowSun : MonoBehaviour
 {
-    [Header("Day window (match DayNightConfig)")]
+    [Header("Day window (match DayLightConfig)")]
     [SerializeField] float sunriseHour = 4f;
     [SerializeField] float sunsetHour = 20f;
 
@@ -38,17 +38,17 @@ public class ShadowSun : MonoBehaviour
     [Header("World")]
     [SerializeField] float groundY = 0f;   // world Y of the flat ground the shadows lie on
 
-    [Header("Fallback when no DayNightClock is injected")]
+    [Header("Fallback when no clock is injected")]
     [SerializeField] float fixedHour = 9f;
 
     static readonly int SunDirId = Shader.PropertyToID("_SunGroundDir");
     static readonly int StrengthId = Shader.PropertyToID("_ShadowStrength");
     static readonly int GroundYId = Shader.PropertyToID("_ShadowGroundY");
 
-    DayNightClock _clock;
+    ITimeOfDay _clock;
 
     [Inject]
-    public void Construct(DayNightClock clock) => _clock = clock;
+    public void Construct(ITimeOfDay clock) => _clock = clock;
 
     void LateUpdate()
     {

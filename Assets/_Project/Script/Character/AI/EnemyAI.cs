@@ -20,10 +20,15 @@ public class EnemyAI : MonoBehaviour
     float _forgetTimer;
     float _recognize;   // reaction delay left before a freshly-aggressive unit engages (frozen in Idle)
 
-    DayNightClock _clock;   // injected through EnemySpawner's scope; only creatures with a body clock read it
+    ITimeOfDay _clock;   // injected through EnemySpawner's scope; only creatures with a body clock read it
+    IPlayer _player;     // hunters go straight for it (see HuntAggro); everything else ignores it
 
     [Inject]
-    public void Construct(DayNightClock clock) => _clock = clock;
+    public void Construct(ITimeOfDay clock, IPlayer player)
+    {
+        _clock = clock;
+        _player = player;
+    }
 
     void Awake()
     {
@@ -41,6 +46,7 @@ public class EnemyAI : MonoBehaviour
         _ctx.home = transform.position;         // where EnemySpawner placed it
         _state = State.Idle;
         _ctx.clock = _clock;
+        _ctx.player = _player;
         _ctx.brain = _s = BuildBrain();   // behaviours read the same copy the FSM does
 
         // A creature authored to sleep will instead be awake around the clock if nothing injected the time —
@@ -51,7 +57,7 @@ public class EnemyAI : MonoBehaviour
                            "never land a hit.", this);
 
         if (_s != null && _s.HasBodyClock && _clock == null)
-            Debug.LogWarning($"[{nameof(EnemyAI)}] brain '{_s.name}' wakes only {_s.activeFrom}h–{_s.activeTo}h but no {nameof(DayNightClock)} was injected — it will behave as awake all day.", this);
+            Debug.LogWarning($"[{nameof(EnemyAI)}] brain '{_s.name}' wakes only {_s.activeFrom}h–{_s.activeTo}h but no {nameof(ITimeOfDay)} was injected — it will behave as awake all day.", this);
     }
 
     // Take a private copy of the kind's brain. The asset is ONE object shared by every unit of the kind, and the
@@ -133,7 +139,7 @@ public class EnemyAI : MonoBehaviour
         if (_recognize > 0f) { _recognize -= Time.deltaTime; return; }   // just turned aggressive -> freeze a beat before engaging
 
         float d = _ctx.DistanceToTarget();
-        if (d > _s.leashRadius) { Disengage(); return; }
+        if (_s.BeyondLeash(d)) { Disengage(); return; }
         if (d <= _ctx.AttackRange) { _state = State.Attack; return; }
         if (Reflex) { Release(); return; }   // out of reach and never its fight — forget it was ever there
         _state = State.Chase;
@@ -144,7 +150,7 @@ public class EnemyAI : MonoBehaviour
         if (!_ctx.HasLiveTarget) { EnterForget(); return; }
         FaceTarget();
         float d = _ctx.DistanceToTarget();
-        if (d > _s.leashRadius) { EnterForget(); return; }
+        if (_s.BeyondLeash(d)) { EnterForget(); return; }
         // Arrived: hand over AND run the attack in the same frame. Just switching state would spend this frame
         // neither moving nor swinging, and one frame of standing still is one frame of idle art punched into
         // the middle of a run — a visible blip on every single approach.
@@ -157,7 +163,7 @@ public class EnemyAI : MonoBehaviour
     {
         if (!_ctx.HasLiveTarget) { Disengage(); return; }
         float d = _ctx.DistanceToTarget();
-        if (d > _s.leashRadius) { Disengage(); return; }   // ran clean away -> give up
+        if (_s.BeyondLeash(d)) { Disengage(); return; }   // ran clean away -> give up
         if (!Reflex) FaceTarget();             // keep aimed every frame — the shot leaves along FacingDir. A reflex tracks nothing; it aims once, below.
 
         // Swinging or recovering: the unit PLANTS. It does not close, does not re-chase. The recovery is

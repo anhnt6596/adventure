@@ -186,7 +186,10 @@ public class ProjectileSkill : CharacterSkill
         // AttackRate and not the raw stat: it is already floored at 1 for anything with no attack speed at
         // all, so a monster that has never heard of the stat throws at the authored pace instead of standing
         // still.
-        float damage = Owner.AttackPower * _power.Value;
+        // ONE ROLL FOR THE WHOLE RELEASE, hoisted with the rest for the same reason: a fan of three is one
+        // blow thrown three ways, not three lotteries, and a burst that crit on its second volley only would
+        // read as the game flickering rather than as a good hit.
+        float damage = Owner.RollAttackDamage(out bool isCrit) * _power.Value;
         float shotSpeed = _speed.Value * (speedFromAttackRate ? Owner.AttackRate : 1f);
         float shove = _knockback.Value;
 
@@ -195,7 +198,7 @@ public class ProjectileSkill : CharacterSkill
         // stutter or slow frame can lengthen — while the caster still authors the flight as the duration it
         // actually reads as. Every buff to the speed lands in the reach for free.
         float shotRange = _life.Value * shotSpeed;
-        _shot = new Shot(Owner.FacingDir, Owner.Team, damage, shotSpeed, shotRange, shove, Owner);
+        _shot = new Shot(Owner.FacingDir, Owner.Team, damage, shotSpeed, shotRange, shove, Owner, isCrit);
 
         // A FRESH HIT FRAME OWNS THE BURST. Whatever was left of the last one is dropped rather than queued:
         // the volleys of one press are that press's, and a second press is a second action — pouring the

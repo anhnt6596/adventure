@@ -29,6 +29,7 @@ public class GameUI : MonoBehaviour
     // Nothing awards experience yet, so this is the only way to move a level at all — which is the point:
     // the tree cannot be played with until something can pay for it.
     Label _levelReadout;
+    IntegerField _pointField;
     IntegerField _expField, _levelField;
 
     VisualElement _bagList;
@@ -53,19 +54,21 @@ public class GameUI : MonoBehaviour
 #endif
 
     CharacterLevels _levels;
+    UpgradePoints _upgradePoints;
     IGetUpgradeTree _trees;
     UpgradeSystem _upgrades;
     NotificationService _notifications;
 
     [Inject]
     public void Construct(IInputGate gate, IUISystem ui, IPlayer player,
-                          CharacterLevels levels, IGetUpgradeTree trees, UpgradeSystem upgrades,
-                          NotificationService notifications)
+                          CharacterLevels levels, UpgradePoints upgradePoints, IGetUpgradeTree trees,
+                          UpgradeSystem upgrades, NotificationService notifications)
     {
         _gate = gate;
         _ui = ui;
         _player = player;   // the HUD will read the player's inventory (and, later, lots more) off this
         _levels = levels;
+        _upgradePoints = upgradePoints;
         _trees = trees;
         _upgrades = upgrades;
         _notifications = notifications;
@@ -125,7 +128,7 @@ public class GameUI : MonoBehaviour
         if (popup == null) return;
 
         var id = _player?.Current != null ? _player.Current.Id : null;
-        popup.Bind(_trees, _upgrades, _levels, _notifications, id);
+        popup.Bind(_trees, _upgrades, _upgradePoints, _notifications, id);
     }
 
     // Point the HUD at the live body. Before START the HUD isn't shown and Get returns null, so this is a
@@ -381,8 +384,17 @@ public class GameUI : MonoBehaviour
         cheat.Q<Button>("set-level-button")?.RegisterCallback<ClickEvent>(_ =>
             _levels?.SetLevel(CurrentMcId, Mathf.Max(CharacterLevels.StartLevel, _levelField?.value ?? 1)));
 
-        // Named, not a lambda: OnDestroy has to be able to take it back off again.
+        // Upgrade points are their own currency now, and nothing hands them out yet — an arena's payout is
+        // what will. Until then this is the only way to have any, so the tree can be looked at at all.
+        _pointField = cheat.Q<IntegerField>("point-field");
+        cheat.Q<Button>("add-point-button")?.RegisterCallback<ClickEvent>(_ =>
+            _upgradePoints?.Award(CurrentMcId, Mathf.Max(0, _pointField?.value ?? 0)));
+
+        // Named, not lambdas: OnDestroy has to be able to take them back off again. Points and ranks both
+        // move the number on the readout, so both are watched.
         if (_levels != null) _levels.Changed += OnAnyLevelChanged;
+        if (_upgradePoints != null) _upgradePoints.Changed += OnAnyLevelChanged;
+        if (_upgrades != null) _upgrades.Changed += RefreshLevelCheat;
         RefreshLevelCheat();
     }
 
@@ -395,9 +407,16 @@ public class GameUI : MonoBehaviour
         var id = CurrentMcId;
         if (string.IsNullOrEmpty(id) || _levels == null) { _levelReadout.text = "—"; return; }
 
-        _levelReadout.text = _levels.IsMaxLevel(id)
-            ? $"{id}   Lv {_levels.Level(id)}   MAX"
-            : $"{id}   Lv {_levels.Level(id)}   {_levels.Exp(id)}/{_levels.ExpToNext(id)}";
+        // What is LEFT, not what was earned: spending is what the cheat is for, and a total that never moves
+        // when a node is bought would say nothing about whether there is anything to buy with.
+        var tree = _trees?.Get(id);
+        int spendable = tree != null ? _upgrades?.Available(id, tree) ?? 0 : _upgradePoints?.Earned(id) ?? 0;
+
+        string level = _levels.IsMaxLevel(id)
+            ? $"Lv {_levels.Level(id)}   MAX"
+            : $"Lv {_levels.Level(id)}   {_levels.Exp(id)}/{_levels.ExpToNext(id)}";
+
+        _levelReadout.text = $"{id}   {level}   ·   {spendable} pt";
     }
 
     // Bag cheat: list each resource kind held, with a button to wipe that kind. The remove path is a real
@@ -489,6 +508,8 @@ public class GameUI : MonoBehaviour
 #if UNITY_EDITOR
         if (_bagInventory != null) _bagInventory.Changed -= RefreshBag;
         if (_levels != null) _levels.Changed -= OnAnyLevelChanged;
+        if (_upgradePoints != null) _upgradePoints.Changed -= OnAnyLevelChanged;
+        if (_upgrades != null) _upgrades.Changed -= RefreshLevelCheat;
         ListenToStats(_cheatStats, false);
 #endif
     }

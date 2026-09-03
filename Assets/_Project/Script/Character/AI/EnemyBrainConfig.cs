@@ -28,7 +28,12 @@ public class EnemyBrainConfig : ScriptableObject
     // where a kind that doesn't use the behaviour never has to carry it.
     [Header("FSM")]
     public float attackRange = 3f;      // stop and fire within this of the target — where it plants its feet, not the weapon's reach
-    public float leashRadius = 8f;      // give up the chase past this distance
+    [Tooltip("Give up the chase past this distance.\n\n" +
+             "-1 = NEVER give up. An arena monster is a tide, not an animal defending a patch: it is coming, " +
+             "and distance is not an argument. Use the sentinel rather than a huge number — 'never' is a " +
+             "different statement from 'nine hundred', and a number that big invites somebody to wonder " +
+             "whether it is a bug.")]
+    public float leashRadius = 8f;
     public float reEngageRadius = 5f;   // in Forget, resume if the target comes back within this
     public float forgetTime = 3f;       // seconds standing still before returning to idle
     public float recognizeTime = 1f;    // reaction delay: on first turning aggressive (spotted / got hit), freeze in Idle this long before engaging
@@ -51,6 +56,11 @@ public class EnemyBrainConfig : ScriptableObject
     }
 
     public bool HasBodyClock => activeFrom != activeTo && !(activeFrom <= 0f && activeTo >= 24f);
+
+    // Has the target got far enough away to be dropped? The one place the -1 sentinel is read, so nothing
+    // else has to remember it exists — a comparison written out by hand somewhere would quietly treat "never"
+    // as "at once", which is the exact opposite and would look like the monster being broken.
+    public bool BeyondLeash(float distance) => leashRadius >= 0f && distance > leashRadius;
 
     public bool IsComplete => idle != null && aggro != null && pursuit != null && attack != null;
 }

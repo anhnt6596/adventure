@@ -17,6 +17,8 @@ public interface ICharacterStats
     IStat AttackPower { get; }
     IStat Recovery { get; }
     IStat MaxHp { get; }
+    IStat CritPoints { get; }
+    IStat CritDamage { get; }
     IStat MaxHunger { get; }
     IStat HungerDrain { get; }
     IStat Regen { get; }

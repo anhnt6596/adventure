@@ -20,17 +20,17 @@ public class UpgradeNotifier : IStartable
 
     readonly NotificationService _notifications;
     readonly UpgradeSystem _upgrades;
-    readonly CharacterLevels _levels;
+    readonly UpgradePoints _points;
     readonly IGetUpgradeTree _trees;
     readonly IPlayer _player;
 
     [Inject]
-    public UpgradeNotifier(NotificationService notifications, UpgradeSystem upgrades, CharacterLevels levels,
+    public UpgradeNotifier(NotificationService notifications, UpgradeSystem upgrades, UpgradePoints points,
                            IGetUpgradeTree trees, IPlayer player)
     {
         _notifications = notifications;
         _upgrades = upgrades;
-        _levels = levels;
+        _points = points;
         _trees = trees;
         _player = player;
     }
@@ -39,13 +39,13 @@ public class UpgradeNotifier : IStartable
     // number actually moved, so re-reporting the same count on an unrelated event costs nothing.
     public void Start()
     {
-        _levels.Changed += OnLevelChanged;
+        _points.Changed += OnPointsChanged;
         _upgrades.Changed += Report;
         _player.Spawned += _ => Report();   // a switch changes whose points these are
         Report();
     }
 
-    void OnLevelChanged(string characterId) => Report();
+    void OnPointsChanged(string characterId) => Report();
 
     void Report()
     {
@@ -53,7 +53,7 @@ public class UpgradeNotifier : IStartable
         string id = mc != null ? mc.Id : null;
 
         // No body yet (before the first spawn) is not "nothing waiting" — it is "no question asked yet", and
-        // reporting zero here would let the player earn their first level with the badge already acknowledged.
+        // reporting zero here would let the player earn their first point with the badge already acknowledged.
         if (string.IsNullOrEmpty(id)) return;
 
         var tree = _trees?.Get(id);

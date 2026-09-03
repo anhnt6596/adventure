@@ -8,7 +8,10 @@ public class AIContext
     public EnemyController controller;
     public EnemyConfig config;     // the BODY: hp, speed, damage
     public EnemyBrainConfig brain; // the MIND: this unit's own copy — FSM distances/timers and the four behaviours
-    public DayNightClock clock;    // world time — creatures with a body clock read it (null = always active)
+    public ITimeOfDay clock;       // time of day — creatures with a body clock read it (null = always active).
+                                   // ITimeOfDay, not DayNightClock: inside an arena the run's clock is the one
+                                   // that means anything, and a nocturnal monster must wake by ITS night.
+    public IPlayer player;         // who the run is about — hunters go straight for this rather than searching
     public Vector3 home;           // spawn position — idle behaviours orbit it
     public IDamageable target;     // current target (null = none)
 
@@ -31,6 +34,21 @@ public class AIContext
         for (int i = 0; i < abilities.Length; i++)
             if (abilities[i] != null && abilities[i].Which == slot) return abilities[i];
         return null;
+    }
+
+    // The player as a thing that can be hit, or null when there is no body out there. Looked up off the live
+    // body each time rather than cached: a respawn or a character switch hands out a different one, and a
+    // cached reference would leave every hunter on the map chasing a corpse.
+    //
+    // NOT a CombatWorld search. HuntAggro means "come for the player wherever they are", and a radius query
+    // cannot answer that — the hash is built for small radii and silently misses beyond one cell.
+    public IDamageable PlayerTarget
+    {
+        get
+        {
+            var mc = player != null ? player.Current : null;
+            return mc != null ? mc.GetComponentInChildren<Damageable>() : null;
+        }
     }
 
     public Transform Tr => controller.transform;

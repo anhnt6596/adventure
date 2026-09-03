@@ -21,3 +21,6 @@ MonoBehaviour:
   - viewTypeName: PausePopup, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
     asset: {fileID: 9197481963319205126, guid: 09323c9fda12962448117f6a0aae4b63, type: 3}
+  - viewTypeName: RunUpgradePopup, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
+    asset: {fileID: 9197481963319205126, guid: 432903e239782274798ff5df4ba9604f, type: 3}

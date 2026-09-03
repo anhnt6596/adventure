@@ -18,6 +18,14 @@ public static class StatId
     // swing it follows is already inside the wait.
     public const string Recovery = "Recovery";
     public const string MaxHp = "MaxHp";
+
+    // How OFTEN a blow crits, as points rather than a percentage — see Crit for why, and for the curve that
+    // turns them into a chance. There is deliberately no CritChance stat: a chance is what points MEAN, and a
+    // second stat holding it would be a number free to disagree with the one anybody actually buys.
+    public const string CritPoints = "CritPoints";
+
+    // How much a crit is WORTH, as a multiplier on the blow. 1.5 is a crit for half again; upgrades push it up.
+    public const string CritDamage = "CritDamage";
     public const string MaxHunger = "MaxHunger";
     public const string HungerDrain = "HungerDrain";
 
@@ -60,7 +68,7 @@ public static class StatId
     public static readonly string[] All =
     {
         MoveSpeed, AttackSpeed, AttackPower, Recovery,
-        MaxHp, MaxHunger, HungerDrain, Regen, Mass, PickupRadius, Vision,
+        MaxHp, MaxHunger, HungerDrain, Regen, Mass, PickupRadius, Vision, CritPoints, CritDamage,
         Skill1Haste, Skill2Haste,
     };
 
@@ -76,6 +84,10 @@ public static class StatId
         AttackPower => "attack",
         Recovery => "recovery",
         MaxHp => "HP",
+        // NOT "crit chance": what is bought is points, and the chance they buy depends on how many are
+        // already on the pile. A node reading "+20% crit" would be wrong for everybody except one build.
+        CritPoints => "crit",
+        CritDamage => "crit damage",
         MaxHunger => "max fullness",
         HungerDrain => "hunger drain",
         // WITH THE CONDITION ATTACHED, not just "regen": this stat does nothing below the well-fed line, and a

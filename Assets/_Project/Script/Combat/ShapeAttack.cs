@@ -62,7 +62,9 @@ public class ShapeAttack : AttackAbility
         // sits out in front, so shoving outward from it would drive anything near the close edge backwards into
         // the attacker — the opposite of what a thrust does.
         Vector3 from = transform.position;
-        float damage = Owner != null ? Owner.AttackPower : 0f;
+        // Rolled once for the swing, not once per body: a blow either landed well or it did not, and a
+        // cleave that crit on the left half of a crowd is not a thing anybody could read.
+        float damage = Owner != null ? Owner.RollAttackDamage(out _) : 0f;
         for (int i = 0; i < _hits.Count; i++)
         {
             var hit = _hits[i];

@@ -1,11 +1,18 @@
 using VContainer.Unity;
 
-// Advances the time of day, looping each cycle. The single source of truth for "what time is it" — the
-// lighting view reads it, and later so will spawns and weather. Ticked by VContainer's entry-point loop.
-public class DayNightClock : ITickable
+// Advances the overworld's time of day, looping each cycle. Ticked by VContainer's entry-point loop.
+//
+// THE OVERWORLD'S CLOCK, NOT THE GAME'S. Out here the time of day is decoration — there are no monsters, no
+// vision limit and no spawn table reading it, so nothing breaks if it says a different hour than an arena
+// does. Inside an arena the time of day is the rules, and RunClock owns it. Anything DISPLAYING time asks for
+// ITimeOfDay and gets whichever is in charge; only a dev tool that means "the overworld clock specifically"
+// should ask for this type.
+public class DayNightClock : ITimeOfDay, ITickable
 {
-    // Hard-coded for now (config + save come later): 3 real minutes per in-game day, start at 7am.
-    const float DayLengthSeconds = 300;
+    // The pace of a day out here. Public because an arena authored to run at the world's pace should say so by
+    // pointing at this number rather than by copying it — see ArenaConfig.dayLengthSeconds.
+    public const float DefaultDayLengthSeconds = 300f;
+
     const float StartTime = 7f / 24f;
 
     public float Time01 { get; private set; } = StartTime;   // TODO: load from save instead of StartTime
@@ -17,7 +24,7 @@ public class DayNightClock : ITickable
     public void Tick()
     {
         if (Paused) return;
-        Time01 += UnityEngine.Time.deltaTime / DayLengthSeconds;
+        Time01 += UnityEngine.Time.deltaTime / DefaultDayLengthSeconds;
         while (Time01 >= 1f) { Time01 -= 1f; Day++; }   // wrap into the next day
     }
 

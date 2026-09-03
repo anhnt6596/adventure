@@ -46,6 +46,19 @@ public class SlashWave : Projectile
              "which of them the query happened to return first is not something a player can aim at.")]
     [SerializeField] bool stopOnHit;
 
+    [Tooltip("How much MORE WAVE a crit is, as a share. 0.3 = a third again, applied to both how wide the " +
+             "cut is and how long it flies — one number, because a crit is not a wider wave or a longer one, " +
+             "it is a bigger one.\n\n" +
+             "The extra DAMAGE is not here: that rides in on the crit multiplier, already inside the Shot.")]
+    [FormerlySerializedAs("critWiden")]
+    [SerializeField, Min(0f)] float critBoost = 0.3f;
+
+    [Tooltip("Colour an ORDINARY wave is tinted, multiplied into whatever the art is drawn with. A crit is " +
+             "left exactly as authored, so the prefab's own colour IS the crit look — grey this down and the " +
+             "crit reads as the bright one without anybody keeping two colours level.\n\n" +
+             "RGB only: the alpha ramp is the flight's business, see FadeArt.")]
+    [SerializeField] Color normalTint = new Color(0.62f, 0.66f, 0.72f, 1f);
+
     [Tooltip("How DEEP the cut is along the flight — the thickness of the line, not its reach. Small: a wave " +
              "is an edge, and this is also the longest it may hop in one frame, so a thin one is tested often.")]
     [SerializeField, Min(0.05f)] float thickness = 0.6f;
@@ -78,6 +91,7 @@ public class SlashWave : Projectile
 
     Vector3 _dir;
     float _speed, _range, _damage, _knockback, _traveled;
+    bool _isCrit;   // thrown by a crit — a third more wave in every dimension (see CritScale)
     Component _source;
 
     // Across the flight, on the ground. Used by the cut, by the meeting test and by the gizmo alike, so none of
@@ -133,14 +147,28 @@ public class SlashWave : Projectile
 
     // How wide the cut is after this much ground. The one place the widening is stated, so the hitbox, the
     // drawing and the gizmo cannot disagree about it.
-    float WidthAt(float distance) => startWidth + widenPerUnit * Mathf.Max(0f, distance);
+    // What a crit multiplies. ONE factor for every dimension of the wave, read in both places rather than
+    // copied: width and reach growing by the same share is what makes a crit read as the same weapon swung
+    // harder, instead of as a different weapon that happens to fire on the same button.
+    float CritScale => _isCrit ? 1f + critBoost : 1f;
+
+    // A CRIT SCALES THE WHOLE THING, not just the near end: a wave that started wider and then widened at the
+    // ordinary rate would be a crit that mattered less the further it flew, which is backwards. One factor over
+    // the lot keeps a crit the same wave, bigger.
+    float WidthAt(float distance)
+        => (startWidth + widenPerUnit * Mathf.Max(0f, distance)) * CritScale;
     float HalfWidth => WidthAt(_traveled) * 0.5f;
 
     public override void Launch(in Shot shot)
     {
+        _isCrit = shot.IsCrit;   // read FIRST: CritScale below depends on it
         _dir = shot.Direction;
         _speed = shot.Speed;
-        _range = shot.Range;
+        // LONGER IN THE AIR, not faster through it. Reach is speed times life (see ProjectileSkill), so
+        // stretching the reach at an unchanged speed IS a longer flight — and it keeps a crit readable: the
+        // same wave, travelling the same way, going further. A faster one would arrive before the player had
+        // seen it was a crit at all.
+        _range = shot.Range * CritScale;
         _damage = shot.Damage;
         _knockback = shot.Knockback;
         Team = shot.Team;
@@ -270,7 +298,11 @@ public class SlashWave : Projectile
         if (fadeIn > 0f) ramp = Mathf.Min(ramp, t / fadeIn);
         if (fadeOut > 0f) ramp = Mathf.Min(ramp, (1f - t) / fadeOut);
 
-        var color = _spriteRestColor;
+        // A CRIT IS THE AUTHORED COLOUR, an ordinary blow is that colour dimmed. Deliberately this way round
+        // rather than two colour fields: the art is drawn once, at its best, and the prefab shows the good
+        // version — so a repaint cannot leave the crit looking like the leftover of two settings somebody
+        // forgot to update together.
+        var color = _isCrit ? _spriteRestColor : _spriteRestColor * normalTint;
         color.a = _spriteRestColor.a * peakAlpha * Mathf.Clamp01(ramp);
         _sprite.color = color;
     }

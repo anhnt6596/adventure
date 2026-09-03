@@ -93,7 +93,7 @@ public class CharacterPopup : BasePopup
 
     // Called by whoever opened it, straight after Show — so OnShow has already run and must not assume any of
     // this has arrived yet.
-    public void Bind(IGetUpgradeTree trees, UpgradeSystem upgrades, CharacterLevels levels,
+    public void Bind(IGetUpgradeTree trees, UpgradeSystem upgrades, UpgradePoints points,
                      NotificationService notifications, string characterId)
     {
         if (_notifications != null) _notifications.Changed -= RefreshBadges;
@@ -108,7 +108,7 @@ public class CharacterPopup : BasePopup
                 ? new StyleBackground(portrait)
                 : new StyleBackground(StyleKeyword.None);
 
-        _upgrade.Bind(trees, upgrades, levels, _art, characterId);
+        _upgrade.Bind(trees, upgrades, points, _art, characterId);
 
         // The tab that is already on screen counts as looked at. OnShow chose it before this method had a
         // service to tell, so the acknowledgement lands here — which is also what makes "open the window" clear

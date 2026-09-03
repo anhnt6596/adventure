@@ -20,6 +20,8 @@ public class MainCharStats : ICharacterStats
     public IStat AttackPower => _byId[StatId.AttackPower];
     public IStat Recovery => _byId[StatId.Recovery];
     public IStat MaxHp => _byId[StatId.MaxHp];
+    public IStat CritPoints => _byId[StatId.CritPoints];
+    public IStat CritDamage => _byId[StatId.CritDamage];
     public IStat MaxHunger => _byId[StatId.MaxHunger];
     public IStat HungerDrain => _byId[StatId.HungerDrain];
     public IStat Regen => _byId[StatId.Regen];
@@ -36,6 +38,8 @@ public class MainCharStats : ICharacterStats
         _byId[StatId.AttackPower] = new Stat(config.attackPower);
         _byId[StatId.Recovery] = new Stat(config.recovery);
         _byId[StatId.MaxHp] = new Stat(config.maxHp);
+        _byId[StatId.CritPoints] = new Stat(config.critPoints);
+        _byId[StatId.CritDamage] = new Stat(config.critDamage);
         _byId[StatId.MaxHunger] = new Stat(config.maxHunger);
         _byId[StatId.HungerDrain] = new Stat(config.hungerDrain);
         _byId[StatId.Regen] = new Stat(config.wellFedHealPercent);   // percent per second, as authored

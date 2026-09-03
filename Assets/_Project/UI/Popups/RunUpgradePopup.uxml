@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Popups/RunUpgradePopup.uss" />
+    <ui:VisualElement name="dimmer" class="dimmer">
+        <ui:VisualElement name="popup" class="popup">
+            <ui:Label name="level-label" text="LEVEL 2" class="level" />
+            <ui:Label text="Choose one" class="title" />
+            <ui:VisualElement name="cards" class="cards" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

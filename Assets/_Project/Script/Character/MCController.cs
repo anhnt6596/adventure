@@ -32,4 +32,6 @@ public class MCController : DynamicUnit
     public override float Recovery => _stats.Recovery.Value;
     protected override float Mass => _stats.Mass.Value;
     public override float AttackPower => _stats.AttackPower.Value;
+    public override float CritPoints => _stats.CritPoints.Value;
+    public override float CritDamage => _stats.CritDamage.Value;
 }

@@ -7,8 +7,8 @@ using UnityEngine;
 //   fogColor     -> LightManager.fogColor: ADDITIVE light on the Fog overlay = the glare itself (there is
 //                   no separate glare lever). rgb = light added, black = off, bright = "chói" (HDR ok).
 // Day is longer than night here: sunrise ~06:00, sunset ~20:00 (14h day / 10h night).
-[CreateAssetMenu(menuName = "Environment/Day Night")]
-public class DayNightConfig : ScriptableObject
+[CreateAssetMenu(menuName = "Environment/Day Light")]
+public class DayLightConfig : ScriptableObject
 {
     [Header("Over the day (t: 0 = midnight, 0.5 = noon)")]
     public Gradient ambientColor;              // -> LightManager.ambientColor (multiply tint)
@@ -25,7 +25,7 @@ public class DayNightConfig : ScriptableObject
     };
 
     // Fills a believable default palette. Runs when the asset is created (Create > Environment > Day
-    // Night) and on the inspector's Reset. Tweak by eye afterwards.
+    // Light) and on the inspector's Reset. Tweak by eye afterwards.
     void Reset()
     {
         // Multiply tint on the veil: white through the day, a strong sunset red at dusk. (The night

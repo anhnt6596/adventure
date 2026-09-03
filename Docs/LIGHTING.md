@@ -60,7 +60,7 @@ push the scene past ~**0.85** (chói). It can only ADD light — darkening/gloom
   tinted by `_Color`; this is a light's shape/reach. Its brightness becomes `b` in the veil.
 - **Additive.shader** (`Healthy/Additive`) — `Blend One One` particle additive; glowy FX / emitters.
 
-## The three day/night knobs (see `DayNightConfig`)
+## The three day/night knobs (see `DayLightConfig`)
 
 | Knob | Type | Drives | Meaning |
 |------|------|--------|---------|

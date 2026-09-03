@@ -15,6 +15,15 @@ public class MainCharStatsConfig : Config, IHungerConfig, IDamageableConfig
     // Vision has no field here on purpose — see MainCharStats. Its baseline is the spotlight drawn on the
     // character's own prefab, so the only value this could ever hold is 1.
 
+    [Header("Crit")]
+    [Tooltip("BASE crit points. Points, not a percentage: 0 = never, 100 = half the time, and it keeps " +
+             "climbing towards but never reaching certain. See Crit for the curve.")]
+    [Min(0f)] public float critPoints = 0f;
+
+    [Tooltip("BASE multiplier a crit does. 1.5 = half again. Upgrades and gear push it up; 1 would make a " +
+             "crit worth nothing, which is a legitimate way to author a character that never crits hard.")]
+    [Min(1f)] public float critDamage = 1.5f;
+
     [Header("Health")]
     public float maxHp = 100f;          // hit radius is NOT here — it's a field on the MC prefab's Damageable, authored against the art
 
@@ -28,9 +37,7 @@ public class MainCharStatsConfig : Config, IHungerConfig, IDamageableConfig
     [Tooltip("How much faster the stomach empties per level, COMPOUNDING. 0.01 = +1% a level, which is 2.7x " +
              "the drain at level 100. Careful: 3% here is 18x, not 'a few percent'.")]
     [Min(0f)] public float hungerDrainPerLevel = 0.01f;
-    // Sliders, because every value from 0 to 1 is a sensible answer: both are a POSITION on the bar.
-    [Tooltip("How full the character starts, as a fraction of the stomach.")]
-    [Range(0f, 1f)] public float startFullness = 0.5f;
+    // A slider, because every value from 0 to 1 is a sensible answer: it is a POSITION on the bar.
     [Tooltip("Fullness fraction above which HP regenerates. A rule of the mechanic, not a character number.")]
     [Range(0f, 1f)] public float wellFed = 0.75f;
 
@@ -55,8 +62,7 @@ public class MainCharStatsConfig : Config, IHungerConfig, IDamageableConfig
     public float HungerDrainAt(int level)
         => hungerDrain * Mathf.Pow(1f + hungerDrainPerLevel, Mathf.Max(0, level - CharacterLevels.StartLevel));
 
-    public float StartFullness => startFullness;   // IHungerConfig
-    public float WellFedFraction => wellFed;
+    public float WellFedFraction => wellFed;   // IHungerConfig
     public float StarveShare => starvePercent * 0.01f;   // percent in, share out
     public float MaxHp => maxHp;               // IDamageableConfig — the HP the MC's Damageable reads
     public int Team => Teams.Player;            // (Damageable actually takes team off MCController)

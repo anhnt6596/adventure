@@ -1,0 +1,88 @@
+.dimmer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.72);
+    align-items: center;
+    justify-content: center;
+}
+
+.popup {
+    padding: 26px 24px;
+    background-color: rgb(30, 32, 42);
+    border-radius: 14px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    align-items: center;
+}
+
+/* The level is the reason the window opened, so it is said first and quietly — the choice is the loud part. */
+.level {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(235, 200, 90);
+    letter-spacing: 2px;
+    margin-bottom: 2px;
+}
+
+.title {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(240, 240, 245);
+    margin-bottom: 18px;
+}
+
+/* A ROW, because three cards side by side are read as three of one kind of thing. Stacked, the top one reads
+   as the recommendation. */
+.cards {
+    flex-direction: row;
+    justify-content: center;
+}
+
+.card {
+    width: 190px;
+    min-height: 190px;
+    margin: 0 6px;
+    padding: 16px 14px;
+    background-color: rgb(42, 45, 58);
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    align-items: center;
+    justify-content: flex-start;
+    transition-property: background-color, scale;
+    transition-duration: 0.09s;
+}
+
+.card:hover {
+    background-color: rgb(56, 60, 76);
+    border-color: rgb(235, 200, 90);
+    scale: 1.03 1.03;
+}
+
+.card-title {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(240, 240, 245);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+/* The numbers, and they are the point of the card — brighter than the flavour under them. */
+.card-effect {
+    font-size: 15px;
+    color: rgb(235, 200, 90);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.card-flavour {
+    font-size: 12px;
+    color: rgba(230, 232, 240, 0.55);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-top: 10px;
+}

@@ -16,24 +16,24 @@ using VContainer;
 // is what keeps this a counter rather than a table — with per-rank values there would be a list to author per
 // node, a curve to tune, and a save that has to remember which rung a number came from.
 //
-// POINTS ARE LEVELS. A character has as many points as it has levels, so "left" is level minus what every
-// rank has cost — nothing about the pool is stored, it is arithmetic over the counts. RESET is therefore only
-// "forget the counts": there is nothing to hand anything back to, which is why a full respec is three lines
-// rather than a refund ledger.
+// POINTS ARE THEIR OWN CURRENCY (see UpgradePoints), not the character's level. "Left" is what has been
+// earned minus what every rank has cost — nothing about the pool is stored here, it is arithmetic over the
+// counts. RESET is therefore only "forget the counts": there is nothing to hand anything back to, which is
+// why a full respec is three lines rather than a refund ledger.
 public class UpgradeSystem : ISavable
 {
     readonly Dictionary<string, Dictionary<string, int>> _ranks = new Dictionary<string, Dictionary<string, int>>();
     readonly SaveService _save;
-    readonly CharacterLevels _levels;
+    readonly UpgradePoints _points;
 
     public string SaveKey => "upgrades";
     public event Action Changed;
 
     [Inject]
-    public UpgradeSystem(SaveService save, CharacterLevels levels)
+    public UpgradeSystem(SaveService save, UpgradePoints points)
     {
         _save = save;
-        _levels = levels;
+        _points = points;
         _save.Register(this);   // loads _bought
     }
 
@@ -87,8 +87,12 @@ public class UpgradeSystem : ISavable
         return spent;
     }
 
+    // What is left to spend: everything the character has been given, minus what its ranks already cost.
+    // NOTHING STORES THIS. A saved "points remaining" would be a second answer to the same question, free to
+    // disagree with the ranks the moment a node is repriced or deleted — the same reason Spent is summed off
+    // the tree rather than off the save.
     public int Available(string characterId, UpgradeTreeConfig tree)
-        => _levels.Level(characterId) - Spent(characterId, tree);
+        => _points.Earned(characterId) - Spent(characterId, tree);
 
     public bool CanBuy(string characterId, UpgradeTreeConfig tree, UpgradeNode node)
         => node != null
@@ -160,8 +164,9 @@ public class UpgradeSystem : ISavable
     }
 #endif
 
-    // Full respec. Points are levels, so nothing has to be given back: dropping the counts is what makes them
-    // spendable again. The character keeps its level, and therefore its total.
+    // Full respec. Nothing has to be given back: what is left to spend is the total earned minus what the
+    // ranks cost, so dropping the counts is what makes the points spendable again. UpgradePoints is not
+    // touched — a respec must not be a way to lose what you earned.
     public void Reset(string characterId)
     {
         if (string.IsNullOrEmpty(characterId)) return;

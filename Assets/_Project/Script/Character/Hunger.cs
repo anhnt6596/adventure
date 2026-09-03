@@ -25,8 +25,14 @@ using VContainer;
 //     somewhere between          ->  nothing happens    (the state you spend most of a trip in)
 //     empty           == 0       ->  HP drains          (starving kills, slowly)
 //
-// The middle band is the point. Docs/DESIGN.md: the player should RARELY look at this bar while exploring —
-// it is a trip budget, not a nagging timer. Tune the drain so the bar only ever says "this trip ends here".
+// The middle band is the point: a budget, not a nagging timer. Tune the drain so the bar only ever says
+// "this run ends here".
+//
+// IT ONLY EXISTS INSIDE AN ARENA. The overworld has no combat, no food and no way to die, so a bar draining
+// while the player walks around a safe hub would be a chore with nothing on the other end of it. ArenaRunner
+// starts the stomach on the way in and stops it on the way out; outside a run this component sits there doing
+// nothing, and the HUD hides the bar. That also makes the reset free: every run starts on a full stomach
+// because every run is told to.
 [DisallowMultipleComponent]
 public class Hunger : MonoBehaviour
 {
@@ -38,7 +44,8 @@ public class Hunger : MonoBehaviour
     TimeService _time;
     Damageable _health;
     float _value;
-    bool _started;
+    bool _started;    // injected and initialised — nothing may touch the numbers before this
+    bool _running;    // inside an arena run — the only time the stomach ticks
 
     public event System.Action Changed;
 
@@ -81,16 +88,40 @@ public class Hunger : MonoBehaviour
             Debug.LogError($"[{nameof(Hunger)}] not injected — add this GameObject to GameScope's Auto Inject list.", this);
             return;
         }
-        _value = Max * Mathf.Clamp01(_cfg.StartFullness);
+        _value = Max;
         _started = true;
-        _time.NewSecond += Step;
+        Changed?.Invoke();   // no subscription here: nothing digests until a run says so
+    }
+
+    // Whether the stomach is live. The HUD asks so the bar can stay off in the overworld, where it would only
+    // ever read full and mean nothing.
+    public bool Running => _running;
+
+    // Called by ArenaRunner at the two ends of a run. FULL, not some authored starting fraction: a run is
+    // meant to begin from the same place every time, and "full" is the only starting point that stays true
+    // when an upgrade makes the stomach bigger. Setting it here rather than leaving whatever the last run
+    // finished on is what makes "every run starts from scratch" true of this too.
+    public void BeginRun()
+    {
+        if (!_started || _running) return;
+        _running = true;
+        _value = Max;
+        if (isActiveAndEnabled) _time.NewSecond += Step;
         Changed?.Invoke();
     }
 
-    // Guarded by _started so these cannot subscribe before Start has run — see there. Together they keep the
-    // old behaviour of a disabled Hunger not digesting, which used to come free from Update not running.
-    void OnEnable()  { if (_started) _time.NewSecond += Step; }
-    void OnDisable() { if (_started) _time.NewSecond -= Step; }
+    public void EndRun()
+    {
+        if (!_running) return;
+        _running = false;
+        if (_started) _time.NewSecond -= Step;
+        Changed?.Invoke();
+    }
+
+    // Guarded by _running so these cannot subscribe outside a run, and never before Start has injected — see
+    // there. Together they keep the old behaviour of a disabled Hunger not digesting.
+    void OnEnable()  { if (_running) _time.NewSecond += Step; }
+    void OnDisable() { if (_running) _time.NewSecond -= Step; }
 
     void Step()
     {
@@ -132,7 +163,7 @@ public class Hunger : MonoBehaviour
     // means staying on the ground until there is room for it.
     public float Eat(float amount)
     {
-        if (!_started || amount <= 0f) return 0f;
+        if (!_running || amount <= 0f) return 0f;
 
         float eaten = Mathf.Min(amount, SpaceLeft);
         if (eaten <= 0f) return 0f;

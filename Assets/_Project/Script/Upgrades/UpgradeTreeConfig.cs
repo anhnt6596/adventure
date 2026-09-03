@@ -9,10 +9,14 @@ using UnityEngine;
 // Name the asset "MC 1 - Tree" for the project window; the id is what anything looks it up by, exactly the
 // way MainCharStatsConfig already works.
 //
-// PAID IN POINTS, NOT IN RESOURCES. A character earns one upgrade point per level of its own, so the tree
-// draws on time spent with THAT character rather than on the shared bag — which is what stops investing in
-// one character from being taken out of another's pocket. It also leaves the bag with exactly one job
-// (pay gates and what comes after), instead of two systems bidding for the same pile.
+// PAID IN POINTS, NOT IN RESOURCES. Points are their own currency, earned and held per character (see
+// UpgradePoints) — so the tree draws on what THAT character has been through rather than on the shared bag,
+// which is what stops investing in one character from being taken out of another's pocket. It also leaves the
+// bag with exactly one job (pay gates and what comes after), instead of two systems bidding for the same pile.
+//
+// NOT THE LEVEL ANY MORE. A level used to be a point, back when levelling was the only thing that happened to
+// a character. Tying the tree to a number that climbs for its own reasons meant every change to how
+// experience works was silently a change to how strong the tree makes you.
 //
 // NO DISPLAY IN HERE. A node has a key and a shape, and that is all: no title, no description, no icon.
 // Everything a player reads or looks at is derived from (this tree's id, the node's key) by whatever owns

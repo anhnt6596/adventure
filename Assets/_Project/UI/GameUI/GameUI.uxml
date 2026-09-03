@@ -41,6 +41,10 @@
                         <ui:IntegerField name="level-field" label="Set level" value="1" class="cheat-field" />
                         <ui:Button name="set-level-button" text="Set" class="cheat-btn cheat-btn-inline" />
                     </ui:VisualElement>
+                    <ui:VisualElement class="cheat-row">
+                        <ui:IntegerField name="point-field" label="Add points" value="5" class="cheat-field" />
+                        <ui:Button name="add-point-button" text="Add" class="cheat-btn cheat-btn-inline" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="cheat-tool">
                     <ui:Label text="Bag" class="cheat-tool-title" />

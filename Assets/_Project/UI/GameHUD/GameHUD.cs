@@ -279,7 +279,10 @@ public class GameHUD : UIView
         float max = _hunger != null ? _hunger.Max : 0f;
         float value = _hunger != null ? Mathf.Max(0f, _hunger.Value) : 0f;
 
-        if (_hungerRoot != null) _hungerRoot.style.display = max > 0f ? DisplayStyle.Flex : DisplayStyle.None;
+        // Off entirely outside an arena: the stomach only runs during a run, and a bar that sits full for
+        // the whole overworld is a vital the player learns to ignore.
+        bool show = max > 0f && _hunger != null && _hunger.Running;
+        if (_hungerRoot != null) _hungerRoot.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
         if (_hungerFill != null) _hungerFill.style.width = Length.Percent(max > 0f ? Mathf.Clamp01(value / max) * 100f : 0f);
         if (_hungerText != null) _hungerText.text = $"{Mathf.CeilToInt(value)}/{Mathf.CeilToInt(max)}";
 

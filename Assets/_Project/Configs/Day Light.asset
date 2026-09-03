@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f7f5a17c358160541a1649900b38d237, type: 3}
-  m_Name: Day Night Config
+  m_Name: Day Light
   m_EditorClassIdentifier: Assembly-CSharp::DayNightConfig
   ambientColor:
     serializedVersion: 2

@@ -6,7 +6,7 @@ using VContainer.Unity;
 public class GameController : IStartable, ITickable
 {
     const string StartMapId = "Map_1";
-    const int StartGateIndex = 0;
+    const int StartSpawnIndex = 0;
 
     readonly IUISystem _ui;
     readonly IMapService _maps;
@@ -17,7 +17,7 @@ public class GameController : IStartable, ITickable
         _maps = maps;
     }
 
-    public void Start() => _maps.WarpAsync(StartMapId, StartGateIndex).Forget();
+    public void Start() => _maps.WarpAsync(StartMapId, StartSpawnIndex).Forget();
 
     public void Tick()
     {

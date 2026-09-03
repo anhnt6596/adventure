@@ -132,6 +132,10 @@ PrefabInstance:
       value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 620481402096309031, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
+      propertyPath: smooth
+      value: 0.02
+      objectReference: {fileID: 0}
+    - target: {fileID: 620481402096309031, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: target
       value: 
       objectReference: {fileID: 0}
@@ -139,9 +143,17 @@ PrefabInstance:
       propertyPath: distance
       value: 8
       objectReference: {fileID: 0}
+    - target: {fileID: 620481402096309031, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
+      propertyPath: maxDistance
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 620481402096309031, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
+      propertyPath: minDistance
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 1120400511220003002, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_LocalScale.x
-      value: 5.031543
+      value: 5.9294977
       objectReference: {fileID: 0}
     - target: {fileID: 1120400511220003002, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_LocalScale.y
@@ -233,7 +245,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5382231671218588767, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_LocalScale.x
-      value: 5.1342278
+      value: 6.050508
       objectReference: {fileID: 0}
     - target: {fileID: 5382231671218588767, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_LocalPosition.x
@@ -249,7 +261,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5910330754745463473, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_LocalScale.x
-      value: 5.2369123
+      value: 6.171518
       objectReference: {fileID: 0}
     - target: {fileID: 5910330754745463473, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_LocalPosition.y
@@ -266,7 +278,7 @@ PrefabInstance:
     - target: {fileID: 7422796970273104650, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
       propertyPath: m_TargetTexture
       value: 
-      objectReference: {fileID: 1780450873}
+      objectReference: {fileID: 1353363021}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -360,10 +372,10 @@ MonoBehaviour:
   autoInjectGameObjects:
   - {fileID: 2063203228}
   - {fileID: 1534016988}
-  - {fileID: 1373120020}
+  - {fileID: 0}
   - {fileID: 831793907}
   _cameraRig: {fileID: 1534016991}
-  _dayNightConfig: {fileID: 11400000, guid: 3a9e46664b911c74a9f5754174ea3c5b, type: 2}
+  _dayLightConfig: {fileID: 11400000, guid: 3a9e46664b911c74a9f5754174ea3c5b, type: 2}
 --- !u!4 &642295462
 Transform:
   m_ObjectHideFlags: 0
@@ -489,79 +501,43 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5582588308000775996, guid: 2b3ee68362801c745ba9b6caeb79baeb, type: 3}
   m_PrefabInstance: {fileID: 831793906}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1373120020
-GameObject:
+--- !u!84 &1353363021
+RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
+  m_Name: LightMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
   serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1373120022}
-  - component: {fileID: 1373120021}
-  - component: {fileID: 1373120023}
-  m_Layer: 0
-  m_Name: ShadowSun
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1373120021
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1373120020}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8970a99f022665545981738d7343664d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DayNightDebug
-  pause: 0
-  scrubHour: 12
---- !u!4 &1373120022
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1373120020}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1373120023
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1373120020}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c8e14d4681efdbf44b72b830048e0755, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ShadowSun
-  sunriseHour: 5
-  sunsetHour: 19
-  dawnDir: {x: -2, y: 0.5}
-  duskDir: {x: 2, y: 0.5}
-  maxLength: 1.5
-  noonScale: 0.55
-  strength: 0.3
-  twilight: 0.35
-  nightDir: {x: 0, y: 1}
-  nightLength: 0.85
-  nightStrength: 0.45
-  nightFade: 0.25
-  groundY: 0
-  fixedHour: 9
+  m_Width: 852
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 90
+  m_ColorFormat: 48
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1534016988 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3781071600342696188, guid: ad83cf337a9df9e43a7a7b4d3b9e9bc7, type: 3}
@@ -602,43 +578,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DayNightLighting
   lightManager: {fileID: 1534016994}
---- !u!84 &1780450873
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: LightMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 722
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 90
-  m_ColorFormat: 48
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &2063203228
 GameObject:
   m_ObjectHideFlags: 0
@@ -713,6 +652,5 @@ SceneRoots:
   m_Roots:
   - {fileID: 642295462}
   - {fileID: 143667938}
-  - {fileID: 1373120022}
   - {fileID: 495248626}
   - {fileID: 831793906}

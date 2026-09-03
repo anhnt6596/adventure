@@ -21,13 +21,13 @@ MonoBehaviour:
   attack:
     rid: 7312000000000000004
   attackRange: 0.8
-  leashRadius: 6
+  leashRadius: -1
   reEngageRadius: 5
   forgetTime: 2
   recognizeTime: 0.2
   retaliateRadius: 4
-  activeFrom: 6
-  activeTo: 10
+  activeFrom: 4
+  activeTo: 20
   references:
     version: 2
     RefIds:
@@ -40,9 +40,8 @@ MonoBehaviour:
         restMax: 0
         activeHoursOnly: 1
     - rid: 7312000000000000002
-      type: {class: PredatorAggro, ns: , asm: Assembly-CSharp}
-      data:
-        huntRadius: 2
+      type: {class: HuntAggro, ns: , asm: Assembly-CSharp}
+      data: 
     - rid: 7312000000000000003
       type: {class: StraightPursuit, ns: , asm: Assembly-CSharp}
       data: 

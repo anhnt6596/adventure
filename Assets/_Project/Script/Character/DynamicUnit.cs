@@ -137,6 +137,27 @@ public abstract class DynamicUnit : Unit
     // the same one on the MC deals the MC's) — the number's source differs per kind, the skill doesn't care.
     public abstract float AttackPower { get; }
 
+    // CRIT LIVES ON THE BODY, not on the weapon. A blow that crits is the fighter landing it well, so every
+    // ability a unit owns rolls against the same numbers — and an enemy that has never heard of crit simply
+    // leaves these at "never, for nothing extra" and every attack in the game keeps working unchanged.
+    public virtual float CritPoints => 0f;    // see Crit — points, not a percentage
+    public virtual float CritDamage => 1f;    // multiplier applied on a crit; 1 = a crit would be worth nothing
+
+    public float CritChance => Crit.ChanceFrom(CritPoints);
+
+    // ONE ROLL PER BLOW, made where the blow is made. Rolling here rather than inside each ability is what
+    // stops a fan of three knives being three separate lotteries — the ability rolls once and hands the same
+    // answer to everything that flight spawns.
+    //
+    // `isCrit` comes back as well as the number because a crit is meant to be SEEN: a wave thrown by one grows
+    // (SlashWave), and anything else that wants to look different has the fact rather than having to guess it
+    // back out of a damage figure it cannot compare against anything.
+    public float RollAttackDamage(out bool isCrit)
+    {
+        isCrit = CritChance > 0f && UnityEngine.Random.value < CritChance;
+        return AttackPower * (isCrit ? CritDamage : 1f);
+    }
+
     // Virtual so a unit whose stats aren't ready at Start (e.g. an enemy configured after spawn) can defer it.
     protected virtual void Start()
     {

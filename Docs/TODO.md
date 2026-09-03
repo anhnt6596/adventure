@@ -688,7 +688,7 @@ migration này được code thật.
       xem mục SunnyWeather) khi bật lại sẽ rửa nhạt dải sương lúc trưa. Đó là tint trên một màu vốn đã tối, không
       đổi hình dạng, nên viền vẫn còn đọc được là viền.
     - Nói theo đúng chữ thì **sương KHÔNG còn "không ảnh hưởng ngày đêm"** nữa — không thể vừa nằm dưới veil vừa
-      miễn nhiễm với nó. Cái được giữ là: sương **không tự đọc** `EnvironmentState`/`DayNightConfig`, không có
+      miễn nhiễm với nó. Cái được giữ là: sương **không tự đọc** `EnvironmentState`/`DayLightConfig`, không có
       nhánh code nào theo giờ; nó chỉ chịu đúng cái tint mà cả cảnh đang chịu.
     - Ngưỡng cần nhớ: thứ vẽ sau sương là queue > 3990. Muốn thêm veil nào **trên** sương thì đặt ≥ 4000.
     - **Đã thử để sương vào chung queue `Transparent` với sprite rồi bỏ** — không phải vì trông sai, mà vì nó
@@ -739,7 +739,7 @@ migration này được code thật.
 - [ ] **Weather system.** Cắm vào seam `--- Weather seam ---` trong `DayNightLighting.LateUpdate`:
   weather biến đổi `EnvironmentState` (ambient/fog/intensity) *sau* day/night rồi mới đẩy vào LightManager.
   - [ ] **SunnyWeather**: bóc cái glare vàng trưa (`#ACAE72`) từ base day/night ra đây
-    (xem `// TODO(weather)` trong `DayNightConfig`). Trời âm u thì trưa không chói.
+    (xem `// TODO(weather)` trong `DayLightConfig`). Trời âm u thì trưa không chói.
   - [ ] Mưa / sương mù / tuyết: fog (cộng sáng/haze) + giảm intensity + tông ambient.
 - [ ] **Day/night timing → config + save.** `DayNightClock` đang hard-code `DayLengthSeconds` +
   `StartTime` (`// TODO: load from save`). Đưa ra config, và giờ khởi động lấy từ save.

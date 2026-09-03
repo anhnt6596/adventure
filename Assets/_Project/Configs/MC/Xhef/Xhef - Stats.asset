@@ -14,16 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MainCharStatsConfig
   id: xhef
   moveSpeed: 2.5
-  attackSpeed: 0.8
-  attackPower: 4
-  recovery: 0
+  attackSpeed: 1
+  attackPower: 5
+  recovery: 0.2
   mass: 1
   pickupRadius: 0.3
+  critPoints: 50
+  critDamage: 1.5
   maxHp: 80
   maxHunger: 50
   hungerDrain: 0.2
   hungerDrainPerLevel: 0.01
-  startFullness: 1
   wellFed: 0.75
   wellFedHealPercent: 0
   starvePercent: 1

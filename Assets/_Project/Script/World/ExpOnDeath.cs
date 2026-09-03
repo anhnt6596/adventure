@@ -20,13 +20,18 @@ using VContainer;
 public class ExpOnDeath : MonoBehaviour
 {
     ExperienceSystem _exp;
+    ArenaRunner _arena;
     Damageable _damageable;
     Unit _unit;
 
     IDeathExpConfig Cfg => _unit != null ? _unit.DamageableConfig as IDeathExpConfig : null;
 
     [Inject]
-    public void Construct(ExperienceSystem exp) => _exp = exp;
+    public void Construct(ExperienceSystem exp, ArenaRunner arena)
+    {
+        _exp = exp;
+        _arena = arena;
+    }
 
     void Awake()
     {
@@ -57,10 +62,16 @@ public class ExpOnDeath : MonoBehaviour
         var cfg = Cfg;
         if (cfg == null) return;
 
-        _exp.Award(cfg.Exp);
+        // TWO LEDGERS, AND THE KILL BELONGS TO ONE OF THEM. Inside an arena the bounty buys power for THAT
+        // run and nothing else; outside, it is the world's. Docs/GATE_RUN.md turns on this line: run
+        // experience that leaked into the save would make a safe arena farmable, which is the one thing the
+        // whole design refuses.
+        if (_arena != null && _arena.InRun) _arena.AwardExp(cfg.Exp);
+        else _exp.Award(cfg.Exp);
 
-        // The bestiary first: paid once for the whole save, for the KIND rather than for this body. Keyed by
-        // the unit's id, which is what "kind" means everywhere else in the game.
+        // The bestiary is the WORLD's either way, and that is not an exception to the rule above — a first
+        // cannot be farmed, so it is safe to pay from inside a run. It is also the thing that rewards going
+        // to arenas full of creatures you have never met.
         if (cfg.FirstKillExp > 0 && _unit != null) _exp.AwardOnce($"kind:{_unit.Id}", cfg.FirstKillExp);
     }
 

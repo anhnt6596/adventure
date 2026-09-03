@@ -24,7 +24,7 @@ using UnityEngine.UIElements;
 // node behind it is owned, and does not put a hundred throwaway elements in the tree.
 //
 // GAME STATE IS PUSHED IN, ART TOO, and the split is not arbitrary: UISystem builds its views with the App
-// container, so UpgradeSystem, CharacterLevels and who is being played — all GameScope — would silently
+// container, so UpgradeSystem, UpgradePoints and who is being played — all GameScope — would silently
 // resolve to nothing through [Inject]. A tab is not a view and gets no injection at all, so IArtProvider now
 // arrives through Bind as well, handed down by the popup that does have it injected.
 public class UpgradeTab
@@ -39,7 +39,7 @@ public class UpgradeTab
 
     IGetUpgradeTree _trees;
     UpgradeSystem _upgrades;
-    CharacterLevels _levels;
+    UpgradePoints _pointsEarned;
     IArtProvider _art;
 
     readonly VisualElement _body, _canvas, _edges, _tip;
@@ -136,12 +136,12 @@ public class UpgradeTab
 
     // Called by the popup, straight after it shows — OnShow runs first, so nothing here may assume it has been
     // bound yet.
-    public void Bind(IGetUpgradeTree trees, UpgradeSystem upgrades, CharacterLevels levels, IArtProvider art,
+    public void Bind(IGetUpgradeTree trees, UpgradeSystem upgrades, UpgradePoints points, IArtProvider art,
                      string characterId)
     {
         _trees = trees;
         _upgrades = upgrades;
-        _levels = levels;
+        _pointsEarned = points;
         _art = art;
         _characterId = characterId;
 
@@ -167,16 +167,16 @@ public class UpgradeTab
     void Subscribe()
     {
         if (_upgrades != null) { _upgrades.Changed -= Refresh; _upgrades.Changed += Refresh; }
-        if (_levels != null) { _levels.Changed -= OnLevelChanged; _levels.Changed += OnLevelChanged; }
+        if (_pointsEarned != null) { _pointsEarned.Changed -= OnPointsChanged; _pointsEarned.Changed += OnPointsChanged; }
     }
 
     void Unsubscribe()
     {
         if (_upgrades != null) _upgrades.Changed -= Refresh;
-        if (_levels != null) _levels.Changed -= OnLevelChanged;
+        if (_pointsEarned != null) _pointsEarned.Changed -= OnPointsChanged;
     }
 
-    void OnLevelChanged(string characterId)
+    void OnPointsChanged(string characterId)
     {
         if (characterId == _characterId) Refresh();
     }
@@ -361,8 +361,7 @@ public class UpgradeTab
         if (_tree == null) return;
 
         int available = _upgrades?.Available(_characterId, _tree) ?? 0;
-        int level = _levels?.Level(_characterId) ?? CharacterLevels.StartLevel;
-        if (_points != null) _points.text = $"Level {level}   ·   {available} point{(available == 1 ? "" : "s")} to spend";
+        if (_points != null) _points.text = $"{available} point{(available == 1 ? "" : "s")} to spend";
 
         foreach (var node in _tree.Nodes)
         {

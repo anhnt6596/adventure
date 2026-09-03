@@ -20,8 +20,13 @@ public readonly struct Shot
     public readonly float Knockback;
     public readonly Component Source;    // the caster, so a victim can hit back at whoever threw this
 
+    // WAS THE BLOW THAT THREW THIS A CRIT. The extra damage is already inside Damage — this is here so the
+    // flight can LOOK like one: a crit is meant to be read off the screen, and a number nobody can compare
+    // against anything is not readable. Anything that does not care simply never asks.
+    public readonly bool IsCrit;
+
     public Shot(Vector3 direction, int team, float damage, float speed, float range, float knockback,
-                Component source)
+                Component source, bool isCrit = false)
     {
         direction.y = 0f;
         Direction = direction.sqrMagnitude > 1e-6f ? direction.normalized : Vector3.forward;
@@ -31,13 +36,14 @@ public readonly struct Shot
         Range = range;
         Knockback = knockback;
         Source = source;
+        IsCrit = isCrit;
     }
 
     // The same shot aimed somewhere else. What a fan is made of: one centre shot and copies of it turned off
     // the middle, so every knife in the spray carries identical numbers by construction rather than by the
     // caller remembering to pass the same ones each time round the loop.
     public Shot Turned(float degrees)
-        => new Shot(Quaternion.Euler(0f, degrees, 0f) * Direction, Team, Damage, Speed, Range, Knockback, Source);
+        => new Shot(Quaternion.Euler(0f, degrees, 0f) * Direction, Team, Damage, Speed, Range, Knockback, Source, IsCrit);
 }
 
 // Anything a skill or an attack can spawn and let go of. The base carries no flight and no hit: a soul-fire

@@ -6,10 +6,6 @@
 // faster healer; nobody is well fed at a different fullness, because that line is what the words mean.
 public interface IHungerConfig
 {
-    // How full a character starts. A FRACTION, not an absolute: the stomach is a Stat that grows with
-    // level and gear, and an absolute would quietly become a smaller and smaller share of it.
-    float StartFullness { get; }
-
     float WellFedFraction { get; }  // above this fraction of fullness, HP regenerates
 
     // Fraction of MAX HP lost per second while empty, not a flat amount: starving should take the same

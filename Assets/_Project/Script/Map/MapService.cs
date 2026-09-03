@@ -24,7 +24,7 @@ public class MapService : IMapService
         _camera = camera;
     }
 
-    public async UniTask WarpAsync(string mapId, int gateIndex)
+    public async UniTask WarpAsync(string mapId, int spawnIndex, IObjectResolver into = null)
     {
         bool sameMap = string.IsNullOrEmpty(mapId) || mapId == CurrentMapId;
 
@@ -36,7 +36,7 @@ public class MapService : IMapService
                 Debug.LogError("[MapService] in-map warp requested but no map is loaded.");
                 return;
             }
-            PlaceAtGate(_current, gateIndex);
+            PlaceAtSpawnPoint(_current, spawnIndex);
             return;
         }
 
@@ -64,12 +64,17 @@ public class MapService : IMapService
         }
 
         // Instantiate + inject the whole hierarchy, so Portals get IMapService and zones join the field.
-        _current = _container.Instantiate(prefab);
+        //
+        // Instantiate plainly and inject afterwards, rather than resolver.Instantiate: on a CHILD scope the
+        // latter routes injection through the parent and the child's own registrations are never seen. Same
+        // trap PlayerSystem.Spawn documents for the per-character scope.
+        _current = Object.Instantiate(prefab);
+        (into ?? _container).InjectGameObject(_current);
         CurrentMapId = mapId;
         long instantiateMs = watch.ElapsedMilliseconds - loadMs;
 
         WireMapToScene(_current);
-        PlaceAtGate(_current, gateIndex);
+        PlaceAtSpawnPoint(_current, spawnIndex);
         long wireMs = watch.ElapsedMilliseconds - loadMs - instantiateMs;
 
         // Only now remove the old map — same synchronous frame the new one is ready, so it's never blank.
@@ -95,13 +100,18 @@ public class MapService : IMapService
     // The border fog needs the same grid for a different reason: its darkness is anchored to the map's edge.
     void WireMapToScene(GameObject map)
     {
+        // The map's own light palette, or null for "look like the world does". Written on every swap, so a
+        // map without one cannot inherit the last map's sky.
+        var descriptor = map.GetComponent<Map>();
+        DayNightLighting.MapPalette = descriptor != null ? descriptor.Lighting : null;
+
         var terrain = map.GetComponentInChildren<TerrainGrid>(true);
         MapBorderFog.Terrain = terrain;
         if (terrain != null) CollisionSystem.Instance?.SetTerrain(terrain);
         else Debug.LogWarning($"[MapService] map '{CurrentMapId}' has no TerrainGrid — tile collision disabled.", map);
     }
 
-    void PlaceAtGate(GameObject mapInstance, int gateIndex)
+    void PlaceAtSpawnPoint(GameObject mapInstance, int spawnIndex)
     {
         var map = mapInstance.GetComponent<Map>();
         if (map == null)
@@ -110,11 +120,11 @@ public class MapService : IMapService
             return;
         }
 
-        var gate = map.GetGate(gateIndex);
+        var spawn = map.GetSpawnPoint(spawnIndex);
         var player = _player.Current;
-        if (gate != null && player != null)
+        if (spawn != null && player != null)
         {
-            player.transform.SetPositionAndRotation(gate.SpawnPosition, gate.SpawnRotation);
+            player.transform.SetPositionAndRotation(spawn.SpawnPosition, spawn.SpawnRotation);
             _camera?.SnapToTarget();   // cut the camera to the new spot instead of sliding across
         }
     }
