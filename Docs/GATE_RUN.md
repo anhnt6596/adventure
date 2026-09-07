@@ -446,9 +446,34 @@ Không còn cái nào chặn việc code. Những thứ dưới đây chốt lú
 
 ---
 
+## 🧪 Chưa test — làm trước khi đi tiếp
+
+Flow field vừa dựng xong nhưng **chưa chạy thử lần nào**. Bốn thứ cần nhìn tận mắt:
+
+1. **Quái đi vòng qua chướng ngại.** `ArenaTest` đang gần như trống nên `CanWalkStraight` gần như
+   luôn true và quái vẫn đi thẳng — **giống hệt như trước khi có flow field**. Muốn thấy nó làm
+   việc thì phải chặn: kẻ một dải nước hoặc một hàng ô không đi được giữa chỗ quái spawn và người
+   chơi. Không chặn thì không kết luận được gì.
+2. **Qua cầu.** Bắc một cây cầu (`Bridge`) qua dải nước đó. Quái phải đi qua được — trước đây field
+   đọc `TerrainGrid` nên cầu không tồn tại với nó. Hạ/nâng cầu giữa lúc chơi cũng phải ăn ngay,
+   không đợi: field theo dõi `TerrainQuery.WalkVersion`.
+3. **Hướng nhìn.** Lúc vòng qua chướng ngại, quái phải **quay mặt theo đường nó đi**, không phải
+   dán mắt vào người chơi. Lúc dừng lại đánh thì mới quay về phía người chơi.
+4. **Con to không chui khe hẹp.** Phép kiểm đi thẳng tính cả bán kính thân (`BodyRadius`), nên một
+   con to hơn khe phải chọn đường vòng thay vì cạ vào tường.
+
+`pp1 Brain` đã đổi sang `FlowPursuit`. Muốn so sánh thì tạo brain thứ hai giữ `StraightPursuit` —
+tường phải chặn được con đó mà không chặn con kia, đúng cái đã chốt.
+
+**Còn treo từ trước, cũng chưa test:** popup 3 thẻ lúc vào arena (cần `ConfigRegistry` đã gom 6 thẻ
+và `UI Registry` đã có `RunUpgradePopup` — cả hai tự sinh lúc compile), và `Spawn Ring` hiện là
+`{8, 12}` trên `Arena Test`.
+
+---
+
 ## Đầu việc
 
-### 🔜 Tìm đường — LÀM TRƯỚC
+### Tìm đường ✅
 
 **Flow field, không phải A* mỗi con.** Trong survivors-like mọi con cùng đuổi một mục tiêu, nên A*
 từng agent là 80 lần tìm ra 80 kết quả gần giống hệt nhau. Thay bằng **một lượt BFS từ người chơi lan
@@ -464,11 +489,15 @@ bám 8 hướng.
 **Quái ngu vẫn ngu — vì thiết kế, không vì tiết kiệm.** Đã chốt: tường là khắc chế tuyệt đối bầy ngu
 và vô dụng trước con biết nghĩ. Con nào cũng đi vòng được thì tường mất sạch ý nghĩa.
 
-- [ ] **`FlowField`** trong `RunScope`: BFS từ người chơi trên ô walkable, nội suy, tính lại theo nhịp.
-- [ ] **`FlowPursuit`** — behaviour mới cắm cạnh `StraightPursuit` (cái cũ **ở lại** cho quái ngu).
+- [x] **`FlowField`** ✅ — BFS 4 hướng từ người chơi trên ô walkable, đọc bằng **gradient 8 hướng** (nên
+      ra một hướng mượt chứ không phải một trong tám), không cắt góc. Sống ở `GameScope`, `ArenaRunner`
+      `Bind`/`Unbind` theo map của run. Tính lại 4 lần/giây.
+- [x] **`FlowPursuit`** ✅ — behaviour mới cắm cạnh `StraightPursuit` (cái cũ **ở lại** cho quái ngu).
       Loài nào biết đi vòng là quyết định author trên brain.
-- [ ] **Nhánh "thấy thì đi thẳng"** trước khi đọc field.
-- [ ] **Đánh dấu bẩn khi tường mọc/gãy**, tính lại ở nhịp sau. Không rebuild ngay giữa frame.
+- [x] **Nhánh "thấy thì đi thẳng"** ✅ — `FlowField.CanSee` bước nửa ô một dọc đường thẳng. Arena
+      thoáng thì gần như luôn rơi vào nhánh này, nên quái không có cảm giác trượt theo lưới.
+- [x] **`MarkDirty()`** ✅ sẵn cho tường mọc/gãy gọi — tính lại ở nhịp sau, không rebuild giữa frame.
+      Chưa ai gọi vì chưa có tường.
 - [ ] *(để dành)* A* thật sự cho từng agent — chỉ đáng làm khi có con cần đi tới **thứ khác ngoài
       người chơi** (một cái tháp, một điểm build). Lúc đó là behaviour thứ ba, không phải viết lại.
 

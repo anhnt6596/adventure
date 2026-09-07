@@ -22,12 +22,14 @@ public class EnemyAI : MonoBehaviour
 
     ITimeOfDay _clock;   // injected through EnemySpawner's scope; only creatures with a body clock read it
     IPlayer _player;     // hunters go straight for it (see HuntAggro); everything else ignores it
+    FlowField _flow;     // only FlowPursuit reads it; a dumb brain never asks
 
     [Inject]
-    public void Construct(ITimeOfDay clock, IPlayer player)
+    public void Construct(ITimeOfDay clock, IPlayer player, FlowField flow)
     {
         _clock = clock;
         _player = player;
+        _flow = flow;
     }
 
     void Awake()
@@ -47,6 +49,7 @@ public class EnemyAI : MonoBehaviour
         _state = State.Idle;
         _ctx.clock = _clock;
         _ctx.player = _player;
+        _ctx.flow = _flow;
         _ctx.brain = _s = BuildBrain();   // behaviours read the same copy the FSM does
 
         // A creature authored to sleep will instead be awake around the clock if nothing injected the time —
@@ -145,10 +148,14 @@ public class EnemyAI : MonoBehaviour
         _state = State.Chase;
     }
 
+    // NO FaceTarget HERE, and that is the difference between a creature walking and a creature being dragged.
+    // A chase can curve — round a wall, along a bridge — and a body that keeps staring at its target while its
+    // feet go elsewhere reads as a cardboard cut-out on a rail. Move() sets the facing from the direction
+    // actually travelled; Attack aims at the target again the moment it stops to swing, which is when aim
+    // genuinely matters (a shot leaves along FacingDir).
     void TickChase()
     {
         if (!_ctx.HasLiveTarget) { EnterForget(); return; }
-        FaceTarget();
         float d = _ctx.DistanceToTarget();
         if (_s.BeyondLeash(d)) { EnterForget(); return; }
         // Arrived: hand over AND run the attack in the same frame. Just switching state would spend this frame

@@ -34,6 +34,7 @@ public class ArenaRunner : ITickable
     readonly EnemySpawner _spawner;
     readonly IUISystem _ui;
     readonly CardLibrary _cards;
+    readonly FlowField _flow;
 
     IScopedObjectResolver _scope;
     ArenaConfig _arena;
@@ -63,7 +64,8 @@ public class ArenaRunner : ITickable
 
     [Inject]
     public ArenaRunner(IObjectResolver container, IMapService maps, IPlayer player, PlayerSystem players,
-                       ActiveTimeOfDay timeOfDay, EnemySpawner spawner, IUISystem ui, CardLibrary cards)
+                       ActiveTimeOfDay timeOfDay, EnemySpawner spawner, IUISystem ui, CardLibrary cards,
+                       FlowField flow)
     {
         _container = container;
         _maps = maps;
@@ -73,6 +75,7 @@ public class ArenaRunner : ITickable
         _spawner = spawner;
         _ui = ui;
         _cards = cards;
+        _flow = flow;
     }
 
     // `returnSpawnIndex` is the spawn point in the CURRENT map the player steps back out at — authored on the
@@ -128,13 +131,18 @@ public class ArenaRunner : ITickable
         StomachFor(true);
         WarnAboutWaysOut();
 
-        // After the warp, because the arena's terrain only exists once the map is built — and the director
-        // places every body on it.
         // After the player is standing and healed: the first card can land on the body immediately.
         _upgrades = new RunUpgrades(_cards, _level, _player, _ui, arena.handSize);
 
-        _director = new ArenaDirector(arena, _clock, _spawner, _player,
-                                      UnityEngine.Object.FindFirstObjectByType<TerrainGrid>());
+        // After the warp, because the arena's terrain only exists once the map is built — the director places
+        // every body on it, and the flow field describes it.
+        var terrain = UnityEngine.Object.FindFirstObjectByType<TerrainGrid>();
+
+        // Bound to THIS map, and only for as long as the run lasts. A field describing a map that has been
+        // destroyed is worse than no field: it answers, and it answers about somewhere else.
+        _flow.Bind(terrain, _player);
+
+        _director = new ArenaDirector(arena, _clock, _spawner, _player, terrain);
         _busy = false;
     }
 
@@ -212,6 +220,8 @@ public class ArenaRunner : ITickable
         // an arena must never leak.
         _director?.Dispose();
         _director = null;
+
+        _flow.Unbind();
 
         // A dead body cannot be put down at a spawn point. Under possession a respawn IS a fresh body for the
         // same character, which is what PlayerSystem does when asked for the one already selected.

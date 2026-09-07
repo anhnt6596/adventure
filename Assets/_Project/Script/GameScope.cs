@@ -42,6 +42,11 @@ public class GameScope : LifetimeScope
         // select later) needs the concrete system.
         builder.RegisterEntryPoint<PlayerSystem>().As<IPlayer>().AsSelf();   // owns + spawns the MC; runs before GameController warps
         builder.Register<EnemySpawner>(Lifetime.Singleton);                 // makes enemies by id (spawn zones call it)
+
+        // Which way to walk to reach the player, for the monsters clever enough to ask (FlowPursuit). One
+        // sweep serves the whole horde, so it is a service rather than something each body carries. An entry
+        // point because it rebuilds on a timer; it does nothing at all until a run binds a map to it.
+        builder.RegisterEntryPoint<FlowField>().AsSelf();
         builder.RegisterEntryPoint<UpgradeNotifier>();               // unspent points -> the (!) on the avatar and its tab
         builder.RegisterEntryPoint<CameraFollowsPlayer>();          // aims CameraRig at the spawned body
 

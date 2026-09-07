@@ -110,6 +110,10 @@ public abstract class DynamicUnit : Unit
     // the player was asking to leave.
     public Vector3 TravelDir => SteerDir.sqrMagnitude > 1e-6f ? SteerDir : FacingDir;
 
+    // How wide this thing is, for anything asking whether it FITS somewhere — a navigation check, a
+    // placement. Off the collision body, so the answer is the same shape collision itself enforces.
+    public float BodyRadius => body != null ? body.Radius : 0f;
+
     // The numbers the control loop needs; each unit kind sources them differently.
     protected abstract float MoveSpeed { get; }
     protected abstract float AttackSpeed { get; }

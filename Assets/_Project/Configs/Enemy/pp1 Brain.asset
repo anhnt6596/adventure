@@ -43,7 +43,7 @@ MonoBehaviour:
       type: {class: HuntAggro, ns: , asm: Assembly-CSharp}
       data: 
     - rid: 7312000000000000003
-      type: {class: StraightPursuit, ns: , asm: Assembly-CSharp}
+      type: {class: FlowPursuit, ns: , asm: Assembly-CSharp}
       data: 
     - rid: 7312000000000000004
       type: {class: SimpleAttack, ns: , asm: Assembly-CSharp}

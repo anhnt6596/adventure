@@ -12,6 +12,11 @@ public class AIContext
                                    // ITimeOfDay, not DayNightClock: inside an arena the run's clock is the one
                                    // that means anything, and a nocturnal monster must wake by ITS night.
     public IPlayer player;         // who the run is about — hunters go straight for this rather than searching
+
+    // Which way to walk to reach the player from anywhere, when a wall is in the way. Null outside a run, and
+    // FlowPursuit falls back to heading straight — a monster with no field is exactly a monster with no
+    // navigation, which is what most of them are meant to be.
+    public FlowField flow;
     public Vector3 home;           // spawn position — idle behaviours orbit it
     public IDamageable target;     // current target (null = none)
 
