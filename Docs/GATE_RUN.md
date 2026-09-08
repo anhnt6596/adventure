@@ -454,9 +454,12 @@ Flow field vừa dựng xong nhưng **chưa chạy thử lần nào**. Bốn th�
    luôn true và quái vẫn đi thẳng — **giống hệt như trước khi có flow field**. Muốn thấy nó làm
    việc thì phải chặn: kẻ một dải nước hoặc một hàng ô không đi được giữa chỗ quái spawn và người
    chơi. Không chặn thì không kết luận được gì.
-2. **Qua cầu.** Bắc một cây cầu (`Bridge`) qua dải nước đó. Quái phải đi qua được — trước đây field
-   đọc `TerrainGrid` nên cầu không tồn tại với nó. Hạ/nâng cầu giữa lúc chơi cũng phải ăn ngay,
-   không đợi: field theo dõi `TerrainQuery.WalkVersion`.
+2. **Qua cầu.** Bắc một cây cầu (`Bridge`) qua dải nước đó. Quái phải đi qua được. Hai lần đã sửa
+   ở đây: field từng đọc `TerrainGrid` nên **cầu không tồn tại**, rồi lấy mẫu ở tâm ô 2 đơn vị nên
+   **cầu rộng 2 đơn vị lọt giữa các mẫu** — quái dồn ở mép cầu. Giờ node là **1/4 ô** (nửa đơn vị).
+   Hạ/nâng cầu giữa lúc chơi cũng phải ăn ngay, không đợi: field theo dõi `TerrainQuery.WalkVersion`.
+   ⚠️ Cầu **hẹp hơn thân quái** thì nó vẫn không qua được, và đó là đúng — `CanMove` tính bán kính
+   thân. Nếu muốn quái qua cầu hẹp thì phải nới cầu, không phải nới field.
 3. **Hướng nhìn.** Lúc vòng qua chướng ngại, quái phải **quay mặt theo đường nó đi**, không phải
    dán mắt vào người chơi. Lúc dừng lại đánh thì mới quay về phía người chơi.
 4. **Con to không chui khe hẹp.** Phép kiểm đi thẳng tính cả bán kính thân (`BodyRadius`), nên một
