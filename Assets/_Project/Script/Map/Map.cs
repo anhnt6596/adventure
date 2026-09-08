@@ -17,6 +17,15 @@ public class Map : MonoBehaviour
     // default is what that means. MapService hands this to DayNightLighting on load.
     public DayLightConfig Lighting => lighting;
 
+    [Tooltip("May the player fight here? Off for the overworld: it is a hub, and a swing there has nothing to " +
+             "hit and no reason to exist. On for arenas, and on for a training map where the point is to hit " +
+             "dummies without a run being open.\n\n" +
+             "A property of the PLACE, not of whether a run is on — which is exactly why it is a field here " +
+             "and not something derived. A training ground is no run at all and still allows a fight.")]
+    [SerializeField] bool combatAllowed;
+
+    public bool CombatAllowed => combatAllowed;
+
     public int SpawnPointCount => spawnPoints != null ? spawnPoints.Length : 0;
 
     public SpawnPoint GetSpawnPoint(int index)

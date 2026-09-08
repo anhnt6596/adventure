@@ -57,13 +57,10 @@ public class ArenaConfig : Config
     public Vector2 spawnRing = new Vector2(18f, 24f);
 
     [Header("Levelling")]
-    // WHICH CARDS can turn up is NOT here: it is what the player has unlocked (CardLibrary). An arena decides
-    // how fast you climb, not what you are offered when you do — the first is a property of the place, the
-    // second a property of the person.
-    [Tooltip("Experience the NEXT level costs, read at the current level (x = level). A curve rather than a " +
-             "formula, so a short test arena and a long one can climb completely differently without code.")]
-    public AnimationCurve expToNext = AnimationCurve.Linear(1f, 10f, 20f, 200f);
-
+    // NEITHER WHAT A LEVEL COSTS NOR WHICH CARDS TURN UP IS HERE. The cost is the game's own curve
+    // (CharacterLevels.ExpToLevelUp, read by RunLevel) and the cards are what this save has unlocked
+    // (CardLibrary) — both are facts about the PLAYER. What an arena decides is how much its monsters are
+    // worth and how thickly they come, which is above, and that is enough to make a hard place level you fast.
     [Tooltip("How many cards a level-up offers. Three is the usual: enough to be a choice, few enough to " +
              "read while a horde waits.")]
     [Min(1)] public int handSize = 3;

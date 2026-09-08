@@ -47,6 +47,12 @@ public class GameHUD : UIView
     // about ids — unlike HP and fullness, which are components on whatever body is currently standing there.
     CharacterLevels _levels;
     string _levelCharacterId;
+
+    // The level the RUN is on, while there is one. It takes over the bar because it is the only level that
+    // moves in an arena: kills feed this, and the character's own level is fed by firsts out in the world (see
+    // Docs/GATE_RUN.md). A bar showing the world level during a run would sit dead still while the player
+    // levelled up in front of it — which is exactly what it was doing.
+    RunLevel _run;
     VisualElement _levelRoot, _levelAvatar, _levelFill;
     Label _levelText, _levelExp;
 
@@ -316,6 +322,15 @@ public class GameHUD : UIView
         if (characterId == _levelCharacterId) RefreshLevel();
     }
 
+    // Handed over by whoever opens and closes a run; null puts the bar back on the character's own level.
+    public void SetRunLevel(RunLevel run)
+    {
+        if (_run != null) _run.Changed -= RefreshLevel;
+        _run = run;
+        if (_run != null) _run.Changed += RefreshLevel;
+        RefreshLevel();
+    }
+
     // Pushed like everything else here that knows about the running game. Taking the service rather than a bool
     // so the badge keeps itself up to date — it has to go out the moment the player opens the window, which is
     // not a moment the HUD would otherwise hear about.
@@ -336,6 +351,17 @@ public class GameHUD : UIView
 
     void RefreshLevel()
     {
+        // THE RUN'S LEVEL WINS WHENEVER THERE IS ONE. Two numbers are called "level" in this game and they
+        // grow for different reasons; the bar shows whichever one the player is currently earning.
+        if (_run != null)
+        {
+            if (_levelRoot != null) _levelRoot.style.display = DisplayStyle.Flex;
+            if (_levelText != null) _levelText.text = _run.Level.ToString();
+            if (_levelExp != null) _levelExp.text = $"{_run.Exp}/{_run.ExpToNext}";
+            if (_levelFill != null) _levelFill.style.width = Length.Percent(_run.Fraction * 100f);
+            return;
+        }
+
         bool has = _levels != null && !string.IsNullOrEmpty(_levelCharacterId);
         if (_levelRoot != null) _levelRoot.style.display = has ? DisplayStyle.Flex : DisplayStyle.None;
         if (!has) return;

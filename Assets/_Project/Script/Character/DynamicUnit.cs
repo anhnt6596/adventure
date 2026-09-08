@@ -354,8 +354,15 @@ public abstract class DynamicUnit : Unit
         // so turning into the next one costs nothing and needs no exception here.
         if (!aimed && !IsBusy && move.sqrMagnitude > 0.0001f) Aim(move.x, move.y);
 
-        // Committed: stand still. The feet are the thing the action owns.
-        if (IsBusy) { Velocity = Vector3.zero; return; }
+        // A SKILL OR A DASH OWNS THE FEET; AN ATTACK DOES NOT. Attacking became something the character does
+        // on its own, continuously, at whatever pace its attack speed sets (see MCInput) — and an auto-attack
+        // that stopped the player every time it went off would be the game taking the controls away several
+        // times a second. So a swing owns the AIM for its duration and nothing else: the blow still lands
+        // where it was pointed, the body keeps walking.
+        //
+        // A skill and a dash still plant, and that is what makes them a commitment rather than a free action:
+        // casting is a moment you spend, and spending it while running would cost nothing at all.
+        if (Busy == ActionKind.Skill || Busy == ActionKind.Dash) { Velocity = Vector3.zero; return; }
 
         Velocity = new Vector3(move.x, 0f, move.y) * MoveSpeed;
         transform.position += Velocity * Time.deltaTime;

@@ -219,6 +219,7 @@ MonoBehaviour:
   - {fileID: 1587663172329036433}
   - {fileID: 1342570557016627832}
   lighting: {fileID: 11400000, guid: 8acb96119338bec4789dab658724799e, type: 2}
+  combatAllowed: 1
 --- !u!1 &3458543295302478990
 GameObject:
   m_ObjectHideFlags: 0

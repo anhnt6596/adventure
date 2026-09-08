@@ -9,6 +9,7 @@ records something the code can't say by itself: a decision, a trade-off, a rule.
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Boot flow, DI scopes, modules, conventions |
 | [DECISIONS.md](DECISIONS.md) | Dated log of why things are the way they are |
 | [GATE_RUN.md](GATE_RUN.md) | Survivors-like gate mode — the new direction (design, not built) |
+| [ORBIT.md](ORBIT.md) | Orbiting spheres — an arena upgrade (design, not built) |
 
 Code-local docs live next to the code they describe:
 - `Assets/_Project/Script/Config/CONFIG.md` — config/ScriptableObject system

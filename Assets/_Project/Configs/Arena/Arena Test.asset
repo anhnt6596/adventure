@@ -19,40 +19,16 @@ MonoBehaviour:
   waves:
   - enemyId: pp1
     day: 0
-    fromHour: 6
-    toHour: 18
-    count: 10
+    fromHour: 0
+    toHour: 24
+    count: 20
   - enemyId: pp1
     day: 1
     fromHour: 0
     toHour: 24
-    count: 20
+    count: 40
   maxAlive: 80
   spawnRing: {x: 8, y: 12}
-  expToNext:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 1
-      value: 10
-      inSlope: 0
-      outSlope: 10
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 20
-      value: 200
-      inSlope: 10
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
   handSize: 3
   days: 15
   dayLengthSeconds: 60

@@ -75,7 +75,18 @@ public class RunUpgrades
 
     void Next()
     {
-        if (_drafting || _pending <= 0) return;
+        // A DRAFT ONLY HOLDS THE QUEUE WHILE ITS WINDOW IS ACTUALLY ON SCREEN. Anything that closes the popup
+        // without a card being taken — the dimmer click that used to be allowed, a scene change, another
+        // system hiding it — otherwise leaves this flag set for good, and every level after that is swallowed
+        // in silence. Asking the UI rather than trusting the flag is what makes that unrecoverable state
+        // recover itself.
+        if (_drafting)
+        {
+            if (_ui?.Get<RunUpgradePopup>() != null) return;
+            _drafting = false;
+        }
+
+        if (_pending <= 0) return;
 
         if (_library == null)
         {
@@ -119,6 +130,9 @@ public class RunUpgrades
             return;
         }
 
+        // Off first: the popup is pooled, so the same instance comes back draft after draft and a plain +=
+        // would stack a second handler on it every time — one choice would then be taken twice.
+        popup.Chosen -= OnChosen;
         popup.Chosen += OnChosen;
         popup.Bind(_level.Level, _hand);
     }
@@ -165,11 +179,10 @@ public class RunUpgrades
         }
     }
 
+    // Reached with the window already closed — see RunUpgradePopup.Take — so the next draft below opens a
+    // fresh one rather than redressing the one being taken down.
     void OnChosen(RunUpgradeCard card)
     {
-        var popup = _ui.Get<RunUpgradePopup>();
-        if (popup != null) popup.Chosen -= OnChosen;
-
         _drafting = false;
         Take(card);
 

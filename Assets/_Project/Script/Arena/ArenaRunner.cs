@@ -58,8 +58,10 @@ public class ArenaRunner : ITickable
     // rather than a rule everybody has to remember.
     public void AwardExp(int amount) => _level?.Award(amount);
 
-    // Fired once the run is fully closed and the player is standing back outside. Whatever pays for a run
-    // listens here rather than being called from inside it, so the run has no idea what it is worth.
+    // Fired once the run is up and the player is standing in it, and again once it is fully closed and they
+    // are standing back outside. Whatever pays for a run, or shows one, listens here rather than being called
+    // from inside it — so the run has no idea what is watching.
+    public event Action Started;
     public event Action<ArenaResult> Ended;
 
     [Inject]
@@ -109,7 +111,7 @@ public class ArenaRunner : ITickable
 
         _arena = arena;
         _clock = new RunClock(arena.days, arena.dayLengthSeconds, arena.startHour);
-        _level = new RunLevel(arena.expToNext);
+        _level = new RunLevel();
 
         // The scope before the map, because the map is injected THROUGH it — anything authored into an arena
         // that wants the run's services would otherwise be built against a run that does not exist yet.
@@ -144,6 +146,8 @@ public class ArenaRunner : ITickable
 
         _director = new ArenaDirector(arena, _clock, _spawner, _player, terrain);
         _busy = false;
+
+        Started?.Invoke();
     }
 
     // EVERY RUN STARTS FROM SCRATCH, and the body is the one thing that carries over from outside. Level,

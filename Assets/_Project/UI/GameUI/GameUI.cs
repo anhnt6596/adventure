@@ -55,6 +55,7 @@ public class GameUI : MonoBehaviour
 
     CharacterLevels _levels;
     UpgradePoints _upgradePoints;
+    ArenaRunner _arena;
     IGetUpgradeTree _trees;
     UpgradeSystem _upgrades;
     NotificationService _notifications;
@@ -62,7 +63,7 @@ public class GameUI : MonoBehaviour
     [Inject]
     public void Construct(IInputGate gate, IUISystem ui, IPlayer player,
                           CharacterLevels levels, UpgradePoints upgradePoints, IGetUpgradeTree trees,
-                          UpgradeSystem upgrades, NotificationService notifications)
+                          UpgradeSystem upgrades, NotificationService notifications, ArenaRunner arena)
     {
         _gate = gate;
         _ui = ui;
@@ -72,7 +73,17 @@ public class GameUI : MonoBehaviour
         _trees = trees;
         _upgrades = upgrades;
         _notifications = notifications;
+        _arena = arena;
+
+        // The bar shows whichever level the player is currently EARNING: the run's while there is one, the
+        // character's otherwise. Bound off the run's own edges rather than polled, so the swap happens on the
+        // frame the run does.
+        _arena.Started += OnRunStarted;
+        _arena.Ended += OnRunEnded;
     }
+
+    void OnRunStarted() => _ui?.Get<GameHUD>()?.SetRunLevel(_arena.Level);
+    void OnRunEnded(ArenaResult _) => _ui?.Get<GameHUD>()?.SetRunLevel(null);
 
     void Awake() => _document = GetComponent<UIDocument>();
 
@@ -156,6 +167,10 @@ public class GameUI : MonoBehaviour
         // Level is the character's, not the body's, so this one is bound by id — and the id is all it needs:
         // the HUD finds the portrait itself, by name.
         hud.SetLevels(_levels, mc != null ? mc.Id : null);
+
+        // A respawn mid-run rebuilds the HUD's bindings, so the run's level has to be put back on it — the
+        // body changed, the run did not.
+        hud.SetRunLevel(_arena != null && _arena.InRun ? _arena.Level : null);
     }
 
     // Dev drawer on the left edge: the tab opens a vertical panel that will hold the cheat tools (empty for
@@ -504,6 +519,7 @@ public class GameUI : MonoBehaviour
     {
         Release();
         if (_player != null) _player.Spawned -= OnPlayerSpawned;
+        if (_arena != null) { _arena.Started -= OnRunStarted; _arena.Ended -= OnRunEnded; }
         if (_upgrades != null) _upgrades.Changed -= RefreshAbilities;
 #if UNITY_EDITOR
         if (_bagInventory != null) _bagInventory.Changed -= RefreshBag;

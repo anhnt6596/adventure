@@ -13,6 +13,8 @@ public class MapService : IMapService
     readonly CameraRig _camera;
 
     GameObject _current;
+    System.IDisposable _peace;   // held while the loaded map forbids fighting
+
     public string CurrentMapId { get; private set; } = "";
 
     [Inject]
@@ -100,10 +102,21 @@ public class MapService : IMapService
     // The border fog needs the same grid for a different reason: its darkness is anchored to the map's edge.
     void WireMapToScene(GameObject map)
     {
+        // WHETHER YOU MAY FIGHT IS A PROPERTY OF WHERE YOU ARE STANDING, and the input gate is already the one
+        // place permissions live — so a peaceful map is one held block, not a branch in every ability. The old
+        // block is released first: a map that allows fighting simply stops holding one.
+        _peace?.Dispose();
+        _peace = null;
+
         // The map's own light palette, or null for "look like the world does". Written on every swap, so a
         // map without one cannot inherit the last map's sky.
         var descriptor = map.GetComponent<Map>();
         DayNightLighting.MapPalette = descriptor != null ? descriptor.Lighting : null;
+
+        // No descriptor is treated as peaceful rather than as a battlefield: a map somebody forgot to mark
+        // should be the harmless kind of wrong.
+        if (descriptor == null || !descriptor.CombatAllowed)
+            _peace = _gate.Block(InputKind.Attack | InputKind.Skill, "peaceful map");
 
         var terrain = map.GetComponentInChildren<TerrainGrid>(true);
         MapBorderFog.Terrain = terrain;

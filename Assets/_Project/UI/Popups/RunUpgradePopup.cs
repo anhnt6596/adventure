@@ -20,7 +20,11 @@ using VContainer;
 // what happens to it when the run ends are all the run's business (RunUpgrades) — this is a window.
 public class RunUpgradePopup : BasePopup
 {
+    // NO ESCAPE, NO CLICKING OUTSIDE. Both doors are shut for the same reason: the level has already been
+    // spent, so a window that can be dismissed is a level that vanishes with nothing to show for it. The only
+    // way out is taking a card, which is also the only way out that means anything.
     public override bool CloseOnEscape => false;
+    protected override bool CloseWhenClickBackground => false;
 
     IInputGate _gate;
 
@@ -30,8 +34,8 @@ public class RunUpgradePopup : BasePopup
     IDisposable _block;
     float _prevTimeScale = 1f;
 
-    // The card the player took. Fired before the window closes, so whoever queued the draft can decide
-    // whether another one follows immediately — two levels at once is two drafts, not one.
+    // The card the player took, announced once the window is already down — see Take. Whoever queued the
+    // draft opens the next one straight off this, so two levels at once is two windows in a row.
     public event Action<RunUpgradeCard> Chosen;
 
     public RunUpgradePopup(VisualElement root) : base(root)
@@ -88,12 +92,17 @@ public class RunUpgradePopup : BasePopup
         return element;
     }
 
+    // CLOSE FIRST, ANNOUNCE SECOND, and the order is not a detail — it is the whole reason a three-level
+    // gain shows three windows. Whoever is listening opens the NEXT draft the moment it hears, and it opens
+    // it in this same window: announcing first meant the second draft was built into a popup that this
+    // method then closed on the very next line, so two of the three levels vanished without a sound.
+    //
+    // It is also the right order for the time scale. Closing puts it back to what it was, so the next window
+    // freezes from a running game — the state its own OnShow expects to find and to restore later.
     void Take(RunUpgradeCard card)
     {
-        // Fire first, close second. Closing restores the time scale, and the next draft in a multi-level
-        // gain wants to freeze it again from the frozen state rather than race the restore.
-        Chosen?.Invoke(card);
         Close();
+        Chosen?.Invoke(card);
     }
 
     public override void OnShow()

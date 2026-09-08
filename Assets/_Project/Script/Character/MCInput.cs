@@ -45,18 +45,20 @@ public class MCInput : MonoBehaviour
     }
 
     readonly Dictionary<Key, ICharacterCommand> _held = new Dictionary<Key, ICharacterCommand>();
-    readonly Dictionary<Key, ICharacterCommand> _pressed = new Dictionary<Key, ICharacterCommand>();
 
-    // Kept apart from _pressed so the gate can allow one and refuse the other. They are two different
-    // permissions — a scripted moment may well want you able to swing where you stand but not to dash out of
-    // it — and one dictionary could only ever be allowed or refused as a whole.
+    // Kept apart from the steering keys, and gated separately: they are two different permissions — a scripted
+    // moment may well want you able to walk but not to dash out of it.
     readonly Dictionary<Key, ICharacterCommand> _skills = new Dictionary<Key, ICharacterCommand>();
 
     // THE TWO MOUSE BUTTONS. Kept apart from the dictionaries because a mouse button is not a Key and they
     // cannot hold it — but each is the SAME command object its keys carry, so one press is one action however
     // it was made: one cooldown, one buffered press, one place in a combo string.
-    ICharacterCommand _attack;   // left
-    ICharacterCommand _skill1;   // right
+    ICharacterCommand _skill1;   // left
+    ICharacterCommand _skill2;   // right
+
+    // NOBODY PRESSES THIS. The attack goes off by itself, as often as the character can throw it, aimed at
+    // the cursor — see TickAutoAttack.
+    ICharacterCommand _attack;
 
     Vector2 _localMove;
 
@@ -86,18 +88,18 @@ public class MCInput : MonoBehaviour
     // because a character with no second skill yet must simply have nothing on that key — a serialized slot
     // would be an empty reference to explain instead.
     //
-    // THE MOUSE FIGHTS AND THE THUMB DASHES. Left button attacks where the cursor is pointing, right button
-    // casts skill 1, Space lunges: the hand that aims is the hand that acts, and the one thing the other hand
-    // needs under it is the way out. That is the control scheme; everything below is an alternative to it.
+    // NOTHING IS BOUND TO ATTACKING, and that is the whole control scheme now. A horde is not a thing you
+    // click at a hundred times a minute; the character swings on its own, as fast as its attack speed lets it,
+    // at whatever the cursor is pointing at. The mouse became an AIM rather than a trigger.
     //
-    // SKILL 1 AND NOT SKILL 2 on the right button, because there are two buttons and four things, so one of
-    // them has to be the one that gets the hand. Skill 1 is the one every character has and the one pressed
-    // most often — skill 2 is the late unlock, and reaching for a key is the right price for it.
+    // SO THE BUTTONS MOVED UP ONE. Left casts skill 1 — the one every character has and the one used most, so
+    // it gets the hand that is already on the mouse — and right casts skill 2. Space still lunges, under the
+    // thumb of the hand that is not on the mouse.
     //
-    // TWO KEYBOARD SETS behind that, both running attack, dash, skill 1, skill 2 in the order the HUD draws
-    // them: Z-X-C-V under the fingers WASD leaves them next to, and J-K-L-; for a hand nowhere near those.
-    // Every alternative for one action is the SAME command object: one cooldown, one buffered press, however
-    // it was asked for.
+    // The keyboard rows are unchanged: X-C-V beside the fingers WASD leaves free, K-L-; for a hand nowhere
+    // near them. Z and J are simply gone, because what they used to do nobody has to ask for any more. Every
+    // alternative for one action is the SAME command object: one cooldown, one buffered press, however it was
+    // asked for.
     //
     // NO KEY AIMS. The cursor turns the character on a mouse CLICK and nowhere else — see AimAtCursor — so the
     // same skill leaves along the pointer off the right button and along the current facing off its key. A key
@@ -136,6 +138,7 @@ public class MCInput : MonoBehaviour
             var command = new SkillCommand(ability);
             foreach (var key in keys) _skills[key] = command;   // the SAME command, so one skill either way
             if (ability.Which == AbilitySlot.Skill1) _skill1 = command;
+            else if (ability.Which == AbilitySlot.Skill2) _skill2 = command;
         }
 
         // A character with nothing in the Attack slot cannot attack at all, which is a wiring mistake and not a
@@ -144,12 +147,7 @@ public class MCInput : MonoBehaviour
             Debug.LogError($"[{nameof(MCInput)}] nothing in the Attack slot on '{character.name}' — the attack " +
                            "button does nothing. Put an AttackAbility or a ComboAttack there.", character);
 
-        // One command object behind the button and both keys, so an attack is one attack however it was asked
-        // for — one cooldown, one buffered press, one place in a combo string.
-        var swing = new AttackCommand(attack);
-        _attack = swing;
-        _pressed[Key.J] = swing;
-        _pressed[Key.Z] = swing;
+        _attack = new AttackCommand(attack);
     }
 
     // EVERY KEY A SLOT ANSWERS TO, in one list rather than one function per set: which keys reach a slot is a
@@ -181,26 +179,40 @@ public class MCInput : MonoBehaviour
         // possible rather than a frame later. A fresh press that also fails simply replaces it below.
         RetryBuffered();
 
-        if (_gate == null || _gate.Allows(InputKind.Attack))
-        {
-            // THE LEFT BUTTON SWINGS WHERE IT POINTS. Always aimed, like every click — see AimAtCursor.
-            if (_attack != null && Clicked(Mouse.current?.leftButton))
-                Press(_attack, InputKind.Attack, atCursor: true);
-
-            foreach (var b in _pressed)
-                if (kb[b.Key].wasPressedThisFrame) Press(b.Value, InputKind.Attack);
-        }
+        TickAutoAttack();
 
         if (_gate == null || _gate.Allows(InputKind.Skill))
         {
-            // AIMED, the same as the left button: a CLICK is an aim, whichever button it was made with. See
-            // AimAtCursor — what does not aim is a KEY.
-            if (_skill1 != null && Clicked(Mouse.current?.rightButton))
+            // AIMED, because a CLICK is an aim whichever button it was made with. See AimAtCursor — what does
+            // not aim is a KEY.
+            if (_skill1 != null && Clicked(Mouse.current?.leftButton))
                 Press(_skill1, InputKind.Skill, atCursor: true);
+
+            if (_skill2 != null && Clicked(Mouse.current?.rightButton))
+                Press(_skill2, InputKind.Skill, atCursor: true);
 
             foreach (var b in _skills)
                 if (kb[b.Key].wasPressedThisFrame) Press(b.Value, InputKind.Skill);
         }
+    }
+
+    // THE ATTACK, THROWN BY NOBODY. Tried every frame and thrown the moment the character is able — which is
+    // exactly its attack speed, because the recovery a swing charges itself IS the gap before the next one
+    // (see DynamicUnit.Hold). So the cadence needs no timer of its own here and no second number to tune:
+    // buy attack speed and the swings come faster, by construction.
+    //
+    // AIMED AT THE CURSOR EVERY TIME, not at the nearest body. What this game's blade throws carries through
+    // a whole rank, so where it is pointed is the difference between one kill and six — handing that to an
+    // auto-target would throw away the only thing worth aiming.
+    //
+    // NOT BUFFERED. A press is remembered because a player asked for it a moment early; nobody asked for this,
+    // so a refused attempt is simply retried next frame, which is sooner than any buffer would have fired it.
+    void TickAutoAttack()
+    {
+        if (_attack == null) return;
+        if (_gate != null && !_gate.Allows(InputKind.Attack)) return;
+
+        Throw(_attack, atCursor: true);
     }
 
     // THE KEYS ARE THE ONLY THING THAT WALKS THE CHARACTER. The mouse points and hits; it does not drive.
